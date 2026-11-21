@@ -58,6 +58,9 @@ vec4 gos_clip(vec4 p)
 {
 #ifdef VULKAN
     p.z = (p.z + p.w) * 0.5;
+#  ifdef GOS_VERTEX_SHADER
+    gl_PointSize = 1.0; // undefined for point lists unless written
+#  endif
 #endif
     return p;
 }

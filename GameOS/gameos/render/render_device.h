@@ -2,8 +2,9 @@
 #define GOS_RENDER_DEVICE_H
 
 // The interface between the GameOS renderer (gameos_graphics.cpp) and a
-// graphics API. Everything API specific lives behind it, under render/<api>/.
-// The OpenGL implementation is render/gl/gl_device.cpp.
+// graphics API. Everything API specific lives behind it, under render/<api>/:
+//   render/gl/gl_device.cpp    OpenGL 4 core profile (-renderer gl)
+//   render/gpu/gpu_device.cpp  SDL3 GPU: Vulkan, D3D12, Metal (-renderer gpu)
 
 #include <stdint.h>
 #include <string>
@@ -61,6 +62,8 @@ public:
     virtual void clear(bool color, bool depth) = 0;
     // Reads back the frame just drawn (before present), RGBA8, bottom row first.
     virtual bool readPixels(int w, int h, uint8_t* rgba) = 0;
+    // Shows the frame (swap buffers) and starts the next one.
+    virtual void present() = 0;
 
     // Shaders: `name` identifies the variant, `defines` is prepended.
     virtual Shader* createShader(const char* name, const char* vs_path, const char* fs_path,
@@ -104,8 +107,16 @@ public:
 Device* device();
 void setDevice(Device* d);
 
-// Factory for the OpenGL device (render/gl/gl_device.cpp).
+// Which device to create; chosen before the window exists (-renderer).
+enum class Backend { GL, GPU };
+Backend backend();
+void setBackend(Backend b);
+const char* backendName(Backend b); // "gl", "gpu"
+bool parseBackend(const char* name, Backend* out);
+
+// Factories (render/gl/gl_device.cpp, render/gpu/gpu_device.cpp)
 Device* createGLDevice();
+Device* createGpuDevice();
 
 } // namespace gos_render
 

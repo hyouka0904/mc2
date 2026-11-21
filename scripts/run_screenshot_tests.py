@@ -2,6 +2,7 @@
 """Deterministic screenshot tests.
 
     run_screenshot_tests.py <game_dir> <out_dir> [--update] [--only NAME...]
+                            [--renderer gl|gpu] [--gpu-validation]
 
 Runs the game headless (Xvfb, Mesa software GL, dummy audio) in fixed-step
 mode for every row of tests/golden/manifest.txt, saves the captured frames
@@ -9,8 +10,13 @@ to <out_dir>, then compares them with the golden images in tests/golden
 (see compare_screenshots.py for thresholds). Heat maps of failing images go
 to <out_dir>/diff.
 
---update   copy the new captures over the golden images instead of comparing
---only     restrict to the named images
+--update          copy the new captures over the golden images instead of comparing
+--only            restrict to the named images
+--renderer        graphics backend passed to the game (default gl). The golden
+                  images come from the OpenGL backend; the SDL3 GPU backend
+                  (Vulkan on Mesa lavapipe) is compared against the same images.
+--gpu-validation  run the SDL3 GPU backend with the Vulkan validation layers
+                  and fail if any validation message is logged
 
 Exit status: 0 pass, 1 mismatch or capture failure, 2 setup error.
 """
@@ -75,6 +81,8 @@ def main():
     # The game window is 800x600; a screen of the same size keeps captures
     # identical whether or not the window manager honours fullscreen.
     ap.add_argument("--screen", default="800x600")
+    ap.add_argument("--renderer", choices=["gl", "gpu"], default="gl")
+    ap.add_argument("--gpu-validation", action="store_true")
     args = ap.parse_args()
 
     for tool in ("Xvfb", "xdpyinfo"):
@@ -96,6 +104,9 @@ def main():
 
     xvfb, display = start_xvfb(args.screen)
     env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", LIBGL_ALWAYS_SOFTWARE="1")
+    if args.gpu_validation:
+        env["MC2_GPU_DEBUG"] = "1"
+    fixed_args = FIXED_ARGS + ["-renderer", args.renderer]
     failed = False
     try:
         if not os.path.exists(os.path.join(game_dir, "options.cfg")):
@@ -108,7 +119,7 @@ def main():
             label = " ".join(game_args) or "(no arguments)"
             print("run %d/%d: %s  frames %s" % (run_index + 1, len(runs), label, frames))
             tmp = tempfile.mkdtemp(prefix="mc2cap")
-            cmd = ["./mc2"] + list(game_args) + FIXED_ARGS + ["-capture-frames", frames, "-capture-dir", tmp]
+            cmd = ["./mc2"] + list(game_args) + fixed_args + ["-capture-frames", frames, "-capture-dir", tmp]
             log_path = os.path.join(out_dir, "run%02d.log" % (run_index + 1))
             with open(log_path, "w") as log:
                 try:
@@ -119,6 +130,12 @@ def main():
             if status != 0:
                 print("  FAIL: game exited with %s (log: %s)" % (status, log_path))
                 failed = True
+            if args.gpu_validation:
+                with open(log_path, errors="replace") as log:
+                    messages = [l.strip() for l in log if "Validation" in l or "VUID-" in l]
+                if messages:
+                    print("  FAIL: %d Vulkan validation messages, first: %s" % (len(messages), messages[0][:300]))
+                    failed = True
             for name, frame in shots:
                 src = os.path.join(tmp, "capture_%06d.png" % frame)
                 if os.path.exists(src):

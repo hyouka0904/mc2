@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <SDL3/SDL.h>
 #include "utils/logging.h"
+#include "render/render_device.h"
 
 // The input code needs the window for SDL_WarpMouseInWindow
 SDL_Window* g_sdl_window = NULL;
@@ -75,6 +76,8 @@ RenderWindow* create_window(const char* pwinname, int width, int height)
                 SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION, SDL_GetRevision());
     }
 
+    const bool use_gl = gos_render::backend() == gos_render::Backend::GL;
+    if (use_gl) {
     SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 8 );
     SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 8 );
     SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 8 );
@@ -87,6 +90,7 @@ RenderWindow* create_window(const char* pwinname, int width, int height)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+    }
 
     if (VERBOSE_MODES) {
         int n = 0;
@@ -109,7 +113,7 @@ RenderWindow* create_window(const char* pwinname, int width, int height)
     }
 
     SDL_Window* window = SDL_CreateWindow(pwinname ? pwinname : "--", width, height,
-                                          SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+                                          (use_gl ? SDL_WINDOW_OPENGL : 0) | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window) {
         fprintf(stderr, "Couldn't create window: %s\n", SDL_GetError());
         return NULL;
@@ -133,7 +137,8 @@ void swap_window(RenderWindowHandle h)
 {
     RenderWindow* rw = (RenderWindow*)h;
     assert(rw && rw->window_);
-    SDL_GL_SwapWindow(rw->window_);
+    (void)rw;
+    gos_render::device()->present();
 }
 
 //==============================================================================
@@ -141,6 +146,14 @@ RenderContextHandle init_render_context(RenderWindowHandle render_window)
 {
     RenderWindow* rw = (RenderWindow*)render_window;
     assert(rw && rw->window_);
+
+    if (gos_render::backend() != gos_render::Backend::GL) {
+        // SDL3 GPU claims the window itself (render/gpu/gpu_device.cpp)
+        RenderContext* rc = new RenderContext();
+        rc->glcontext_ = NULL;
+        rc->render_window_ = render_window;
+        return rc;
+    }
 
     SDL_GLContext glcontext = SDL_GL_CreateContext(rw->window_);
     if (!glcontext ) {
@@ -183,7 +196,8 @@ void destroy_render_context(RenderContextHandle rc_handle)
     RenderContext* rc = (RenderContext*)rc_handle;
     assert(rc);
 
-    SDL_GL_DestroyContext(rc->glcontext_);
+    if (rc->glcontext_)
+        SDL_GL_DestroyContext(rc->glcontext_);
     delete rc;
 }
 
@@ -191,7 +205,9 @@ void destroy_render_context(RenderContextHandle rc_handle)
 void make_current_context(RenderContextHandle ctx_h)
 {
     RenderContext* rc = (RenderContext*)ctx_h;
-    assert(rc && rc->render_window_ && rc->glcontext_);
+    assert(rc && rc->render_window_);
+    if (!rc->glcontext_)
+        return;
 
     RenderWindow* rw = rc->render_window_;
     assert(rw && rw->window_);

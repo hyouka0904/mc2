@@ -59,10 +59,12 @@ jobs:
             build/out/data_tools/makersp
             build/out/data_tools/pak
             build/out/text_tool/text_tool
+            build/shaders_out/
 
   smoke-test:
     # Builds the game data and plays the first campaign mission headless
-    # (Xvfb + Mesa software rendering).
+    # (Xvfb + Mesa software rendering), with the OpenGL backend (llvmpipe)
+    # and the SDL3 GPU backend (Vulkan on lavapipe, validation layers on).
     needs: build-and-test
     runs-on: ubuntu-24.04
     steps:
@@ -86,6 +88,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             libglew2.2 libfreetype6 libxkbcommon0 \
             libopengl0 libgl1 libglx0 libglx-mesa0 libgl1-mesa-dri \
+            libvulkan1 mesa-vulkan-drivers vulkan-validationlayers \
             xvfb x11-utils imagemagick ffmpeg python3-pil python3-numpy
           chmod +x build/mc2 build/out/data_tools/* build/out/text_tool/text_tool
 
@@ -100,8 +103,19 @@ jobs:
           MC2_SMOKE_OUT: smoke
         run: scripts/smoke_test.sh game mc2_01 60
 
-      - name: Screenshot comparison (tests/golden)
+      - name: Smoke test (mission mc2_01, SDL3 GPU)
+        env:
+          MC2_SMOKE_OUT: smoke_gpu
+          MC2_SMOKE_ARGS: -renderer gpu
+        run: scripts/smoke_test.sh game mc2_01 60
+
+      - name: Screenshot comparison (tests/golden, OpenGL)
         run: python3 scripts/run_screenshot_tests.py game shots
+
+      # Same golden images: the SDL3 GPU backend differs by at most 0.25 % of
+      # the pixels (rasterisation), well under the 0.5 % threshold
+      - name: Screenshot comparison (tests/golden, SDL3 GPU + Vulkan validation)
+        run: python3 scripts/run_screenshot_tests.py game shots_gpu --renderer gpu --gpu-validation
 
       - name: Upload screenshot and log
         if: always()
@@ -110,4 +124,6 @@ jobs:
           name: smoke-test-result
           path: |
             smoke/
+            smoke_gpu/
             shots/
+            shots_gpu/

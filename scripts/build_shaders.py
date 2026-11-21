@@ -11,7 +11,8 @@ For every program (a .vert/.frag pair) and variant (base, alpha_test) this
   4. converts it to Metal (MSL) and HLSL with spirv-cross, and the HLSL to
      DXIL with dxc when those tools are installed,
   5. records the resources of each stage (number of samplers and uniform
-     buffers, which SDL_CreateGPUShader needs) in <out_dir>/shaders.json.
+     buffers, which SDL_CreateGPUShader needs) in <out_dir>/shaders.json and
+     <out_dir>/shaders.txt (read by the SDL3 GPU backend).
 
 It also checks that the PerDraw uniform block has the layout of the C++
 struct gos_render::PerDraw (GameOS/gameos/render/shader_params.h).
@@ -145,8 +146,9 @@ def main():
                         ok, log = run([tools["msl"], spv, "--reflect"])
                         if ok:
                             refl = json.loads(log)
-                            info["samplers"] = len(refl.get("textures", []))
-                            info["uniform_buffers"] = len(refl.get("ubos", []))
+                            # slots, not counts: SDL GPU binds slot i at binding i
+                            info["samplers"] = 1 + max([x["binding"] for x in refl.get("textures", [])] or [-1])
+                            info["uniform_buffers"] = 1 + max([x["binding"] for x in refl.get("ubos", [])] or [-1])
                             info["entry_point"] = "main"
                             errors += check_per_draw(refl, "%s (%s)" % (base, stage))
                         else:
@@ -160,7 +162,7 @@ def main():
                             errors.append("%s (%s): MSL conversion failed: %s" % (base, stage, log))
                     if tools["hlsl"]:
                         hlsl = os.path.join(out, "hlsl", "%s.%s.hlsl" % (base, ext))
-                        ok, log = run([tools["hlsl"], "--hlsl", "--shader-model", "60", "--output", hlsl, spv])
+                        ok, log = run([tools["hlsl"], "--hlsl", "--shader-model", "60", "--hlsl-enable-compat", "--output", hlsl, spv])
                         if ok:
                             info["hlsl"] = os.path.relpath(hlsl, out)
                             counts["hlsl"] += 1
@@ -184,6 +186,13 @@ def main():
 
     with open(os.path.join(out, "shaders.json"), "w") as f:
         json.dump(manifest, f, indent=1, sort_keys=True)
+    # The same for the C++ side (render/gpu/gpu_device.cpp), one stage a line:
+    #   <program>.<variant> <vertex|fragment> <sampler slots> <uniform buffer slots>
+    with open(os.path.join(out, "shaders.txt"), "w") as f:
+        for name in sorted(manifest["programs"]):
+            for stage, info in sorted(manifest["programs"][name]["stages"].items()):
+                if "samplers" in info:
+                    f.write("%s %s %d %d\n" % (name, stage, info["samplers"], info["uniform_buffers"]))
 
     for e in errors:
         print("FAIL " + e)

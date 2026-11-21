@@ -24,7 +24,9 @@ set(SOURCES ${SOURCES}
     utils/file_utils.cpp
     utils/kv_registry.cpp
 
+    render/render_device.cpp
     render/render_state.cpp
+    render/gpu/gpu_device.cpp
     render/render_types.cpp
     render/gl/gl_device.cpp
     render/gl/gl_utils.cpp

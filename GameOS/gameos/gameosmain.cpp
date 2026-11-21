@@ -31,6 +31,7 @@ extern bool gos_RenderGetEnableDebugDrawCalls();
 extern bool gosExitGameOS();
 extern void gos_SetForceWindowed(bool windowed);
 extern void gos_SetShaderHotReload(bool enable);
+extern void gos_SetDrawBatching(bool enable);
 
 #include "gameos_sound.h"
 #include "mods/gos_mods.h"
@@ -167,6 +168,12 @@ int main(int argc, char** argv)
         gos_SetFixedRandomSeed(run_opts.seed);
     gos_SetForceWindowed(run_opts.windowed);
     gos_SetShaderHotReload(run_opts.shader_reload);
+    gos_SetDrawBatching(run_opts.batching);
+    {
+        gos_render::Backend b = gos_render::Backend::GL;
+        gos_render::parseBackend(run_opts.renderer.c_str(), &b);
+        gos_render::setBackend(b);
+    }
 
     // Mods must be active before the game opens its first data file
     {

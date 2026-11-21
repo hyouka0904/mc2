@@ -48,7 +48,8 @@
 │   ├ include/   原始 GameOS 介面 + Win32 型別定義                 │
 │   ├ gameos/    以 SDL3 / SDL3_mixer 實作視窗、輸入、音效、檔案、字型；  │
 │   │   └ render/  繪圖後端介面（Device / Shader / PipelineState）；     │
-│   │       └ gl/  OpenGL 實作（全專案唯一呼叫 OpenGL 的地方）        │
+│   │       ├ gl/  OpenGL 實作（全專案唯一呼叫 OpenGL 的地方）        │
+│   │       └ gpu/ SDL3 GPU 實作（Vulkan / D3D12 / Metal）            │
 │   │            utils/ 為影像、矩陣、截圖、輸入腳本等工具             │
 │   └ src/       Win32 API 的替代實作（字串、檔案、訊息框、時間…）    │
 ├──────────────────────────────────────────────────────────────┤
@@ -401,7 +402,13 @@ scripts/smoke_test.sh game mc2_01 60
 ```
 
 若遊戲提前結束（當機）、跳出訊息框、出現 OpenGL 錯誤、不回應 SIGTERM，或畫面全黑，測試就會失敗。
-結果截圖會存為 `game/smoke.png`。
+結果截圖會存為 `game/smoke.png`。額外的遊戲參數放在環境變數 `MC2_SMOKE_ARGS`，例如以 SDL3 GPU 後端執行：
+
+```bash
+MC2_SMOKE_ARGS="-renderer gpu" scripts/smoke_test.sh game mc2_01 60
+```
+
+SDL3 GPU 後端在沒有 GPU 的環境使用 Mesa 的軟體 Vulkan（lavapipe）：`sudo apt-get install mesa-vulkan-drivers vulkan-validationlayers`。
 
 ### 截圖比對測試（決定性模式）
 
@@ -419,6 +426,8 @@ scripts/smoke_test.sh game mc2_01 60
 | `-mods <dir>` / `-modpack <file>` | 啟用 Mod / Modpack（見 [Mod / Modding / Modpack](#mod--modding--modpack)） |
 | `-windowed` | 忽略遊戲的全螢幕設定，一律以視窗執行（全螢幕行為取決於視窗管理員，會讓截圖因環境而異） |
 | `-shader-reload` | 開發用：著色器原始碼變更時在遊戲中重新編譯（每半秒檢查一次，預設關閉） |
+| `-renderer gl\|gpu` | 繪圖後端：`gl`＝OpenGL（預設），`gpu`＝SDL3 GPU（Linux 上為 Vulkan）。環境變數 `MC2_GPU_DEBUG=1` 開啟 Vulkan 驗證層，`SDL_GPU_DRIVER` 可指定驅動 |
+| `-no-batching` | 關閉繪製合併，每個 `gos_Draw*` 呼叫各畫一次（比較效能或排查問題用） |
 
 測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 18 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
 暫停中的任務，以及載入範例 Mod / Modpack 的主選單。執行與比對：
@@ -432,6 +441,8 @@ scripts/run_screenshot_tests.py game shots
 ```
 
 任一通道差異大於 8/255 的像素算「不同」，不同像素達 0.5% 即失敗，並在 `shots/diff/` 輸出熱度圖。
+基準圖由 OpenGL 後端產生；SDL3 GPU 後端用同一組基準圖比對（`--renderer gpu`，加 `--gpu-validation` 時開啟 Vulkan 驗證層，記錄中出現任何驗證訊息即失敗）。
+在 lavapipe 上量得兩個後端的差異：選單與介面畫面 0%，任務畫面最多 0.25%（3D 模型邊緣的光柵化差異），因此門檻維持 0.5% 不變。
 畫面刻意變更（例如修改 shader）後，用 `--update` 重新產生基準圖並一起提交。
 單獨比較兩張圖或兩個資料夾可用 `scripts/compare_screenshots.py`。
 
@@ -473,6 +484,36 @@ cmake.exe -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=c:/path_to_your_
 
 ## 已知限制與待辦事項
 
+### 繪圖後端
+
+`GameOS/gameos/render/render_device.h` 定義後端介面，遊戲端程式碼不需要知道用的是哪一個：
+
+| 後端 | 參數 | 說明 |
+|---|---|---|
+| OpenGL | `-renderer gl`（預設） | OpenGL 4 Core Profile，執行時編譯 `shaders/` |
+| SDL3 GPU | `-renderer gpu` | Linux 上為 Vulkan，Windows 上為 D3D12，macOS 上為 Metal；讀取建置時編好的 `shaders/compiled/` |
+
+GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，重複使用同一個緩衝區），SDL3 GPU 則要求上傳在繪圖通道外進行、狀態烘焙進管線物件。因此 SDL3 GPU 後端（`render/gpu/gpu_device.cpp`）會先記錄整個幀：
+
+- 每次繪製記下所需的一切：管線（著色器變體 + 混合／深度／剔除狀態 + 頂點格式 + 圖元類型，第一次遇到時建立並快取）、貼圖與取樣器、著色器參數，以及本幀內被改過的頂點／索引資料（複製進每幀的上傳環狀緩衝區）。
+- 貼圖更新依順序記錄在繪製之間。
+- 幀結束時一次上傳環狀緩衝區，再把記錄的指令重播到離屏的顏色＋深度目標上；只有遇到貼圖更新或清除時才中斷繪圖通道。最後 blit 到交換鏈；截圖則從離屏目標下載。
+- 一幀內沒有變動的靜態緩衝區會複製到自己的 GPU 緩衝區，之後直接從那裡繪製。
+- GL 的原點在左下、SDL GPU 在左上；剛好落在像素中心或邊界上的邊與線，翻轉 y 軸後會被歸到另一側的像素。視口偏移 0.01 像素即可讓光柵化結果與 GL 一致（選單畫面逐像素相同）。
+
+**繪製合併**（`gameos_graphics.cpp`，兩個後端共用）：連續的 `gos_DrawTriangles` / `Quads` / `Lines` / `Points` / 索引三角形呼叫，若渲染狀態完全相同，就合併成一次繪製；狀態改變，或在貼圖／緩衝區更新、其他種類的繪製、文字、幀結束之前，才把累積的頂點畫出去。繪製順序不變（半透明物件依賴順序），截圖比對結果不變。`-no-batching` 可關閉。
+
+量測（mc2_01，第 300–900 幀平均，Xvfb + Mesa 軟體繪圖，`-perf-csv`）：
+
+| | draw call（第 600 幀） | 平均 draw call | 平均幀時間 |
+|---|---|---|---|
+| OpenGL，未合併 | 242 | 215 | 26.7 ms |
+| OpenGL，合併 | 156 | 140 | 19.9 ms |
+| SDL3 GPU，未合併 | 242 | 215 | 15.6 ms |
+| SDL3 GPU，合併 | 156 | 140 | 14.2 ms |
+
+整場只出現 16 個 SDL3 GPU 管線物件（8 種狀態組合 × 著色器變體），第一次建立的成本可忽略，因此沒有另外做「預先建立」。
+
 ### 著色器
 
 `shaders/` 是同一份 GLSL 原始碼，供兩種目標使用：
@@ -503,7 +544,7 @@ cmake.exe -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=c:/path_to_your_
 | 2 SDL3_mixer / SDL3_ttf | 完成 | 音效與字型工具改寫；修正音量截斷、資源洩漏、8 位元 PCM；執行檔不再連結任何 SDL2 |
 | 3 繪圖後端抽象 | 完成 | `render/` 介面、OpenGL 只在 `render/gl/`、移除固定管線程式碼（純 Core Profile）、管線鍵與快取、可鎖定貼圖的 CPU 影子副本、`-perf-csv` |
 | 4 著色器 | 完成（DXIL 待 CI 安裝 dxc） | Vulkan 風格 GLSL（`PerDraw` / `LightsData` / `SceneData` 三個 uniform block、明確的 set / binding / location）；建置時編成 SPIR-V（通過 `spirv-val`）、MSL、HLSL；OpenGL 後端改用 uniform block 後 18 張截圖逐像素相同；熱重載改為 `-shader-reload` 開發選項 |
-| 5 SDL3 GPU 後端 | 未開始 | 介面已備妥（`gos_render::Device`）；量測顯示遊戲只用到 8 種管線狀態，有利於日後的管線快取 |
+| 5 SDL3 GPU 後端 | 完成 | `render/gpu/`（Vulkan via SDL3 GPU）、`-renderer gl\|gpu`、記錄重播式的即時模式模擬、管線快取、每幀上傳環狀緩衝區；兩個後端共用的繪製合併讓 mc2_01 第 600 幀 draw call 從 242 降到 156；CI 對兩個後端各跑冒煙測試與 18 張截圖比對（GPU 後端開啟 Vulkan 驗證層，零訊息）；兩後端差異最多 0.25%，門檻維持 0.5% |
 | 6 移除 OpenGL / GLEW | 未開始 | 依賴階段 5 |
 | 7 新繪圖 API | 未開始 | |
 | 8 平台層精簡 | 未開始 | |

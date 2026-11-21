@@ -28,6 +28,7 @@ static const DWORD INVALID_TEXTURE_ID = 0;
 
 static gosRenderer* g_gos_renderer = NULL;
 
+void gos_FlushDrawBatch(); // defined after gosRenderer
 gosRenderer* getGosRenderer() {
     return g_gos_renderer;
 }
@@ -635,6 +636,7 @@ class gosTexture {
                 DWORD* dst = (DWORD*)shadow_.data();
                 for(size_t i = 0; i < num_pixels; ++i)
                     dst[i] = swapRedBlue(src[i]);
+                gos_FlushDrawBatch(); // pending draws see the old pixels
                 gos_render::device()->updateTexture(tex_, shadow_.data(), TF_RGBA8);
             }
 
@@ -956,6 +958,7 @@ class gosRenderer {
         }
 
         void deleteTexture(DWORD texture_id) {
+            flushBatch(); // the pending batch may use it
             gosASSERT(textureList_.size() > texture_id);
             gosASSERT(textureList_[texture_id] != 0);
             delete textureList_[texture_id];
@@ -1052,6 +1055,14 @@ class gosRenderer {
         void destroy();
         void flush();
 
+        // Draw batching: consecutive gos_DrawTriangles / Quads / Lines /
+        // Points / indexed triangle calls with identical render states are
+        // merged into one draw. flushBatch() draws what is pending; it runs
+        // when the state changes and before anything that could change
+        // what the pending vertices look like (texture or buffer updates,
+        // other kinds of draws, the end of the frame).
+        void flushBatch();
+
         // debug interface
         void setNumDrawCallsToDraw(uint32_t num) { num_draw_calls_to_draw_ = num; }
         uint32_t getNumDrawCallsToDraw() { return num_draw_calls_to_draw_; }
@@ -1072,6 +1083,14 @@ class gosRenderer {
 
         bool beforeDrawCall();
         void afterDrawCall();
+
+        enum class BatchKind { None, Tris, Lines, Points, IndexedTris };
+        // Makes room for a draw of `kind` with the current render states:
+        // flushes the pending batch unless the draw can be appended to it.
+        gosMesh* beginBatch(BatchKind kind, int num_vertices, int num_indices);
+        void mirrorCurStates();
+        BatchKind batch_kind_ = BatchKind::None;
+        uint32_t batch_states_[gos_MaxState];
 
         // render target size
         int width_;
@@ -1391,6 +1410,7 @@ void gos_SetShaderHotReload(bool enable) { g_shader_hot_reload = enable; }
 
 void gosRenderer::endFrame()
 {
+    flushBatch();
     if (!g_shader_hot_reload)
         return;
     // Check shader files for changes (hot reload) every half second.
@@ -1413,6 +1433,7 @@ void gos_SetForceWindowed(bool windowed) { g_force_windowed = windowed; }
 void gosRenderer::handleEvents()
 {
     if(pendingRequest) {
+        flushBatch();
 
         width_ = reqWidth;
         height_ = reqHeight;
@@ -1485,47 +1506,89 @@ gosRenderMaterial* gosRenderer::selectLightedRenderMaterial(const RenderState& r
     }
 }
 
+void gos_FlushDrawBatch() { if(g_gos_renderer) g_gos_renderer->flushBatch(); }
+
+// -no-batching: every call is drawn on its own (as before batching)
+static bool g_draw_batching = true;
+void gos_SetDrawBatching(bool enable) { g_draw_batching = enable; }
+
+void gosRenderer::mirrorCurStates()
+{
+    // what applyRenderStates() records, without touching the device:
+    // gos_GetRenderState reports the state of the last draw
+    const gos_RenderState states[] = { gos_State_Culling, gos_State_ZWrite, gos_State_ZCompare,
+        gos_State_AlphaMode, gos_State_AlphaTest, gos_State_Fog, gos_State_Filter,
+        gos_State_TextureAddress, gos_State_Texture, gos_State_Texture2, gos_State_Texture3 };
+    for(size_t i = 0; i < COUNTOF(states); ++i)
+        curStates_[states[i]] = renderStates_[states[i]];
+}
+
+gosMesh* gosRenderer::beginBatch(BatchKind kind, int num_vertices, int num_indices)
+{
+    gosMesh* mesh = kind == BatchKind::Tris ? tris_ : kind == BatchKind::Lines ? lines_
+                  : kind == BatchKind::Points ? points_ : indexed_tris_;
+    const bool same = batch_kind_ == kind && 0 == memcmp(batch_states_, renderStates_, sizeof(batch_states_));
+    const bool fits = mesh->getNumVertices() + num_vertices <= mesh->getVertexCapacity() &&
+                      mesh->getNumIndices() + num_indices <= mesh->getIndexCapacity() &&
+                      // 16-bit indices are rebased by the vertex count
+                      (kind != BatchKind::IndexedTris || mesh->getNumVertices() + num_vertices <= 0x10000);
+    if(!same || !fits) {
+        flushBatch();
+        batch_kind_ = kind;
+        memcpy(batch_states_, renderStates_, sizeof(batch_states_));
+    }
+    mirrorCurStates();
+    return mesh;
+}
+
+void gosRenderer::flushBatch()
+{
+    if(batch_kind_ == BatchKind::None)
+        return;
+    const BatchKind kind = batch_kind_;
+    batch_kind_ = BatchKind::None;
+
+    // draw with the states the batch was recorded with
+    RenderState saved;
+    memcpy(saved, renderStates_, sizeof(saved));
+    memcpy(renderStates_, batch_states_, sizeof(renderStates_));
+    applyRenderStates();
+
+    gosRenderMaterial* mat = (kind == BatchKind::Tris || kind == BatchKind::IndexedTris)
+        ? selectBasicRenderMaterial(curStates_) : basic_material_;
+    gosASSERT(mat);
+    mat->setTransform(projection_);
+    mat->setFogColor(fog_color_);
+    switch(kind) {
+        case BatchKind::Tris: tris_->draw(mat); tris_->rewind(); break;
+        case BatchKind::Lines: lines_->draw(mat); lines_->rewind(); break;
+        case BatchKind::Points: points_->draw(mat); points_->rewind(); break;
+        case BatchKind::IndexedTris: indexed_tris_->drawIndexed(mat); indexed_tris_->rewind(); break;
+        default: break;
+    }
+    memcpy(renderStates_, saved, sizeof(renderStates_));
+}
+
 void gosRenderer::drawQuads(gos_VERTEX* vertices, int count) {
     gosASSERT(vertices);
 
     if(beforeDrawCall()) return;
 
-    int num_quads = count / 4;
-    int num_vertices = num_quads * 6;
-
-    if(quads_->getNumVertices() + num_vertices > quads_->getVertexCapacity()) {
-        applyRenderStates();
-        gosRenderMaterial* mat = selectBasicRenderMaterial(curStates_);
-        gosASSERT(mat);
-
-        mat->setTransform(projection_);
-        mat->setFogColor(fog_color_);
-        quads_->draw(mat);
-        quads_->rewind();
-    } 
-
-    gosASSERT(quads_->getNumVertices() + num_vertices <= quads_->getVertexCapacity());
+    // each quad becomes two triangles in the triangle batch
+    const int num_quads = count / 4;
+    gosMesh* mesh = beginBatch(BatchKind::Tris, num_quads * 6, 0);
+    gosASSERT(mesh->getNumVertices() + num_quads * 6 <= mesh->getVertexCapacity());
     for(int i=0; i<count;i+=4) {
+        mesh->addVertices(vertices + 4*i + 0, 1);
+        mesh->addVertices(vertices + 4*i + 1, 1);
+        mesh->addVertices(vertices + 4*i + 2, 1);
 
-        quads_->addVertices(vertices + 4*i + 0, 1);
-        quads_->addVertices(vertices + 4*i + 1, 1);
-        quads_->addVertices(vertices + 4*i + 2, 1);
-
-        quads_->addVertices(vertices + 4*i + 0, 1);
-        quads_->addVertices(vertices + 4*i + 2, 1);
-        quads_->addVertices(vertices + 4*i + 3, 1);
+        mesh->addVertices(vertices + 4*i + 0, 1);
+        mesh->addVertices(vertices + 4*i + 2, 1);
+        mesh->addVertices(vertices + 4*i + 3, 1);
     }
-
-    // for now draw anyway because no render state saved for draw calls
-    applyRenderStates();
-
-    gosRenderMaterial* mat = selectBasicRenderMaterial(curStates_);
-    gosASSERT(mat);
-
-    mat->setTransform(projection_);
-    mat->setFogColor(fog_color_);
-    quads_->draw(mat);
-    quads_->rewind();
+    if(!g_draw_batching)
+        flushBatch();
 
     afterDrawCall();
 }
@@ -1535,23 +1598,11 @@ void gosRenderer::drawLines(gos_VERTEX* vertices, int count) {
 
     if(beforeDrawCall()) return;
 
-    if(lines_->getNumVertices() + count > lines_->getVertexCapacity()) {
-        applyRenderStates();
-        basic_material_->setTransform(projection_);
-        basic_material_->setFogColor(fog_color_);
-        lines_->draw(basic_material_);
-        lines_->rewind();
-    }
-
-    gosASSERT(lines_->getNumVertices() + count <= lines_->getVertexCapacity());
-    lines_->addVertices(vertices, count);
-
-    // for now draw anyway because no render state saved for draw calls
-    applyRenderStates();
-    basic_material_->setTransform(projection_);
-    basic_material_->setFogColor(fog_color_);
-    lines_->draw(basic_material_);
-    lines_->rewind();
+    gosMesh* mesh = beginBatch(BatchKind::Lines, count, 0);
+    gosASSERT(mesh->getNumVertices() + count <= mesh->getVertexCapacity());
+    mesh->addVertices(vertices, count);
+    if(!g_draw_batching)
+        flushBatch();
 
     afterDrawCall();
 }
@@ -1561,21 +1612,11 @@ void gosRenderer::drawPoints(gos_VERTEX* vertices, int count) {
 
     if(beforeDrawCall()) return;
 
-    if(points_->getNumVertices() + count > points_->getVertexCapacity()) {
-        applyRenderStates();
-        basic_material_->setTransform(projection_);
-		basic_material_->setFogColor(fog_color_);
-        points_->draw(basic_material_);
-        points_->rewind();
-    } 
-
-    gosASSERT(points_->getNumVertices() + count <= points_->getVertexCapacity());
-    points_->addVertices(vertices, count);
-
-    // for now draw anyway because no render state saved for draw calls
-    applyRenderStates();
-    points_->draw(basic_material_);
-    points_->rewind();
+    gosMesh* mesh = beginBatch(BatchKind::Points, count, 0);
+    gosASSERT(mesh->getNumVertices() + count <= mesh->getVertexCapacity());
+    mesh->addVertices(vertices, count);
+    if(!g_draw_batching)
+        flushBatch();
 
     afterDrawCall();
 }
@@ -1587,31 +1628,11 @@ void gosRenderer::drawTris(gos_VERTEX* vertices, int count) {
 
     if(beforeDrawCall()) return;
 
-    if(tris_->getNumVertices() + count > tris_->getVertexCapacity()) {
-        applyRenderStates();
-
-        gosRenderMaterial* mat = selectBasicRenderMaterial(curStates_);
-        gosASSERT(mat);
-
-        mat->setTransform(projection_);
-		mat->setFogColor(fog_color_);
-        tris_->draw(mat);
-        tris_->rewind();
-    } 
-
-    gosASSERT(tris_->getNumVertices() + count <= tris_->getVertexCapacity());
-    tris_->addVertices(vertices, count);
-
-    // for now draw anyway because no render state saved for draw calls
-    applyRenderStates();
-
-    gosRenderMaterial* mat = selectBasicRenderMaterial(curStates_);
-    gosASSERT(mat);
-
-    mat->setTransform(projection_);
-    mat->setFogColor(fog_color_);
-    tris_->draw(mat);
-    tris_->rewind();
+    gosMesh* mesh = beginBatch(BatchKind::Tris, count, 0);
+    gosASSERT(mesh->getNumVertices() + count <= mesh->getVertexCapacity());
+    mesh->addVertices(vertices, count);
+    if(!g_draw_batching)
+        flushBatch();
 
     afterDrawCall();
 }
@@ -1623,41 +1644,32 @@ void gosRenderer::drawIndexedTris(gos_VERTEX* vertices, int num_vertices, WORD* 
 
     if(beforeDrawCall()) return;
 
-    bool not_enough_vertices = indexed_tris_->getNumVertices() + num_vertices > indexed_tris_->getVertexCapacity();
-    bool not_enough_indices = indexed_tris_->getNumIndices() + num_indices > indexed_tris_->getIndexCapacity();
-    if(not_enough_vertices || not_enough_indices){
-        applyRenderStates();
-
-        gosRenderMaterial* mat = selectBasicRenderMaterial(curStates_);
-        gosASSERT(mat);
-
-        mat->setTransform(projection_);
-		mat->setFogColor(fog_color_);
-        indexed_tris_->drawIndexed(mat);
-        indexed_tris_->rewind();
-    } 
-
-    gosASSERT(indexed_tris_->getNumVertices() + num_vertices <= indexed_tris_->getVertexCapacity());
-    gosASSERT(indexed_tris_->getNumIndices() + num_indices <= indexed_tris_->getIndexCapacity());
-    indexed_tris_->addVertices(vertices, num_vertices);
-    indexed_tris_->addIndices(indices, num_indices);
-
-    // for now draw anyway because no render state saved for draw calls
-    applyRenderStates();
-
-    gosRenderMaterial* mat = selectBasicRenderMaterial(curStates_);
-    gosASSERT(mat);
-
-    mat->setTransform(projection_);
-    mat->setFogColor(fog_color_);
-    indexed_tris_->drawIndexed(mat);
-    indexed_tris_->rewind();
+    gosMesh* mesh = beginBatch(BatchKind::IndexedTris, num_vertices, num_indices);
+    gosASSERT(mesh->getNumVertices() + num_vertices <= mesh->getVertexCapacity());
+    gosASSERT(mesh->getNumIndices() + num_indices <= mesh->getIndexCapacity());
+    // indices refer to this call's vertices: rebase them
+    const WORD base = (WORD)mesh->getNumVertices();
+    mesh->addVertices(vertices, num_vertices);
+    if(base == 0) {
+        mesh->addIndices(indices, num_indices);
+    } else {
+        WORD rebased[256];
+        for(int i = 0; i < num_indices; i += 256) {
+            const int n = num_indices - i < 256 ? num_indices - i : 256;
+            for(int j = 0; j < n; ++j)
+                rebased[j] = (WORD)(indices[i + j] + base);
+            mesh->addIndices(rebased, n);
+        }
+    }
+    if(!g_draw_batching)
+        flushBatch();
 
     afterDrawCall();
 }
 
 void gosRenderer::drawIndexedTris(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* mvp)
 {
+    flushBatch();
     gosASSERT(ib && vb && mvp);
     gosASSERT((ib->count_ % 3) == 0);
 
@@ -1688,6 +1700,7 @@ void gosRenderer::drawIndexedTris(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLAR
 
 void gosRenderer::drawIndexedTris(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl)
 {
+    flushBatch();
     gosASSERT(ib && vb);
     gosASSERT((ib->count_ % 3) == 0);
 
@@ -1821,6 +1834,7 @@ void addCharacter(gosMesh* text_, const float u, const float v, const float u2, 
 }
 
 void gosRenderer::drawText(const char* text) {
+    flushBatch();
     gosASSERT(text);
 
     if(beforeDrawCall()) return;
@@ -1955,8 +1969,11 @@ void gosRenderer::flush()
 
 bool gos_CreateRenderer(graphics::RenderContextHandle ctx_h, graphics::RenderWindowHandle win_h, int w, int h) {
 
-    gos_render::Device* dev = gos_render::createGLDevice();
+    const bool gpu = gos_render::backend() == gos_render::Backend::GPU;
+    gos_render::Device* dev = gpu ? gos_render::createGpuDevice() : gos_render::createGLDevice();
     if(!dev->init()) {
+        fprintf(stderr, "error: the %s renderer cannot start%s\n", gpu ? "SDL3 GPU" : "OpenGL",
+                gpu ? " (try -renderer gl)" : "");
         delete dev;
         return false;
     }
@@ -2561,6 +2578,7 @@ void __stdcall gos_UpdateBuffer(HGOSBUFFER buffer, void* data, size_t offset, si
 	gosASSERT(buffer);
     gosASSERT(buffer->element_size_ * buffer->count_ >= num_bytes);
 	(void)offset; // whole buffer replaced, as before
+	g_gos_renderer->flushBatch(); // pending draws see the old contents
 	gos_render::device()->updateBuffer(buffer->buffer_, toBufferKind(buffer->type_), data, num_bytes);
 }
 

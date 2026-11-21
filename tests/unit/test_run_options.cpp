@@ -227,6 +227,25 @@ TEST(run_options_shader_reload_flag)
     CHECK(o.shader_reload);
 }
 
+TEST(run_options_renderer_flag)
+{
+    Options o;
+    CHECK(o.renderer == "gl");
+    CHECK(parseArgs({"-renderer", "gpu"}, o));
+    CHECK(o.renderer == "gpu");
+    Options bad;
+    CHECK(!parseArgs({"-renderer", "vulkan"}, bad));
+    CHECK(!parseArgs({"-renderer"}, bad));
+}
+
+TEST(run_options_no_batching_flag)
+{
+    Options o;
+    CHECK(o.batching);
+    CHECK(parseArgs({"-no-batching"}, o));
+    CHECK(!o.batching);
+}
+
 TEST(run_options_perf_csv_flag)
 {
     Options o;

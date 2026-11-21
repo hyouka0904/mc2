@@ -10,6 +10,7 @@
 #
 # Runs under Xvfb with Mesa software OpenGL, so no GPU or display is needed.
 # Writes smoke.log and smoke.png into $MC2_SMOKE_OUT (default: game_dir).
+# Extra game arguments can be given in $MC2_SMOKE_ARGS (e.g. "-renderer gpu").
 #
 # The test fails if the game exits before the time is up (crash or quit),
 # shows any message box, logs an OpenGL error, or renders an all-black frame.
@@ -50,7 +51,8 @@ if [ ! -f options.cfg ]; then
 fi
 
 echo "Running mission $mission for ${seconds}s on $display"
-./mc2 -mission "$mission" > "$log" 2>&1 &
+# shellcheck disable=SC2086 # word splitting of the extra arguments is intended
+./mc2 -mission "$mission" ${MC2_SMOKE_ARGS:-} > "$log" 2>&1 &
 game_pid=$!
 
 sleep "$seconds"

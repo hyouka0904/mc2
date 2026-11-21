@@ -19,10 +19,21 @@ struct ObjectLights {
     ivec4 numLights;
 };
 
+#ifdef VULKAN
+// The SDL3 GPU backend uploads only the entry selected by light_offset_.x
+// (uniform data is pushed per draw and limited to 32 KB per slot).
+GOS_UBO(LIGHT_DATA_ATTACHMENT_SLOT, 1) uniform LightsData
+{
+    ObjectLights light[1];
+};
+#define GOS_OBJECT_LIGHTS(index) light[0]
+#else
 GOS_UBO(LIGHT_DATA_ATTACHMENT_SLOT, 1) uniform LightsData
 {
     ObjectLights light[32];
 };
+#define GOS_OBJECT_LIGHTS(index) light[index]
+#endif
 
 //================================================================================ 
 //================================================================================ 
@@ -119,7 +130,7 @@ vec3 calc_light(in int lights_index, in vec3 normal, in vec3 base_light)
     //  0 light - directional
     //  1st light ambient
     
-    ObjectLights ld = light[lights_index];
+    ObjectLights ld = GOS_OBJECT_LIGHTS(lights_index);
 
     if(0 == ld.numLights.x)
         return vec3(1,1,1);

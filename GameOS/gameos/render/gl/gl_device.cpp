@@ -8,6 +8,9 @@
 
 #include "gameos.hpp"
 
+#include <SDL3/SDL_video.h>
+extern SDL_Window* g_sdl_window; // gos_render.cpp
+
 #include <map>
 #include <stdio.h>
 #include <string>
@@ -127,6 +130,7 @@ public:
         glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
         have_state_ = false;
     }
+    void present() override { SDL_GL_SwapWindow(g_sdl_window); }
     bool readPixels(int w, int h, uint8_t* rgba) override {
         glReadBuffer(GL_BACK);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -350,12 +354,8 @@ void GLDevice::bindTexture(int unit, const Texture* t, const SamplerDesc& s)
                      s.filter == FilterMode::Linear ? TFM_LINEAR : TFM_NEAREST);
 }
 
-Device* g_device = nullptr;
-
 } // namespace
 
-Device* device() { return g_device; }
-void setDevice(Device* d) { g_device = d; }
 Device* createGLDevice() { return new GLDevice(); }
 
 } // namespace gos_render
