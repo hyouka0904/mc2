@@ -8,6 +8,7 @@
 #  render_isolation   OpenGL is only used under GameOS/gameos/render/gl/
 #  unit_mods          mod system: versions, manifests, modpacks, load order, overlay
 #  tool_mc2mod        modding workflow through the mc2mod command line tool
+#  shader_validation  every shader variant compiles and links (glslangValidator)
 #  unit_stuff         original Stuff library self-tests (mclib/stuff)
 #  unit_pqueue        A* open list (mclib/pqueue)
 #  unit_run_options   deterministic-mode options, PNG capture writer, clock
@@ -94,4 +95,11 @@ set_target_properties(unit_mods PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED
 if(NOT WIN32)
     add_test(NAME tool_mc2mod
         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_mc2mod.sh $<TARGET_FILE:mc2mod> ${CMAKE_SOURCE_DIR})
+endif()
+
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_FOUND)
+    add_test(NAME shader_validation
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/validate_shaders.py ${CMAKE_SOURCE_DIR}/shaders)
+    set_tests_properties(shader_validation PROPERTIES SKIP_RETURN_CODE 77)
 endif()

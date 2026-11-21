@@ -24,7 +24,7 @@ jobs:
             libfreetype-dev fontconfig fonts-dejavu-core \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
             libxss-dev libxtst-dev libxfixes-dev libxkbcommon-dev \
-            libpulse-dev libasound2-dev
+            libpulse-dev libasound2-dev glslang-tools python3
 
       # SDL3 is not packaged for Ubuntu 24.04: the configure step downloads
       # and builds the pinned releases (cmake/MC2Dependencies.cmake).

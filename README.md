@@ -367,6 +367,7 @@ ctest --test-dir build --output-on-failure
 | `unit_sound` | 音效 API（SDL3_mixer）：播放一次 / 迴圈 / 暫停 / 停止、音量線性、左右聲道定位、釋放資源；不需要音效卡 |
 | `unit_render_state` | 由 GameOS 渲染狀態推出的管線描述、32 位元管線鍵（可逆、互不重複）、管線快取 |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
+| `shader_validation` | 以 glslangValidator 離線編譯並連結所有著色器變體（與執行時相同的 `#version 420`、`ALPHA_TEST` 定義與 `#include` 展開），不需要 GPU；未安裝 `glslang-tools` 時略過 |
 | `unit_mods` / `tool_mc2mod` | Mod 系統與製作工具（詳見 Mod 章節） |
 | `unit_stuff` | 執行原版 Stuff 數學函式庫內建、但從未被呼叫的自我測試 |
 | `tool_fastfile` / `tool_pak` / `tool_rsp` | 資料工具的打包→解包往返測試 |
@@ -470,15 +471,33 @@ cmake.exe -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=c:/path_to_your_
 
 ## 已知限制與待辦事項
 
-尚未完成的項目（原始碼中保留了對應的 `TODO` 註解）：
+### 現代化計畫進度
+
+依「MC2 GameOS 現代化計畫」各階段：
+
+| 階段 | 狀態 | 內容 |
+|---|---|---|
+| 0 截圖比對測試 | 完成 | 決定性模式、幀擷取、輸入腳本、18 張基準圖、CI 比對；故意修改著色器可被偵測 |
+| 1 SDL2 → SDL3 | 完成 | 視窗、輸入、事件、動態載入改用 SDL3；與 SDL2 版逐像素相同 |
+| 2 SDL3_mixer / SDL3_ttf | 完成 | 音效與字型工具改寫；修正音量截斷、資源洩漏、8 位元 PCM；執行檔不再連結任何 SDL2 |
+| 3 繪圖後端抽象 | 完成 | `render/` 介面、OpenGL 只在 `render/gl/`、移除固定管線程式碼（純 Core Profile）、管線鍵與快取、可鎖定貼圖的 CPU 影子副本、`-perf-csv` |
+| 4 著色器 | 部分 | 已有離線驗證（glslangValidator 編譯並連結所有變體）並移除未使用的著色器；**尚未**改寫為 Vulkan 風格 GLSL / SPIR-V |
+| 5 SDL3 GPU 後端 | 未開始 | 介面已備妥（`gos_render::Device`）；量測顯示遊戲只用到 8 種管線狀態，有利於日後的管線快取 |
+| 6 移除 OpenGL / GLEW | 未開始 | 依賴階段 5 |
+| 7 新繪圖 API | 未開始 | |
+| 8 平台層精簡 | 未開始 | |
+
+### 其他尚未完成的項目
 
 - **網路對戰**未實作。
 - **多貼圖模型的 GPU 繪製**：`mclib/tgl.cpp` 的硬體繪製路徑以整個模型的第一張貼圖繪製，
-  若模型使用多張貼圖會不正確；需要在載入時依貼圖分段並支援繪製索引範圍。
+  若模型使用多張貼圖會不正確；需要在載入時依貼圖分段並支援繪製索引範圍（計畫階段 7）。
 - **光照完全移到著色器**：目前部分光照仍在 CPU 計算（`mclib/msl.cpp`、`shaders/gos_tex_vertex_lighted.vert`）。
 - **記憶體堆積追蹤**：`gos_Malloc` 尚未依 heap 記錄配置，因此 heap 銷毀時不會釋放其記憶體（`GameOS/gameos/gameos.cpp`）。
-- 減少 draw call 數量、GameOS 繪圖 API 的型別安全（`gameos_graphics.cpp` 中的設計註解）。
+- 減少 draw call 數量（目前一般任務畫面約 240 次 / 幀）、GameOS 繪圖 API 的型別安全。
 - 都卜勒等 3D 音效。
+- 編譯警告仍多（舊程式碼約數百則）。
+- 尚未在 Windows、實體 GPU、長時間遊玩下重新驗證（CI 只在 Linux + Mesa 軟體繪圖上執行）。
 - `GameOS/include/platform_*.h` 中的 `FIXME` 來自 Wine 的 Win32 標頭，屬於上游註解。
 
 `code/`、`mclib/` 中大量標註為 `HACK` 的註解是微軟 2001 年原始碼的開發紀錄，描述的是刻意的遊戲行為（AI、網路封包、地圖格子等），
