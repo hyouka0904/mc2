@@ -175,4 +175,4 @@ namespace Stuff {
 
 }
 
-void* operator new(size_t size, void* where) noexcept;
+#include <new> // placement new comes from the standard library
