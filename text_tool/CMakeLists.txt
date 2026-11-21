@@ -5,4 +5,4 @@ add_definitions(-DLINUX_BUILD)
 set(TEXT_TOOL_SOURCES "main.cpp")
 
 add_executable(text_tool ${TEXT_TOOL_SOURCES})
-target_link_libraries(text_tool SDL2::Main SDL2::TTF ${ADDITIONAL_LIBS})
+target_link_libraries(text_tool MC2::TTF ${ADDITIONAL_LIBS})

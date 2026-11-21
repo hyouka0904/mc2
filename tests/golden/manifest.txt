@@ -1,7 +1,7 @@
 # Screenshot comparison tests: scripts/run_screenshot_tests.py
 #
 # <image name>        <frame>  <game arguments>
-# Every run uses -fixedstep 33 -seed 1. @file names are relative to this
+# Every run uses -fixedstep 33 -seed 1 -windowed on an 800x600 screen. @file names are relative to this
 # directory. Rows with identical arguments share one game run.
 
 mc2_01_0300           300      -mission mc2_01

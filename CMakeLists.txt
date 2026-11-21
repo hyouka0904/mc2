@@ -27,10 +27,7 @@ endif("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_PREFIX_PATH}/cmake)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
-# may have to help find_package bydetting path to FindSDL2.cmake
-#set(SDL2_DIR "${CMAKE_PREFIX_PATH}/cmake")
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 if(NOT MSVC)
     # -Wno-unused-local-typedefs: "typedef was ignored on this declaration"
@@ -61,10 +58,8 @@ endif()
 add_definitions(-DUSE_ASSEMBLER_CODE=0)
 add_definitions(-DLINUX_BUILD)
 
-find_package(SDL2 REQUIRED)
-find_package(SDL2_mixer REQUIRED)
-#required by text_tool
-find_package(SDL2_ttf REQUIRED)
+# SDL3 / SDL3_mixer / SDL3_ttf -> MC2::SDL, MC2::Mixer, MC2::TTF
+include(MC2Dependencies)
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -189,7 +184,7 @@ endif()
 
 
 add_executable(mc2 ${SOURCES} ${MAIN_SRC})
-target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main windows ZLIB::ZLIB SDL2::Main GLEW::GLEW SDL2::Mixer ${ADDITIONAL_LIBS} OpenGL::GL)
+target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main windows ZLIB::ZLIB MC2::SDL GLEW::GLEW MC2::Mixer ${ADDITIONAL_LIBS} OpenGL::GL)
 
 add_subdirectory("./res" "./out/res")
 add_subdirectory("./data_tools" "./out/data_tools")

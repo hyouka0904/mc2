@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include "gos_input.h"
 
 #include "utils/camera.h"
@@ -29,24 +29,23 @@ extern void gos_RenderEnableDebugDrawCalls();
 extern bool gos_RenderGetEnableDebugDrawCalls();
 
 extern bool gosExitGameOS();
+extern void gos_SetForceWindowed(bool windowed);
 
-extern bool gos_CreateAudio();
-extern void gos_DestroyAudio();
+#include "gameos_sound.h"
 
 static bool g_exit = false;
-static bool g_focus_lost = false;
 #if 0
 static camera g_camera;
 #endif
 
-static void handle_key_down( SDL_Keysym* keysym ) {
-    switch( keysym->sym ) {
+static void handle_key_down( const SDL_KeyboardEvent& key ) {
+    switch( key.key ) {
         case SDLK_ESCAPE:
-            if(keysym->mod & KMOD_RALT)
+            if(key.mod & SDL_KMOD_RALT)
                 g_exit = true;
             break;
-        case 'd':
-            if(keysym->mod & KMOD_RALT)
+        case SDLK_D:
+            if(key.mod & SDL_KMOD_RALT)
                 gos_RenderEnableDebugDrawCalls();
             break;
     }
@@ -58,44 +57,27 @@ static void process_events( void ) {
 
     SDL_Event event;
     while( SDL_PollEvent( &event ) ) {
-
-        if(g_focus_lost) {
-            if(event.type != SDL_WINDOWEVENT_FOCUS_GAINED) {
-                continue;
-            } else {
-                g_focus_lost = false;
-            }
-        }
-
         switch( event.type ) {
-        case SDL_KEYDOWN:
-            handle_key_down( &event.key.keysym );
+        case SDL_EVENT_KEY_DOWN:
+            handle_key_down( event.key );
             // fallthrough
-        case SDL_KEYUP:
+        case SDL_EVENT_KEY_UP:
             input::handleKeyEvent(&event);
             break;
-        case SDL_QUIT:
+        case SDL_EVENT_QUIT:
             g_exit = true;
             break;
-		case SDL_WINDOWEVENT_RESIZED:
-			{
-				float w = (float)event.window.data1;
-				float h = (float)event.window.data2;
-				glViewport(0, 0, (GLsizei)w, (GLsizei)h);
-                SPEW(("INPUT", "resize event: w: %f h:%f\n", w, h));
-			}
-			break;
-        case SDL_WINDOWEVENT_FOCUS_LOST:
-            g_focus_lost = true;
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+            // mouse coordinates are normalised by the drawable size
+            Environment.drawableWidth = event.window.data1;
+            Environment.drawableHeight = event.window.data2;
+            glViewport(0, 0, (GLsizei)event.window.data1, (GLsizei)event.window.data2);
+            SPEW(("INPUT", "resize event: w: %d h:%d\n", event.window.data1, event.window.data2));
             break;
-        case SDL_MOUSEMOTION:
-            input::handleMouseMotion(&event); 
+        case SDL_EVENT_MOUSE_MOTION:
+            input::handleMouseMotion(&event);
             break;
-        case SDL_MOUSEBUTTONDOWN:
-        case SDL_MOUSEBUTTONUP:
-            //input::handleMouseButton(&event);
-            break;
-        case SDL_MOUSEWHEEL:
+        case SDL_EVENT_MOUSE_WHEEL:
             input::handleMouseWheel(&event);
             break;
         }
@@ -284,6 +266,7 @@ int main(int argc, char** argv)
     platform_clock::set_fixed_step(run_opts.fixed_step_us);
     if (run_opts.has_seed)
         gos_SetFixedRandomSeed(run_opts.seed);
+    gos_SetForceWindowed(run_opts.windowed);
 
     std::vector<input_script::Event> script_events;
     if (!run_opts.input_script.empty()) {

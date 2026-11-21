@@ -9,8 +9,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 static const uint32_t NUM_GLYPHS = 255 - 32;
 static const uint32_t START_GLYPH = 32;
@@ -88,16 +88,16 @@ int main(int argc, char** argv)
 
     // do stuff
 
-    if(TTF_Init() == -1) {
-        printf("TTF_Init: %s\n", TTF_GetError());
+    if(!TTF_Init()) {
+        printf("TTF_Init: %s\n", SDL_GetError());
         exit(1);
     }
 
     int outlinePixelSize = 0;
 
-    TTF_Font* font = TTF_OpenFont(fontFile, fontSize);
+    TTF_Font* font = TTF_OpenFont(fontFile, (float)fontSize);
     if(!font) {
-        printf("TTF_OpenFont: %s\n", TTF_GetError());
+        printf("TTF_OpenFont: %s\n", SDL_GetError());
         exit(1);
     }
 
@@ -105,10 +105,10 @@ int main(int argc, char** argv)
     TTF_SetFontOutline(font, outlinePixelSize);
 
     // get the loaded font's max height
-    const int maxFontHeight = TTF_FontHeight(font);
-    const int maxFontAscent = TTF_FontAscent(font);
-    const int maxFontDescent = TTF_FontDescent(font);
-    const int fontLineSkip = TTF_FontLineSkip(font);
+    const int maxFontHeight = TTF_GetFontHeight(font);
+    const int maxFontAscent = TTF_GetFontAscent(font);
+    const int maxFontDescent = TTF_GetFontDescent(font);
+    const int fontLineSkip = TTF_GetFontLineSkip(font);
     //TTF_SetFontHinting(font, TTF_HINTING_MONO);
 
     printf("The font max height is: %d\n", maxFontHeight);
@@ -116,13 +116,12 @@ int main(int argc, char** argv)
     printf("The font descent is: %d\n", maxFontDescent);
 
 	printf("family: %s, style: %s, size:%d\n",
-            TTF_FontFaceFamilyName(font),
-			TTF_FontFaceStyleName(font),
+            TTF_GetFontFamilyName(font),
+			TTF_GetFontStyleName(font),
             fontSize);
 
     int max_advance = 0;
 	const SDL_Color fg = { 255, 255, 255, 255 };
-	const SDL_Color bg = { 0, 0, 0, 0};
 
     for(int i=0;i<NUM_GLYPHS;++i) {
 
@@ -131,12 +130,12 @@ int main(int argc, char** argv)
         gm[i].valid = true;
 
         if(!gs[i]) {
-            printf("TTF_RenderGlyph+Blended: %d : %s\n", glyph_id, TTF_GetError());
+            printf("TTF_RenderGlyph+Blended: %d : %s\n", glyph_id, SDL_GetError());
             gm[i].valid = false;
             continue;
         }
 
-        TTF_GlyphMetrics(font, glyph_id,
+        TTF_GetGlyphMetrics(font, glyph_id,
                 &gm[i].minx, &gm[i].maxx,
                 &gm[i].miny, &gm[i].maxy,
                 &gm[i].advance);
@@ -158,19 +157,11 @@ int main(int argc, char** argv)
 	while(finalTextureHeight < fontTextureHeight)
 		finalTextureHeight <<= 1;
 
-    SDL_Surface* fontTexture = SDL_CreateRGBSurface(0, 
-            finalTextureWidth, 
-            finalTextureHeight,
-            32,
-            0x00FF0000,
-            0x0000FF00,
-            0x000000FF,
-            0xFF000000);
+    SDL_Surface* fontTexture = SDL_CreateSurface(finalTextureWidth, finalTextureHeight,
+                                                 SDL_PIXELFORMAT_ARGB8888);
 
-    const Uint32 black = SDL_MapRGBA(fontTexture->format, 0,0,0, 0);
-    const Uint32 white = SDL_MapRGBA(fontTexture->format, 255,255,255, 255);
-
-    SDL_FillRect(fontTexture, 0, black);
+    const Uint32 black = SDL_MapSurfaceRGBA(fontTexture, 0,0,0, 0);
+    SDL_FillSurfaceRect(fontTexture, NULL, black);
 
     int x = 0;
     int y = 0;

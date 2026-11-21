@@ -1,6 +1,6 @@
 #include "gameos.hpp"
 
-#include <SDL2/SDL.h> // can avoid inluding this here if move MouseInfo struct to separate file
+#include <SDL3/SDL.h> // can avoid inluding this here if move MouseInfo struct to separate file
 #include "gos_input.h"
 #include "utils/vec.h"
 
@@ -78,7 +78,7 @@ extern SDL_Window* g_sdl_window;
 void __stdcall gos_SetMousePosition( float XPosition, float YPosition )
 {
     if(g_sdl_window) {
-        SDL_WarpMouseInWindow(g_sdl_window, (int)XPosition, (int)YPosition);
+        SDL_WarpMouseInWindow(g_sdl_window, XPosition, YPosition);
     }
 }
 
@@ -299,19 +299,19 @@ DWORD __stdcall gos_GetKey()
 
     if(ki->first_pressed_!=-1) {
         SDL_Scancode sc = (SDL_Scancode)ki->first_pressed_;
-        SDL_Keycode kc = SDL_GetKeyFromScancode(sc);
+        SDL_Keycode kc = SDL_GetKeyFromScancode(sc, SDL_KMOD_NONE, false);
         unsigned char c = 0;
         // check if it represents a character:
-        if(!(kc & SDLK_SCANCODE_MASK) && isascii(kc)) {
+        if(!(kc & SDLK_SCANCODE_MASK) && kc < 0x80) {
             c = (unsigned char)kc;
 
             // Translate to the character the key produces with the current
             // modifiers (US layout, which is what the game's fonts support).
             // Caps Lock is a toggle, so its state comes from SDL's modifier
             // state rather than from whether the key is currently held.
-            const bool caps_on = (SDL_GetModState() & KMOD_CAPS) != 0;
+            const bool caps_on = (SDL_GetModState() & SDL_KMOD_CAPS) != 0;
             const bool shift_pressed = !!(ki->last_state_[SDL_SCANCODE_LSHIFT] || ki->last_state_[SDL_SCANCODE_RSHIFT]);
-            if(c >= SDLK_a && c<=SDLK_z)
+            if(c >= SDLK_A && c<=SDLK_Z)
             {
                 if(caps_on != shift_pressed)
                     c-=32;
@@ -337,10 +337,10 @@ DWORD __stdcall gos_GetKey()
                     case SDLK_SLASH:        c = '?'; break;
                     case SDLK_BACKSLASH:    c = '|'; break;
                     case SDLK_SEMICOLON:    c = ':'; break;
-                    case SDLK_QUOTE:        c = '"'; break;
+                    case SDLK_APOSTROPHE:        c = '"'; break;
                     case SDLK_LEFTBRACKET:  c = '{'; break;
                     case SDLK_RIGHTBRACKET: c = '}'; break;
-                    case SDLK_BACKQUOTE:    c = '~'; break;
+                    case SDLK_GRAVE:    c = '~'; break;
                     default: break;
                 }
             }

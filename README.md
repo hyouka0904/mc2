@@ -4,7 +4,7 @@
 
 本專案是《MechCommander 2》（微軟 2001 年發行的即時戰術遊戲）的開源引擎重製與跨平台移植。
 微軟在 Shared Source 授權下公開了遊戲程式碼，但其底層引擎 **GameOS** 只提供標頭檔（`.h`）而沒有實作；
-本專案依照這些介面，以 **SDL2 + OpenGL** 重新實作了整個 GameOS，使遊戲能以 64 位元在 Linux 與 Windows 上執行，
+本專案依照這些介面，以 **SDL3 + OpenGL** 重新實作了整個 GameOS，使遊戲能以 64 位元在 Linux 與 Windows 上執行，
 並修正了許多原版遊戲本身就存在的錯誤。
 
 - 單人戰役、任務、存讀檔、機甲實驗室等功能皆可運作。
@@ -45,11 +45,11 @@
 ├──────────────────────────────────────────────────────────────┤
 │ GameOS/    平台抽象層（本專案重新實作的部分）                     │
 │   ├ include/   原始 GameOS 介面 + Win32 型別定義                 │
-│   ├ gameos/    以 SDL2 / OpenGL / SDL_mixer 實作繪圖、輸入、音效、  │
+│   ├ gameos/    以 SDL3 / OpenGL / SDL3_mixer 實作繪圖、輸入、音效、 │
 │   │            檔案、字型、除錯；utils/ 為著色器、影像、矩陣等工具   │
 │   └ src/       Win32 API 的替代實作（字串、檔案、訊息框、時間…）    │
 ├──────────────────────────────────────────────────────────────┤
-│ 第三方函式庫：SDL2、SDL2_mixer、SDL2_ttf、GLEW、OpenGL、zlib       │
+│ 第三方函式庫：SDL3、SDL3_mixer、SDL3_ttf、GLEW、OpenGL、zlib       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -68,7 +68,7 @@
 | `Viewer/` | 模型檢視器（開發用）。 |
 | `tests/` | 自動化測試（見[自動化測試](#自動化測試)）。 |
 | `scripts/` | `prepare_game_dir.sh`（建置遊戲資料並組出可執行的遊戲目錄）、`smoke_test.sh`（無頭端到端測試）。 |
-| `cmake/sdl2/` | 尋找 SDL2 系列函式庫用的 CMake 模組。 |
+| `cmake/MC2Dependencies.cmake` | 取得 SDL3 / SDL3_mixer / SDL3_ttf：優先用已安裝的版本，否則自動下載固定版本並靜態編譯。 |
 | `.github/workflows/ci.yml` | GitHub Actions：建置、單元測試、實際執行遊戲的冒煙測試。 |
 | `test_scripts/` | 原作者移植時用的轉換腳本（字串資源轉換、檔名轉小寫等）。 |
 
@@ -97,8 +97,13 @@ mc2srcdata（原始素材）
 ### 1. 安裝相依套件
 
 ```bash
-sudo apt-get install build-essential cmake libsdl2-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libgl-dev zlib1g-dev
+sudo apt-get install build-essential cmake git libglew-dev libgl-dev zlib1g-dev libfreetype-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxfixes-dev libxkbcommon-dev libpulse-dev libasound2-dev
 ```
+
+Ubuntu 24.04 沒有 SDL3 套件，所以第一次設定時 CMake 會自動下載並靜態編譯固定版本的
+SDL 3.4.8、SDL3_mixer 3.2.4（只開 WAVE 等不需外部函式庫的格式）與 SDL3_ttf 3.2.2（使用系統 FreeType），
+產出的執行檔不依賴任何 SDL 共享函式庫。上面的 X11 / PulseAudio / ALSA 開發套件是讓 SDL3 能編進對應的後端。
+若系統已安裝 SDL3（例如 `/opt/sdl3`），可用 `-DCMAKE_PREFIX_PATH=/opt/sdl3` 讓 CMake 直接使用。
 
 ### 2. 編譯
 
@@ -118,6 +123,7 @@ cmake --build build -j"$(nproc)"
 | `-DCMAKE_BUILD_TYPE=Debug` | 除錯版，啟用 `gosASSERT` 等斷言 |
 | `-DMC2_BUILD_TESTS=OFF` | 不編譯測試 |
 | `-DMC2_ENABLE_ASAN=ON` | 啟用 AddressSanitizer 檢查記憶體錯誤 |
+| `-DMC2_SDL3_SOURCE=AUTO\|SYSTEM\|FETCH` | SDL3 來源：預設 `AUTO`（有安裝就用、沒有就下載）；`SYSTEM` 只用已安裝的；`FETCH` 一律下載 |
 
 ### 3. 產出檔案
 
@@ -193,6 +199,7 @@ ctest --test-dir build --output-on-failure
 | `unit_image_tga` | TGA 貼圖解碼：未壓縮與 RLE 壓縮、24/32/16 位元、損壞資料 |
 | `unit_pqueue` | 路徑搜尋優先佇列，包含與參考模型比對的隨機測試 |
 | `unit_run_options` | 決定性模式參數、PNG 截圖編碼、固定步長時鐘、輸入腳本解析 |
+| `unit_sound` | 音效 API（SDL3_mixer）：播放一次 / 迴圈 / 暫停 / 停止、音量線性、左右聲道定位、釋放資源；不需要音效卡 |
 | `unit_stuff` | 執行原版 Stuff 數學函式庫內建、但從未被呼叫的自我測試 |
 | `tool_fastfile` / `tool_pak` / `tool_rsp` | 資料工具的打包→解包往返測試 |
 | `tool_text_tool` | 在沒有顯示器的環境下烘焙字型 |
@@ -238,8 +245,9 @@ scripts/smoke_test.sh game mc2_01 60
 | `-capture-dir <dir>` | 截圖輸出目錄 |
 | `-exit-after <n>` | 第 `<n>` 幀後結束（預設為最後一個截圖幀） |
 | `-input-script <file>` | 依腳本重播滑鼠／鍵盤事件，期間忽略真實輸入（格式見 `GameOS/gameos/utils/input_script.h`） |
+| `-windowed` | 忽略遊戲的全螢幕設定，一律以視窗執行（全螢幕行為取決於視窗管理員，會讓截圖因環境而異） |
 
-`tests/golden/manifest.txt` 列出 16 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
+測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 16 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
 暫停中的任務。執行與比對：
 
 ```bash
@@ -266,26 +274,24 @@ scripts/run_screenshot_tests.py game shots
 
 ## 在 Windows 上建置
 
-> 以下為原作者的說明，本次更新未在 Windows 上重新驗證。
+> 本次更新尚未在 Windows 上實機驗證（CI 只跑 Linux）。
 
-使用 CMake，並準備好 SDL2、SDL2_mixer、SDL2_ttf、zlib、GLEW。建議自行從原始碼編譯 zlib（記得複製 `zconf.h`）。
-相依套件目錄結構範例：
+SDL3 系列會由 CMake 自動下載並靜態編譯（與 Linux 相同），只需自行準備 zlib 與 GLEW，
+並以 `CMAKE_PREFIX_PATH` 指向它們：
 
 ```
 3rdparty
 ├── include
 │   ├── zconf.h, zlib.h
-│   ├── GL/      (glew.h, wglew.h …)
-│   └── SDL2/    (SDL 與 SDL_mixer 標頭檔)
+│   └── GL/      (glew.h, wglew.h …)
 └── lib
-    ├── x64/     (glew32.lib, SDL2.lib, SDL2main.lib, SDL2_mixer.lib, zlib.lib 及對應 dll)
-    └── x86/
+    └── x64/     (glew32.lib, zlib.lib 及對應 dll)
 ```
 
-產生 Visual Studio 2017 64 位元專案：
+產生 Visual Studio 64 位元專案（版本依安裝的 Visual Studio 調整）：
 
 ```bat
-cmake.exe -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH=c:/path_to_your_dependencies/ -DCMAKE_LIBRARY_ARCHITECTURE=x64 ..
+cmake.exe -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=c:/path_to_your_dependencies/ ..
 ```
 
 字串資源 `libmc2res` 會跟主程式一起建置，不需要另外執行 `res_conv.pl`。

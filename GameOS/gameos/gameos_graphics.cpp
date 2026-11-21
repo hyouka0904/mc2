@@ -1606,6 +1606,10 @@ void gosRenderer::endFrame()
     }
 }
 
+// -windowed: ignore the game's fullscreen setting (tests, debugging)
+static bool g_force_windowed = false;
+void gos_SetForceWindowed(bool windowed) { g_force_windowed = windowed; }
+
 void gosRenderer::handleEvents()
 {
     if(pendingRequest) {
@@ -1623,7 +1627,7 @@ void gosRenderer::handleEvents()
 
         if(graphics::resize_window(win_h_, width_, height_))
 		{
-            graphics::set_window_fullscreen(win_h_, reqGotoFullscreen);
+            graphics::set_window_fullscreen(win_h_, reqGotoFullscreen && !g_force_windowed);
 
             Environment.screenWidth = width_;
             Environment.screenHeight = height_;

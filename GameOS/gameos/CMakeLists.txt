@@ -33,13 +33,12 @@ set(SOURCES ${SOURCES}
 
 set(MAIN_SRC gameosmain.cpp)
 
-#find_package(SDL2 REQUIRED PATHS "/opt" NO_DEFAULT_PATH)
-#include_directories("${SDL2_PREFIX}/include")
 
 include_directories("../include"  ".")
 
 add_library(gameos ${SOURCES})
+target_link_libraries(gameos MC2::SDL MC2::Mixer)
 add_library(gameos_main ${MAIN_SRC})
 # main() uses the run options / PNG capture helpers from gameos
-target_link_libraries(gameos_main gameos windows ZLIB::ZLIB)
+target_link_libraries(gameos_main gameos windows ZLIB::ZLIB MC2::SDL)
 

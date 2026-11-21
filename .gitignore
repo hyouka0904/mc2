@@ -7,6 +7,7 @@ build*/
 .clangd/
 *.exe
 *.cmake
+!cmake/*.cmake
 Makefile
 CMakeFiles/
 .vscode/
@@ -73,5 +74,4 @@ CMakeToolsMeta.in.txt
 CMakeToolsMeta.txt
 compile_commands.json
 
-!cmake/sdl2/*.cmake
 __pycache__/

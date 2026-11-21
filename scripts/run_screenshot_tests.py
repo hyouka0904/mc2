@@ -31,7 +31,7 @@ GOLDEN = os.path.join(REPO, "tests", "golden")
 sys.path.insert(0, os.path.join(REPO, "scripts"))
 import compare_screenshots  # noqa: E402
 
-FIXED_ARGS = ["-fixedstep", "33", "-seed", "1"]
+FIXED_ARGS = ["-fixedstep", "33", "-seed", "1", "-windowed"]
 
 
 def read_manifest(path):
@@ -49,10 +49,10 @@ def read_manifest(path):
     return rows
 
 
-def start_xvfb():
+def start_xvfb(screen):
     for _ in range(20):
         display = ":%d" % random.randint(100, 400)
-        proc = subprocess.Popen(["Xvfb", display, "-screen", "0", "1024x768x24", "-nolisten", "tcp"],
+        proc = subprocess.Popen(["Xvfb", display, "-screen", "0", screen + "x24", "-nolisten", "tcp"],
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(50):
             if subprocess.call(["xdpyinfo", "-display", display],
@@ -72,6 +72,9 @@ def main():
     ap.add_argument("--update", action="store_true")
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--timeout", type=int, default=900)
+    # The game window is 800x600; a screen of the same size keeps captures
+    # identical whether or not the window manager honours fullscreen.
+    ap.add_argument("--screen", default="800x600")
     args = ap.parse_args()
 
     for tool in ("Xvfb", "xdpyinfo"):
@@ -91,7 +94,7 @@ def main():
     for name, frame, game_args in rows:
         runs.setdefault(tuple(game_args), []).append((name, frame))
 
-    xvfb, display = start_xvfb()
+    xvfb, display = start_xvfb(args.screen)
     env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", LIBGL_ALWAYS_SOFTWARE="1")
     failed = False
     try:

@@ -211,6 +211,14 @@ TEST(input_script_player_hands_out_due_events_once)
     CHECK(p.finished());
 }
 
+TEST(run_options_windowed_flag)
+{
+    Options o;
+    CHECK(!o.windowed);
+    CHECK(parseArgs({"-windowed", "-mission", "x"}, o));
+    CHECK(o.windowed);
+}
+
 TEST(run_options_input_script_flag)
 {
     Options o;

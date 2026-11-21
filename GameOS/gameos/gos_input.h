@@ -1,6 +1,10 @@
 #ifndef GOS_INPUT_H
 #define GOS_INPUT_H
 
+#include <stdint.h>
+
+union SDL_Event;
+
 namespace input {
 
 enum KeyState {
@@ -27,8 +31,6 @@ struct KeyboardInfo {
     KeyboardInfo();
     bool key_pressed_;
     bool key_released_;
-    SDL_Keysym pressed_keysym_;
-    SDL_Keysym released_keysym_;
     uint32_t first_pressed_;
     uint8_t last_state_[512];
 };

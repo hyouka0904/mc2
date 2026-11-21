@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <string.h> // memset
 #include <assert.h>
 #include "gos_input.h"
@@ -8,7 +8,7 @@ static input::KeyboardInfo g_keyboard_info;
 
 static bool g_scripted = false;
 static bool g_scripted_buttons[input::MouseInfo::NUM_BUTTONS] = {};
-static Uint8 g_scripted_keys[SDL_NUM_SCANCODES] = {};
+static bool g_scripted_keys[SDL_SCANCODE_COUNT] = {};
 
 namespace input {
 
@@ -68,8 +68,8 @@ void scriptedMouseButton(int index, bool down) {
 }
 
 void scriptedKey(int scancode, bool down) {
-    if(scancode > 0 && scancode < SDL_NUM_SCANCODES)
-        g_scripted_keys[scancode] = down ? 1 : 0;
+    if(scancode > 0 && scancode < SDL_SCANCODE_COUNT)
+        g_scripted_keys[scancode] = down;
 }
 
 void handleMouseMotion(const SDL_Event* event) {
@@ -90,7 +90,7 @@ void handleMouseButton(const SDL_Event* event) {
     MouseInfo* mi = &g_mouse_info;
     int idx = sdl2idx(event->button.button);
     if(idx != -1 && idx < MouseInfo::NUM_BUTTONS) {
-        mi->button_state_[idx] = event->type == SDL_MOUSEBUTTONUP ? KS_PRESSED : KS_RELEASED;
+        mi->button_state_[idx] = event->type == SDL_EVENT_MOUSE_BUTTON_UP ? KS_PRESSED : KS_RELEASED;
     }
 }
 
@@ -101,12 +101,10 @@ void handleMouseWheel(const SDL_Event* event) {
     mi->wheel_vert_ = (float)event->wheel.y;
     mi->wheel_hor_ = (float)event->wheel.x;
 
-    /* not in my SDL, apparenty >= SDL 2.0.4
     if(event->wheel.direction == SDL_MOUSEWHEEL_FLIPPED) {
         mi->wheel_vert_ *= -1;
         mi->wheel_hor_ *= -1;
     }
-    */
 }
 
 void beginUpdateMouseState() {
@@ -118,7 +116,7 @@ void beginUpdateMouseState() {
 void updateMouseState() {
     MouseInfo* mi = &g_mouse_info;
 
-    Uint32 button_state = SDL_GetMouseState(NULL, NULL);
+    SDL_MouseButtonFlags button_state = SDL_GetMouseState(NULL, NULL);
     int buttons[] = {SDL_BUTTON_LEFT, SDL_BUTTON_MIDDLE, SDL_BUTTON_RIGHT, SDL_BUTTON_X1, SDL_BUTTON_X2 };
 
     for(unsigned int b=0; b < sizeof(buttons)/sizeof(buttons[0]); ++b) {
@@ -130,7 +128,7 @@ void updateMouseState() {
         KeyState prev_ks = mi->button_state_[idx];
 
         const bool down = g_scripted ? g_scripted_buttons[idx]
-                                     : (button_state & SDL_BUTTON(buttons[b])) != 0;
+                                     : (button_state & SDL_BUTTON_MASK(buttons[b])) != 0;
         if(down) {
             mi->button_state_[idx] = 
                 (prev_ks==KS_FREE||prev_ks==KS_RELEASED) ? KS_PRESSED : KS_HELD;
@@ -153,25 +151,23 @@ void updateMouseState() {
 
 void handleKeyEvent(const SDL_Event* event) {
     KeyboardInfo* ki = &g_keyboard_info;
-    if(event->key.state == SDL_PRESSED) {
+    if(event->key.down) {
         ki->key_pressed_ = true;
     } else {
         ki->key_released_ = true;
     }
-
-    ki->pressed_keysym_ = event->key.keysym;
 }
 
 void updateKeyboardState() {
     KeyboardInfo* ki = &g_keyboard_info;
 
     int array_len;
-    const Uint8* state = SDL_GetKeyboardState(&array_len);
+    const bool* state = SDL_GetKeyboardState(&array_len);
     if(g_scripted) {
         state = g_scripted_keys;
-        array_len = SDL_NUM_SCANCODES;
+        array_len = SDL_SCANCODE_COUNT;
     }
-    assert(array_len <= sizeof(ki->last_state_)/sizeof(ki->last_state_[0]));
+    assert(array_len <= (int)(sizeof(ki->last_state_)/sizeof(ki->last_state_[0])));
 
     ki->first_pressed_ = -1;
 

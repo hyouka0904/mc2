@@ -3,41 +3,32 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <SDL2/SDL_loadso.h>
+#include <string.h>
+#include <SDL3/SDL_loadso.h>
+#include <SDL3/SDL_error.h>
 
-#ifdef PLATFORM_WINDOWS
+// SDL's loader wraps dlopen / LoadLibrary, so one code path serves every
+// platform.
 static void* DL_Open(const char* name) {
 	return SDL_LoadObject(name);
 }
 static void DL_Close(void* handle) {
-	SDL_UnloadObject(handle);
+	SDL_UnloadObject((SDL_SharedObject*)handle);
 }
 static void* DL_LoadFunction(void* handle, const char* name) {
-	return SDL_LoadFunction(handle, name);
+	return (void*)SDL_LoadFunction((SDL_SharedObject*)handle, name);
 }
-// mimic dlerror
+// mimics dlerror(): returns and clears the last error, NULL if none
 static const char* DL_GetError() {
+	static char last[512];
 	const char* err = SDL_GetError();
+	if (!err || !*err)
+		return NULL;
+	strncpy(last, err, sizeof(last) - 1);
+	last[sizeof(last) - 1] = 0;
 	SDL_ClearError();
-	return strlen(err)==0 ? NULL : err;
+	return last;
 }
-#else
-#include <dlfcn.h>
-
-static void* DL_Open(const char* name) {
-    return dlopen(name, RTLD_LAZY);
-}
-static void DL_Close(void* handle) {
-	dlclose(handle);
-}
-static void* DL_LoadFunction(void* handle, const char* name) {
-	return dlsym(handle, name);
-}
-static const char* DL_GetError() {
-	 const char* err = dlerror();
-	 return err;
-}
-#endif
 
 HSTRRES __stdcall gos_OpenResourceDLL(char const* FileName, const char** strings, int num)
 {

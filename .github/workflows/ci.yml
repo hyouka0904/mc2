@@ -20,8 +20,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential cmake libsdl2-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-            libglew-dev libgl-dev zlib1g-dev fontconfig fonts-dejavu-core
+            build-essential cmake git libglew-dev libgl-dev zlib1g-dev \
+            libfreetype-dev fontconfig fonts-dejavu-core \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libxss-dev libxtst-dev libxfixes-dev libxkbcommon-dev \
+            libpulse-dev libasound2-dev
+
+      # SDL3 is not packaged for Ubuntu 24.04: the configure step downloads
+      # and builds the pinned releases (cmake/MC2Dependencies.cmake).
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
@@ -31,6 +37,12 @@ jobs:
 
       - name: Unit and tool tests
         run: ctest --test-dir build --output-on-failure
+
+      - name: No SDL2 / shared SDL3 left in the binaries
+        run: |
+          for b in build/mc2 build/out/text_tool/text_tool; do
+            if ldd "$b" | grep -i sdl; then echo "unexpected SDL shared library in $b"; exit 1; fi
+          done
 
       - name: Upload binaries
         if: matrix.build_type == 'RelWithDebInfo'
@@ -71,7 +83,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            libsdl2-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 libglew2.2 \
+            libglew2.2 libfreetype6 libxkbcommon0 \
             libopengl0 libgl1 libglx0 libglx-mesa0 libgl1-mesa-dri \
             xvfb x11-utils imagemagick ffmpeg python3-pil python3-numpy
           chmod +x build/mc2 build/out/data_tools/* build/out/text_tool/text_tool
