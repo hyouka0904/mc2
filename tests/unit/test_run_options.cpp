@@ -219,6 +219,15 @@ TEST(run_options_windowed_flag)
     CHECK(o.windowed);
 }
 
+TEST(run_options_perf_csv_flag)
+{
+    Options o;
+    CHECK(parseArgs({"-perf-csv", "perf.csv"}, o));
+    CHECK(o.perf_csv == "perf.csv");
+    Options o2;
+    CHECK(!parseArgs({"-perf-csv"}, o2));
+}
+
 TEST(run_options_input_script_flag)
 {
     Options o;

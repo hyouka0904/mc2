@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "utils/graphics.h"
+#include "render/gl/graphics.h"
 
 typedef GLvoid (APIENTRY *UNIFORM_FUNC)(GLint location, GLsizei count, const void *value);
 typedef GLvoid (APIENTRY *UNIFORM_MAT_FUNC)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);

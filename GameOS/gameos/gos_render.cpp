@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <SDL3/SDL.h>
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include "utils/logging.h"
 
 // The input code needs the window for SDL_WarpMouseInWindow
@@ -163,15 +161,6 @@ RenderContextHandle init_render_context(RenderWindowHandle render_window)
     }
 
     if(VERBOSE_RENDER) {
-        printf("Vendor     : %s\n", glGetString(GL_VENDOR));
-        printf("Renderer   : %s\n", glGetString(GL_RENDERER));
-        printf("Version    : %s\n", glGetString(GL_VERSION));
-        // glGetString(GL_EXTENSIONS) is invalid in a core profile context
-        // (returns NULL and raises GL_INVALID_ENUM); query the count instead.
-        GLint num_exts = 0;
-        glGetIntegerv(GL_NUM_EXTENSIONS, &num_exts);
-        printf("Extensions : %d\n", num_exts);
-
         int value = 0;
         if (SDL_GL_GetAttribute(SDL_GL_ACCELERATED_VISUAL, &value))
             printf("SDL_GL_ACCELERATED_VISUAL: %d\n", value);

@@ -15,17 +15,21 @@ set(SOURCES ${SOURCES}
 
     utils/stream.cpp
     utils/camera.cpp
-    utils/gl_utils.cpp
-    utils/gl_render_constants.cpp
     utils/Image.cpp
     utils/logging.cpp
-    utils/shader_builder.cpp
     utils/matrix.cpp
     utils/vec.cpp
     utils/timing.cpp
     utils/string_utils.cpp
     utils/file_utils.cpp
     utils/kv_registry.cpp
+
+    render/render_state.cpp
+    render/render_types.cpp
+    render/gl/gl_device.cpp
+    render/gl/gl_utils.cpp
+    render/gl/gl_render_constants.cpp
+    render/gl/shader_builder.cpp
     utils/run_options.cpp
     utils/png_writer.cpp
     utils/input_script.cpp

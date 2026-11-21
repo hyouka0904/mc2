@@ -83,6 +83,11 @@ bool parse(int argc, const char* const* argv, Options& out, std::string* error)
                 return fail(a, "expected a directory");
             out.capture_dir = value;
             ++i;
+        } else if (!strcmp(a, "-perf-csv")) {
+            if (!value || !*value)
+                return fail(a, "expected a file name");
+            out.perf_csv = value;
+            ++i;
         } else if (!strcmp(a, "-windowed")) {
             out.windowed = true;
         } else if (!strcmp(a, "-input-script")) {

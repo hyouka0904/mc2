@@ -14,8 +14,7 @@
 #include "platform_stdlib.h"
 #include "platform_str.h"
 
-#include "utils/shader_builder.h"
-#include "utils/gl_utils.h"
+#include "render/render_device.h"
 #include "utils/Image.h"
 #include "utils/vec.h"
 #include "utils/string_utils.h"
@@ -43,30 +42,28 @@ struct gosTextureInfo {
 class gosBuffer {
 	friend class gosRenderer;
 public:
-	GLuint buffer_;
+	gos_render::BufferHandle buffer_;
 	int element_size_;
 	uint32_t count_;
 	gosBUFFER_TYPE type_;
 	gosBUFFER_USAGE usage_;
 };
 
-GLenum getGLVertexAttribType(gosVERTEX_ATTRIB_TYPE type) {
-	GLenum t = -1;
+static gos_render::AttribType toAttribType(gosVERTEX_ATTRIB_TYPE type) {
 	switch (type)
 	{
-	case gosVERTEX_ATTRIB_TYPE::BYTE: return GL_BYTE;
-	case gosVERTEX_ATTRIB_TYPE::UNSIGNED_BYTE: return GL_UNSIGNED_BYTE;
-	case gosVERTEX_ATTRIB_TYPE::SHORT: return GL_SHORT;
-	case gosVERTEX_ATTRIB_TYPE::UNSIGNED_SHORT: return GL_UNSIGNED_SHORT;
-	case gosVERTEX_ATTRIB_TYPE::INT: return GL_INT;
-	case gosVERTEX_ATTRIB_TYPE::UNSIGNED_INT: return GL_UNSIGNED_INT;
-	case gosVERTEX_ATTRIB_TYPE::FLOAT: return GL_FLOAT;
+	case gosVERTEX_ATTRIB_TYPE::BYTE: return gos_render::AttribType::Byte;
+	case gosVERTEX_ATTRIB_TYPE::UNSIGNED_BYTE: return gos_render::AttribType::UByte;
+	case gosVERTEX_ATTRIB_TYPE::SHORT: return gos_render::AttribType::Short;
+	case gosVERTEX_ATTRIB_TYPE::UNSIGNED_SHORT: return gos_render::AttribType::UShort;
+	case gosVERTEX_ATTRIB_TYPE::INT: return gos_render::AttribType::Int;
+	case gosVERTEX_ATTRIB_TYPE::UNSIGNED_INT: return gos_render::AttribType::UInt;
+	case gosVERTEX_ATTRIB_TYPE::FLOAT: return gos_render::AttribType::Float;
 	default:
-		gosASSERT(0 && "unknows vertex attrib type");
+		gosASSERT(0 && "unknown vertex attrib type");
 	}
-
-	return t;
-};
+	return gos_render::AttribType::Float;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 class gosVertexDeclaration {
@@ -87,6 +84,7 @@ public:
 		vdecl->vf_ = new gosVERTEX_FORMAT_RECORD[count];
 		memcpy(vdecl->vf_, vf, count * sizeof(gosVERTEX_FORMAT_RECORD));
 		vdecl->count_ = count;
+		vdecl->buildAttribs();
 
 		return vdecl;
 	}
@@ -99,27 +97,26 @@ public:
 		delete vdecl;
 	}
 
-	void apply() {
+	// Attribute layout handed to the render device with each draw
+	const gos_render::VertexAttrib* attribs() const { return attribs_.data(); }
+	int numAttribs() const { return (int)attribs_.size(); }
 
+private:
+	void buildAttribs() {
+		attribs_.resize(count_);
 		for (uint32_t i = 0; i < count_; ++i) {
-
-			gosVERTEX_FORMAT_RECORD* rec = vf_ + i;
-
-			GLuint type = getGLVertexAttribType(rec->type);
-
-			glEnableVertexAttribArray(rec->index);
-			glVertexAttribPointer(rec->index, rec->num_components, type, rec->normalized ? GL_TRUE : GL_FALSE, rec->stride, BUFFER_OFFSET(rec->offset));
+			const gosVERTEX_FORMAT_RECORD& rec = vf_[i];
+			gos_render::VertexAttrib& a = attribs_[i];
+			a.location = (int)rec.index;
+			a.components = rec.num_components;
+			a.type = toAttribType(rec.type);
+			a.normalized = rec.normalized;
+			a.stride = rec.stride;
+			a.offset = rec.offset;
 		}
 	}
 
-	void end() {
-
-		for (uint32_t i = 0; i < count_; ++i) {
-			gosVERTEX_FORMAT_RECORD* rec = vf_ + i;
-			glDisableVertexAttribArray(rec->index);
-		}
-	}
-
+	std::vector<gos_render::VertexAttrib> attribs_;
 };
 
 class gosMaterialVariationHelper;
@@ -227,7 +224,7 @@ class gosRenderMaterial {
             std::string sh_name = shader;
             sh_name.append(mvar.getUniqueSuffix());
 
-            pmat->program_ = glsl_program::makeProgram(sh_name.c_str(), vs, ps, mvar.getDefinesString());
+            pmat->program_ = gos_render::device()->createShader(sh_name.c_str(), vs, ps, mvar.getDefinesString());
             if(!pmat->program_) {
                 SPEW(("SHADERS", "Failed to create %s material\n", shader));
                 delete pmat;
@@ -236,6 +233,7 @@ class gosRenderMaterial {
             
             pmat->name_ = new char[strlen(shader) + 1];
             strcpy(pmat->name_, shader);
+            pmat->variant_name_ = sh_name;
 
             pmat->onLoad();
 
@@ -246,21 +244,30 @@ class gosRenderMaterial {
         void onLoad() {
             gosASSERT(program_);
 
-            pos_loc = program_->getAttribLocation("pos");
-            color_loc = program_->getAttribLocation("color");
-            spec_color_and_fog_loc = program_->getAttribLocation("fog");
-            texcoord_loc = program_->getAttribLocation("texcoord");
+            // gos_VERTEX: float x, y, z, rhw; DWORD argb; DWORD frgb; float u, v
+            const int stride = sizeof(gos_VERTEX);
+            const int pos = program_->attribLocation("pos");
+            gosASSERT(pos >= 0);
+            vertex_attribs_[0] = { pos, 4, gos_render::AttribType::Float, false, stride, 0 };
+            vertex_attribs_[1] = { program_->attribLocation("color"), 4, gos_render::AttribType::UByte, true, stride, (int)(4*sizeof(float)) };
+            vertex_attribs_[2] = { program_->attribLocation("fog"), 4, gos_render::AttribType::UByte, true, stride, (int)(4*sizeof(float) + sizeof(uint32_t)) };
+            vertex_attribs_[3] = { program_->attribLocation("texcoord"), 2, gos_render::AttribType::Float, false, stride, (int)(4*sizeof(float) + 2*sizeof(uint32_t)) };
         }
+
+        // gos_VERTEX layout for this shader's attribute locations
+        const gos_render::VertexAttrib* vertexAttribs() const { return vertex_attribs_; }
+        static const int NUM_VERTEX_ATTRIBS = 4;
 
         static void destroy(gosRenderMaterial* pmat) {
             gosASSERT(pmat);
             if(pmat->program_) {
-                glsl_program::deleteProgram(pmat->name_);
+                gos_render::device()->destroyShader(pmat->variant_name_.c_str());
                 pmat->program_ = 0;
             }
 
             delete[] pmat->name_;
             pmat->name_ = 0;
+            delete pmat;
         }
 
         void checkReload()
@@ -273,59 +280,14 @@ class gosRenderMaterial {
             }
         }
 
-        void applyVertexDeclaration() {
-            
-            const int stride = sizeof(gos_VERTEX);
-            
-            // gos_VERTEX structure
-	        //float x,y;
-	        //float z;
-	        //float rhw;
-	        //DWORD argb;
-	        //DWORD frgb;
-	        //float u,v;	
-
-            gosASSERT(pos_loc >= 0);
-            glEnableVertexAttribArray(pos_loc);
-            glVertexAttribPointer(pos_loc, 4, GL_FLOAT, GL_FALSE, stride, (void*)0);
-
-            if(color_loc != -1) {
-                glEnableVertexAttribArray(color_loc);
-                glVertexAttribPointer(color_loc, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, 
-                        BUFFER_OFFSET(4*sizeof(float)));
-            }
-
-            if(spec_color_and_fog_loc != -1) {
-                glEnableVertexAttribArray(spec_color_and_fog_loc);
-                glVertexAttribPointer(spec_color_and_fog_loc, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride,
-                        BUFFER_OFFSET(4*sizeof(float) + sizeof(uint32_t)));
-            }
-
-            if(texcoord_loc != -1) {
-                glEnableVertexAttribArray(texcoord_loc);
-                glVertexAttribPointer(texcoord_loc, 2, GL_FLOAT, GL_FALSE, stride, 
-                        BUFFER_OFFSET(4*sizeof(float) + 2*sizeof(uint32_t)));
-            }
-        }
-
         bool setSamplerUnit(const std::string& sampler_name, uint32_t unit) {
             gosASSERT(!sampler_name.empty());
-            // TODO: may also check that current program is equal to our program
-            if(program_->samplers_.count(sampler_name)) {
-                glUniform1i(program_->samplers_[sampler_name]->index_, unit);
-                return true;
-            }
-            return false;
+            return program_->setSampler(sampler_name, (int)unit);
         }
 
         bool setUniformBlock(const std::string& uniform_block_name, uint32_t unit) {
             gosASSERT(!uniform_block_name.empty());
-            if(program_->uniform_blocks_.count(uniform_block_name)) {
-				//glBindBufferBase(GL_UNIFORM_BUFFER, , unit);
-				glUniformBlockBinding(program_->shp_, program_->uniform_blocks_[uniform_block_name]->index_, unit);
-                return true;
-            }
-            return false;
+            return program_->setUniformBlock(uniform_block_name, (int)unit);
         }
 
         bool setTransform(const mat4& m) {
@@ -345,47 +307,23 @@ class gosRenderMaterial {
 
         const char* getName() const { return name_; }
 
-        // TODO: think how to not expose this
-        glsl_program* getShader() { return program_; }
-
-		void endVertexDeclaration() {
-
-			glDisableVertexAttribArray(pos_loc);
-
-			if (color_loc != -1) {
-				glDisableVertexAttribArray(color_loc);
-			}
-
-			if (spec_color_and_fog_loc != -1) {
-				glDisableVertexAttribArray(spec_color_and_fog_loc);
-			}
-
-			if (texcoord_loc != -1) {
-				glDisableVertexAttribArray(texcoord_loc);
-			}
-		}
+        gos_render::Shader* getShader() { return program_; }
 
 		void end() {
-            glUseProgram(0);
+            gos_render::device()->endShader();
         }
 
     private:
         gosRenderMaterial():
             program_(NULL)
             , name_(NULL)
-            , pos_loc(-1)
-            , color_loc(-1)
-            , spec_color_and_fog_loc(-1)
-            , texcoord_loc(-1)
         {
         }
 
-        glsl_program* program_;
+        gos_render::Shader* program_;
         char* name_;
-        GLint pos_loc;
-        GLint color_loc;
-        GLint spec_color_and_fog_loc;
-        GLint texcoord_loc;
+        std::string variant_name_; // name the shader was created under
+        gos_render::VertexAttrib vertex_attribs_[NUM_VERTEX_ATTRIBS];
 };
 
 const std::string gosRenderMaterial::s_mvp = std::string("mvp");
@@ -396,13 +334,14 @@ class gosMesh {
         typedef WORD INDEX_TYPE;
 
         static gosMesh* makeMesh(gosPRIMITIVETYPE prim_type, int vertex_capacity, int index_capacity = 0) {
-            GLuint vb = makeBuffer(GL_ARRAY_BUFFER, 0, sizeof(gos_VERTEX)*vertex_capacity, GL_DYNAMIC_DRAW);
+            using namespace gos_render;
+            BufferHandle vb = device()->createBuffer(BufferKind::Vertex, BufferUsage::Dynamic, 0, sizeof(gos_VERTEX)*vertex_capacity);
             if(!vb)
                 return NULL;
 
-            GLuint ib = 0;
+            BufferHandle ib = 0;
             if(index_capacity > 0) {
-                ib = makeBuffer(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(INDEX_TYPE)*index_capacity, GL_DYNAMIC_DRAW);
+                ib = device()->createBuffer(BufferKind::Index, BufferUsage::Dynamic, 0, sizeof(INDEX_TYPE)*index_capacity);
                 if(!ib)
                     return NULL;
             }
@@ -422,8 +361,9 @@ class gosMesh {
             delete[] pmesh->pvertex_data_;
             delete[] pmesh->pindex_data_;
 
-            GLuint b[] = {pmesh->vb_, pmesh->ib_};
-            glDeleteBuffers(sizeof(b)/sizeof(b[0]), b);
+            gos_render::device()->destroyBuffer(pmesh->vb_);
+            gos_render::device()->destroyBuffer(pmesh->ib_);
+            delete pmesh;
         }
 
         bool addVertices(gos_VERTEX* vertices, int count) {
@@ -473,8 +413,8 @@ class gosMesh {
             , pvertex_data_(NULL)    
             , pindex_data_(NULL)    
             , prim_type_(prim_type)
-            , vb_(-1)  
-            ,ib_(-1) 
+            , vb_(0)
+            , ib_(0)
          {
          }
 
@@ -486,9 +426,19 @@ class gosMesh {
         INDEX_TYPE* pindex_data_;
         gosPRIMITIVETYPE prim_type_;
 
-        GLuint vb_;
-        GLuint ib_;
+        gos_render::BufferHandle vb_;
+        gos_render::BufferHandle ib_;
 };
+
+static gos_render::Primitive toPrimitive(gosPRIMITIVETYPE pt) {
+    switch(pt) {
+        case PRIMITIVE_POINTLIST: return gos_render::Primitive::Points;
+        case PRIMITIVE_LINELIST: return gos_render::Primitive::Lines;
+        case PRIMITIVE_TRIANGLELIST: return gos_render::Primitive::Triangles;
+        default: gosASSERT(0 && "Wrong primitive type");
+    }
+    return gos_render::Primitive::Triangles;
+}
 
 const std::string gosMesh::s_tex1 = std::string("tex1");
 
@@ -499,40 +449,16 @@ void gosMesh::draw(gosRenderMaterial* material) const
     if(num_vertices_ == 0)
         return;
 
-    updateBuffer(vb_, GL_ARRAY_BUFFER, pvertex_data_, num_vertices_*sizeof(gos_VERTEX), GL_DYNAMIC_DRAW_ARB);
+    using namespace gos_render;
+    device()->updateBuffer(vb_, BufferKind::Vertex, pvertex_data_, num_vertices_*sizeof(gos_VERTEX));
 
     material->apply();
-
     material->setSamplerUnit(s_tex1, 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vb_);
-    CHECK_GL_ERROR;
+    device()->draw(toPrimitive(prim_type_), vb_, material->vertexAttribs(),
+                   gosRenderMaterial::NUM_VERTEX_ATTRIBS, 0, num_vertices_);
 
-    material->applyVertexDeclaration();
-    CHECK_GL_ERROR;
-
-    GLenum pt = GL_TRIANGLES;
-    switch(prim_type_) {
-        case PRIMITIVE_POINTLIST:
-            pt = GL_POINTS;
-            break;
-        case PRIMITIVE_LINELIST:
-            pt = GL_LINES;
-            break;
-        case PRIMITIVE_TRIANGLELIST:
-            pt = GL_TRIANGLES;
-            break;
-        default:
-            gosASSERT(0 && "Wrong primitive type");
-    }
-
-    glDrawArrays(pt, 0, num_vertices_);
-
-    material->endVertexDeclaration();
     material->end();
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 }
 
 void gosMesh::drawIndexed(gosRenderMaterial* material) const
@@ -542,43 +468,17 @@ void gosMesh::drawIndexed(gosRenderMaterial* material) const
     if(num_vertices_ == 0)
         return;
 
-    updateBuffer(vb_, GL_ARRAY_BUFFER, pvertex_data_, num_vertices_*sizeof(gos_VERTEX), GL_DYNAMIC_DRAW);
-    updateBuffer(ib_, GL_ELEMENT_ARRAY_BUFFER, pindex_data_, num_indices_*sizeof(INDEX_TYPE), GL_DYNAMIC_DRAW);
+    using namespace gos_render;
+    device()->updateBuffer(vb_, BufferKind::Vertex, pvertex_data_, num_vertices_*sizeof(gos_VERTEX));
+    device()->updateBuffer(ib_, BufferKind::Index, pindex_data_, num_indices_*sizeof(INDEX_TYPE));
 
     material->apply();
-
     material->setSamplerUnit(s_tex1, 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vb_);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib_);
-    CHECK_GL_ERROR;
+    device()->drawIndexed(toPrimitive(prim_type_), vb_, ib_, getIndexSizeBytes(), material->vertexAttribs(),
+                          gosRenderMaterial::NUM_VERTEX_ATTRIBS, num_indices_);
 
-    material->applyVertexDeclaration();
-    CHECK_GL_ERROR;
-
-    GLenum pt = GL_TRIANGLES;
-    switch(prim_type_) {
-        case PRIMITIVE_POINTLIST:
-            pt = GL_POINTS;
-            break;
-        case PRIMITIVE_LINELIST:
-            pt = GL_LINES;
-            break;
-        case PRIMITIVE_TRIANGLELIST:
-            pt = GL_TRIANGLES;
-            break;
-        default:
-            gosASSERT(0 && "Wrong primitive type");
-    }
-
-    glDrawElements(pt, num_indices_, getIndexSizeBytes()==2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, NULL);
-
-    material->endVertexDeclaration();
     material->end();
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
 }
 
 void gosMesh::drawIndexed(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, gosRenderMaterial* material)
@@ -592,27 +492,12 @@ void gosMesh::drawIndexed(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vd
 		return;
 
 	material->apply();
-	CHECK_GL_ERROR;
-
 	material->setSamplerUnit(s_tex1, 0);
-	CHECK_GL_ERROR;
 
-	glBindBuffer(GL_ARRAY_BUFFER, vb->buffer_);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer_);
-	CHECK_GL_ERROR;
+	gos_render::device()->drawIndexed(gos_render::Primitive::Triangles, vb->buffer_, ib->buffer_, index_size,
+	                                  vdecl->attribs(), vdecl->numAttribs(), ib->count_);
 
-	vdecl->apply();
-	CHECK_GL_ERROR;
-
-	GLenum pt = GL_TRIANGLES;
-	glDrawElements(pt, ib->count_, index_size == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, NULL);
-
-	vdecl->end();
 	material->end();
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
 }
 
 void gosMesh::drawIndexed(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl)
@@ -623,26 +508,11 @@ void gosMesh::drawIndexed(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vd
 	if (ib->count_ == 0)
 		return;
 
-	CHECK_GL_ERROR;
+	// uses the material the caller applied (gos_ApplyRenderMaterial)
+	gos_render::device()->drawIndexed(gos_render::Primitive::Triangles, vb->buffer_, ib->buffer_, index_size,
+	                                  vdecl->attribs(), vdecl->numAttribs(), ib->count_);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vb->buffer_);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer_);
-	CHECK_GL_ERROR;
-
-	vdecl->apply();
-	CHECK_GL_ERROR;
-
-	GLenum pt = GL_TRIANGLES;
-	glDrawElements(pt, ib->count_, index_size == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, NULL);
-
-	vdecl->end();
-
-	//material->end();
-	glUseProgram(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
+	gos_render::device()->endShader();
 }
 
 
@@ -721,56 +591,51 @@ class gosTexture {
             if(texname_)
                 delete[] texname_;
 
-            destroyTexture(&tex_);
+            gos_render::device()->destroyTexture(&tex_);
         }
 
         uint32_t getTextureId() const { return tex_.id; }
-        TexType getTextureType() const { return tex_.type_; }
+        const Texture& getTexture() const { return tex_; }
 
+        // Lock/Unlock exchange BGRA pixels (D3D order); the backends store
+        // RGBA. A CPU copy of the pixels (shadow_) means locking never waits
+        // for the GPU: it is filled when the texture is created from memory,
+        // or by a single readback the first time a file texture is locked,
+        // and kept up to date by Unlock().
         BYTE* Lock(int mipl_level, bool is_read_only, int* pitch) {
+            (void)mipl_level;
             gosASSERT(is_locked_ == false);
             is_locked_ = true;
-            // Data is always handed out as tightly packed 32-bit pixels, and
-            // TEXTUREPTR::Pitch is measured in DWORDs, so pitch == width.
+            // TEXTUREPTR::Pitch is measured in DWORDs: tightly packed rows
             gosASSERT(pitch);
             *pitch = tex_.w;
 
             gosASSERT(!plocked_area_);
-            // always return rgba8 formatted data
             lock_type_read_only_ = is_read_only;
-            const uint32_t ts = tex_.w*tex_.h * getTexFormatPixelSize(TF_RGBA8);
-            plocked_area_ = new BYTE[ts];
-            getTextureData(tex_, 0, plocked_area_, TF_RGBA8);
-            for(int y=0;y<tex_.h;++y) {
-                for(int x=0;x<tex_.w;++x) {
-                    DWORD rgba = ((DWORD*)plocked_area_)[tex_.w*y + x];
-                    DWORD r = rgba&0xff;
-                    DWORD g = (rgba&0xff00)>>8;
-                    DWORD b = (rgba&0xff0000)>>16;
-                    DWORD a = (rgba&0xff000000)>>24;
-                    DWORD bgra = (a<<24) | (r<<16) | (g<<8) | b;
-                    ((DWORD*)plocked_area_)[tex_.w*y + x] = bgra;
-                }
+            const size_t num_pixels = (size_t)tex_.w * tex_.h;
+            if(shadow_.empty()) {
+                shadow_.resize(num_pixels * 4);
+                gos_render::device()->readTexture(tex_, shadow_.data(), TF_RGBA8);
+                ++s_shadow_readbacks;
             }
+            plocked_area_ = new BYTE[num_pixels * 4];
+            const DWORD* src = (const DWORD*)shadow_.data();
+            DWORD* dst = (DWORD*)plocked_area_;
+            for(size_t i = 0; i < num_pixels; ++i)
+                dst[i] = swapRedBlue(src[i]);
             return plocked_area_;
         }
 
         void Unlock() {
             gosASSERT(is_locked_ == true);
-        
+
             if(!lock_type_read_only_) {
-                for(int y=0;y<tex_.h;++y) {
-                    for(int x=0;x<tex_.w;++x) {
-                        DWORD bgra = ((DWORD*)plocked_area_)[tex_.w*y + x];
-                        DWORD b = bgra&0xff;
-                        DWORD g = (bgra&0xff00)>>8;
-                        DWORD r = (bgra&0xff0000)>>16;
-                        DWORD a = (bgra&0xff000000)>>24;
-                        DWORD argb = (a<<24) | (b<<16) | (g<<8) | r;
-                        ((DWORD*)plocked_area_)[tex_.w*y + x] = argb;
-                    }
-                }
-                updateTexture(tex_, plocked_area_, TF_RGBA8);
+                const size_t num_pixels = (size_t)tex_.w * tex_.h;
+                const DWORD* src = (const DWORD*)plocked_area_;
+                DWORD* dst = (DWORD*)shadow_.data();
+                for(size_t i = 0; i < num_pixels; ++i)
+                    dst[i] = swapRedBlue(src[i]);
+                gos_render::device()->updateTexture(tex_, shadow_.data(), TF_RGBA8);
             }
 
             delete[] plocked_area_;
@@ -778,6 +643,9 @@ class gosTexture {
 
             is_locked_ = false;
         }
+
+        // Number of textures that had to be read back from the GPU once
+        static uint32_t s_shadow_readbacks;
 
         void getTextureInfo(gosTextureInfo* texinfo) const {
             gosASSERT(texinfo);
@@ -800,7 +668,15 @@ class gosTexture {
         bool is_locked_;
         bool lock_type_read_only_;
         bool is_from_memory_; // not loaded from file
+        std::vector<uint8_t> shadow_; // RGBA8 copy of the pixels, see Lock()
+
+        // BGRA <-> RGBA (the same swap both ways)
+        static DWORD swapRedBlue(DWORD c) {
+            return (c & 0xFF00FF00) | ((c & 0xFF) << 16) | ((c >> 16) & 0xFF);
+        }
 };
+
+uint32_t gosTexture::s_shadow_readbacks = 0;
 
 struct gosTextAttribs {
     HGOSFONT3D FontHandle;
@@ -877,7 +753,7 @@ bool gosTexture::createHardwareTexture() {
 
         format_ = convertIfNecessary(img, format_);
 
-        tex_ = create2DTexture(img.getWidth(), img.getHeight(), tf, img.getPixels());
+        tex_ = gos_render::device()->createTexture2D(img.getWidth(), img.getHeight(), tf, img.getPixels());
         return tex_.isValid();
 
     } else if(pcompdata_ && size_ > 0) {
@@ -899,7 +775,7 @@ bool gosTexture::createHardwareTexture() {
 
         format_ = convertIfNecessary(img, format_);
 
-        tex_ = create2DTexture(img.getWidth(), img.getHeight(), tf, img.getPixels());
+        tex_ = gos_render::device()->createTexture2D(img.getWidth(), img.getHeight(), tf, img.getPixels());
         return tex_.isValid();
     } else {
         gosASSERT(tex_.w >0 && tex_.h > 0);
@@ -907,12 +783,14 @@ bool gosTexture::createHardwareTexture() {
         // No source data: create a magenta placeholder of the requested size.
         // Lock()/Unlock() always exchange RGBA8, so the storage format is
         // RGBA8 regardless of format_ (which only describes alpha usage).
+        // The pixels are known here, so the CPU copy starts filled and
+        // locking this texture never needs a GPU readback.
         TexFormat tf = TF_RGBA8;
-        DWORD* pdata = new DWORD[tex_.w*tex_.h];
+        shadow_.resize((size_t)tex_.w * tex_.h * 4);
+        DWORD* pdata = (DWORD*)shadow_.data();
         for(int i=0;i<tex_.w*tex_.h;++i)
             pdata[i] = 0xFF00FFFF;
-        tex_ = create2DTexture(tex_.w, tex_.h, tf, (const uint8_t*)pdata);
-        delete[] pdata;
+        tex_ = gos_render::device()->createTexture2D(tex_.w, tex_.h, tf, shadow_.data());
         return tex_.isValid();
     }
 
@@ -1283,7 +1161,6 @@ class gosRenderer {
 
 const std::string gosRenderer::s_Foreground = std::string("Foreground");
 
-static GLuint gVAO = 0;
 
 void gosRenderer::init() {
     initRenderStates();
@@ -1354,9 +1231,6 @@ void gosRenderer::init() {
     }
 
 
-    glGenVertexArrays(1, &gVAO);
-
-
     pendingRequest = false;
 
     num_draw_calls_ = 0;
@@ -1381,7 +1255,8 @@ void gosRenderer::destroy() {
     gosMesh::destroy(points_);
     gosMesh::destroy(text_);
 
-    for(size_t i=0; i<fontList_.size(); i++) {
+    // (used to loop over fontList_.size(), leaking or overrunning materials)
+    for(size_t i=0; i<materialList_.size(); i++) {
         gosRenderMaterial::destroy(materialList_[i]);
     }
     materialList_.clear();
@@ -1397,8 +1272,6 @@ void gosRenderer::destroy() {
     }
     textureList_.clear();
     freeTextureSlots_.clear();
-
-    glDeleteVertexArrays(1, &gVAO);
 
 }
 
@@ -1466,128 +1339,48 @@ void gosRenderer::popRenderStates()
 
 void gosRenderer::applyRenderStates() {
 
-	////////////////////////////////////////////////////////////////////////////////
-	switch (renderStates_[gos_State_Culling]) {
-		case gos_Cull_None: glDisable(GL_CULL_FACE); break;
-		case gos_Cull_CW:	
-		case gos_Cull_CCW:
-			glEnable(GL_CULL_FACE);
-			// by default in OpenGL front face is CCW (could be changed by glFrontFace)
-			glCullFace(renderStates_[gos_State_Culling] == gos_Cull_CW ? GL_BACK : GL_FRONT);
-			break;
-		default: gosASSERT(0 && "Wrong cull face value");
-	}
-	curStates_[gos_State_Culling] = renderStates_[gos_State_Culling];
+    // Blending, depth, culling: one backend pipeline state
+    bool valid = true;
+    gos_render::device()->applyPipeline(gos_render::pipelineFromGosStates(renderStates_, &valid));
+    gosASSERT(valid && "Unsupported culling / depth / alpha mode value");
+    const gos_RenderState pipeline_states[] = { gos_State_Culling, gos_State_ZWrite,
+        gos_State_ZCompare, gos_State_AlphaMode, gos_State_AlphaTest };
+    for(size_t i = 0; i < COUNTOF(pipeline_states); ++i)
+        curStates_[pipeline_states[i]] = renderStates_[pipeline_states[i]];
 
-	////////////////////////////////////////////////////////////////////////////////
+    fog_color_ = uint32_to_vec4(renderStates_[gos_State_Fog]);
+    curStates_[gos_State_Fog] = renderStates_[gos_State_Fog];
 
-	////////////////////////////////////////////////////////////////////////////////
-	fog_color_ = uint32_to_vec4(renderStates_[gos_State_Fog]);
-	curStates_[gos_State_Fog] = renderStates_[gos_State_Fog];
+    // Sampler state is bound with each texture (no mipmaps exist, so
+    // trilinear filtering is bilinear)
+    const gos_render::SamplerDesc sampler = gos_render::samplerFromGosStates(renderStates_);
+    curStates_[gos_State_Filter] = renderStates_[gos_State_Filter];
+    curStates_[gos_State_TextureAddress] = renderStates_[gos_State_TextureAddress];
 
-   ////////////////////////////////////////////////////////////////////////////////
-   switch(renderStates_[gos_State_ZWrite]) {
-       case 0: glDepthMask(GL_FALSE); break;
-       case 1: glDepthMask(GL_TRUE); break;
-       default: gosASSERT(0 && "Wrong depth write value");
-   }
-   curStates_[gos_State_ZWrite] = renderStates_[gos_State_ZWrite];
+    const uint32_t tex_states[] = { gos_State_Texture, gos_State_Texture2, gos_State_Texture3 };
+    for(int i=0; i<(int)COUNTOF(tex_states); ++i) {
+        DWORD gosTextureHandle = renderStates_[tex_states[i]];
 
-   ////////////////////////////////////////////////////////////////////////////////
-   if(0 == renderStates_[gos_State_ZCompare]) {
-       glDisable(GL_DEPTH_TEST);
-   } else {
-       glEnable(GL_DEPTH_TEST);
-   }
-   switch(renderStates_[gos_State_ZCompare]) {
-       case 0: glDepthFunc(GL_ALWAYS); break;
-       case 1: glDepthFunc(GL_LEQUAL); break;
-       case 2: glDepthFunc(GL_LESS); break;
-       default: gosASSERT(0 && "Wrong depth test value");
-   }
-   curStates_[gos_State_ZCompare] = renderStates_[gos_State_ZCompare];
+        gosTexture* tex = gosTextureHandle == INVALID_TEXTURE_ID ? 0 : this->getTexture(gosTextureHandle);
+        if(tex) {
+            gos_render::device()->bindTexture(i, &tex->getTexture(), sampler);
 
-   ////////////////////////////////////////////////////////////////////////////////
-   bool disable_blending = renderStates_[gos_State_AlphaMode] == gos_Alpha_OneZero;
-   if(disable_blending) {
-       glDisable(GL_BLEND);
-   } else {
-       glEnable(GL_BLEND);
-   }
-   switch(renderStates_[gos_State_AlphaMode]) {
-       case gos_Alpha_OneZero:          glBlendFunc(GL_ONE, GL_ZERO); break;
-       case gos_Alpha_OneOne:           glBlendFunc(GL_ONE, GL_ONE); break;
-       case gos_Alpha_AlphaInvAlpha:    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
-       case gos_Alpha_OneInvAlpha:      glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
-       case gos_Alpha_AlphaOne:         glBlendFunc(GL_SRC_ALPHA, GL_ONE); break;
-       default: gosASSERT(0 && "Wrong alpha mode value");
-   }
-   curStates_[gos_State_AlphaMode] = renderStates_[gos_State_AlphaMode];
-
-   ////////////////////////////////////////////////////////////////////////////////
-   #if 0 // now in shaders (this is not supported in CORE OpenGL profile
-   bool enable_alpha_test = renderStates_[gos_State_AlphaTest] == 1;
-   if(enable_alpha_test) {
-       glEnable(GL_ALPHA_TEST);
-       glAlphaFunc(GL_NOTEQUAL, 0.0f);
-   } else {
-       glDisable(GL_ALPHA_TEST);
-   }
-   #endif
-   curStates_[gos_State_AlphaTest] = renderStates_[gos_State_AlphaTest];
-
-   ////////////////////////////////////////////////////////////////////////////////
-   TexFilterMode filter = TFM_NONE;
-   switch(renderStates_[gos_State_Filter]) {
-       case gos_FilterNone: filter = TFM_NEAREST; break;
-       case gos_FilterBiLinear : filter = TFM_LINEAR; break;
-       case gos_FilterTriLinear: filter = TFM_LNEAR_MIPMAP_LINEAR; break;
-   }
-   // no mips for now, so ensure no invalid filters used
-   //gosASSERT(filter == TFM_NEAREST || filter == TFM_LINEAR);
-   // i do not know of any mipmaps that we are using
-   if(filter == TFM_LNEAR_MIPMAP_LINEAR)
-       filter = TFM_LINEAR;
-
-   // in this case does not necessaily mean, that state was set, because in OpenGL this is binded to texture (unless separate sampler state extension is used, which is not currently)
-   curStates_[gos_State_Filter] = renderStates_[gos_State_Filter];
-  
-   ////////////////////////////////////////////////////////////////////////////////
-   TexAddressMode address_mode = 
-       renderStates_[gos_State_TextureAddress] == gos_TextureWrap ? TAM_REPEAT : TAM_CLAMP_TO_EDGE;
-   // in this case does not necessarily mean, that state was set, because in OpenGL this is binded to texture (unless separate sampler state extension is used, which is not currently)
-   curStates_[gos_State_TextureAddress] = renderStates_[gos_State_TextureAddress];
-
-   ////////////////////////////////////////////////////////////////////////////////
-   uint32_t tex_states[] = { gos_State_Texture, gos_State_Texture2, gos_State_Texture3 };
-   for(int i=0; i<sizeof(tex_states) / sizeof(tex_states[0]); ++i) {
-       DWORD gosTextureHandle = renderStates_[tex_states[i]];
-
-       glActiveTexture(GL_TEXTURE0 + i);
-
-       gosTexture* tex = gosTextureHandle == INVALID_TEXTURE_ID ? 0 : this->getTexture(gosTextureHandle);
-       if(tex) {
-           glBindTexture(GL_TEXTURE_2D, tex->getTextureId());
-           setSamplerParams(tex->getTextureType(), address_mode, filter);
-
-           gosTextureInfo texinfo;
-           tex->getTextureInfo(&texinfo);
-           if(renderStates_[gos_State_TextureMapBlend] == gos_BlendDecal && texinfo.format_ == gos_Texture_Alpha)
-           {
-               PAUSE((""));
-           }
-
-       } else {
-           glBindTexture(GL_TEXTURE_2D, 0);
-       }
-       curStates_[tex_states[i]] = gosTextureHandle;
-   }
-
+            gosTextureInfo texinfo;
+            tex->getTextureInfo(&texinfo);
+            if(renderStates_[gos_State_TextureMapBlend] == gos_BlendDecal && texinfo.format_ == gos_Texture_Alpha)
+            {
+                PAUSE((""));
+            }
+        } else {
+            gos_render::device()->bindTexture(i, NULL, sampler);
+        }
+        curStates_[tex_states[i]] = gosTextureHandle;
+    }
 }
 
 void gosRenderer::beginFrame()
 {
-    glBindVertexArray(gVAO);
+    gos_render::device()->beginFrame();
     num_draw_calls_ = 0;
 }
 
@@ -2153,16 +1946,30 @@ void gosRenderer::flush()
 {
 }
 
-void gos_CreateRenderer(graphics::RenderContextHandle ctx_h, graphics::RenderWindowHandle win_h, int w, int h) {
+bool gos_CreateRenderer(graphics::RenderContextHandle ctx_h, graphics::RenderWindowHandle win_h, int w, int h) {
+
+    gos_render::Device* dev = gos_render::createGLDevice();
+    if(!dev->init()) {
+        delete dev;
+        return false;
+    }
+    gos_render::setDevice(dev);
 
     g_gos_renderer = new gosRenderer(ctx_h, win_h, w, h);
     g_gos_renderer->init();
+    return true;
 }
 
 void gos_DestroyRenderer() {
 
     g_gos_renderer->destroy();
     delete g_gos_renderer;
+    g_gos_renderer = NULL;
+
+    gos_render::Device* dev = gos_render::device();
+    gos_render::setDevice(NULL);
+    dev->shutdown();
+    delete dev;
 }
 
 void gos_RendererBeginFrame() {
@@ -2641,7 +2448,7 @@ size_t __stdcall gos_GetMachineInformation( MachineInfo mi, int Param1/*=0*/, in
     if(mi == gos_Info_NumberDevices)
         return 1;
     if(mi == gos_Info_GetDeviceName)
-        return (size_t)glGetString(GL_RENDERER);
+        return (size_t)gos_render::device()->name();
     if(mi == gos_Info_ValidMode) {
         int xres = Param2;
         int yres = Param3;
@@ -2676,52 +2483,37 @@ bool gos_GetDisplayModeByIndex(int DisplayIndex, int ModeIndex, int* XRes, int* 
 // GPU Buffers management code
 ////////////////////////////////////////////////////////////////////////////////
 
-GLenum getGLBufferType(gosBUFFER_TYPE type)
+static gos_render::BufferKind toBufferKind(gosBUFFER_TYPE type)
 {
-	GLenum t = -1;
 	switch (type)
 	{
-		case gosBUFFER_TYPE::VERTEX: t = GL_ARRAY_BUFFER; break;
-		case gosBUFFER_TYPE::INDEX: t = GL_ELEMENT_ARRAY_BUFFER; break;
-		case gosBUFFER_TYPE::UNIFORM: t = GL_UNIFORM_BUFFER; break;
-
+		case gosBUFFER_TYPE::VERTEX: return gos_render::BufferKind::Vertex;
+		case gosBUFFER_TYPE::INDEX: return gos_render::BufferKind::Index;
+		case gosBUFFER_TYPE::UNIFORM: return gos_render::BufferKind::Uniform;
 		default:
-			gosASSERT(0 && "unknows buffer type");
+			gosASSERT(0 && "unknown buffer type");
 	}
-	return t;
+	return gos_render::BufferKind::Vertex;
 }
 
-GLenum getGLBufferUsage(gosBUFFER_USAGE usage)
+static gos_render::BufferUsage toBufferUsage(gosBUFFER_USAGE usage)
 {
-	GLenum u = -1;
 	switch (usage)
 	{
-		case gosBUFFER_USAGE::STREAM_DRAW: u = GL_STREAM_DRAW; break;
-		case gosBUFFER_USAGE::STATIC_DRAW: u = GL_STATIC_DRAW; break;
-		case gosBUFFER_USAGE::DYNAMIC_DRAW: u = GL_DYNAMIC_DRAW; break;
-
+		case gosBUFFER_USAGE::STREAM_DRAW: return gos_render::BufferUsage::Stream;
+		case gosBUFFER_USAGE::STATIC_DRAW: return gos_render::BufferUsage::Static;
+		case gosBUFFER_USAGE::DYNAMIC_DRAW: return gos_render::BufferUsage::Dynamic;
 		default:
-			gosASSERT(0 && "unknows buffer usage");
+			gosASSERT(0 && "unknown buffer usage");
 	}
-	return u;
+	return gos_render::BufferUsage::Dynamic;
 }
-
-
 
 gosBuffer* __stdcall gos_CreateBuffer(gosBUFFER_TYPE type, gosBUFFER_USAGE usage, int element_size, uint32_t count, void* buffer_data)
 {
-	GLenum gl_target = getGLBufferType(type);
-	GLenum gl_usage = getGLBufferUsage(usage);
-
-	size_t buffer_size = element_size * count;
-	GLuint buffer;
-	glGenBuffers(1, &buffer);
-	glBindBuffer(gl_target, buffer);
-	glBufferData(gl_target, buffer_size, buffer_data, gl_usage);
-	glBindBuffer(gl_target, 0);
-
 	gosBuffer* pbuffer = new gosBuffer();
-	pbuffer->buffer_ = buffer;
+	pbuffer->buffer_ = gos_render::device()->createBuffer(toBufferKind(type), toBufferUsage(usage),
+	                                                       buffer_data, (size_t)element_size * count);
 	pbuffer->element_size_ = element_size;
 	pbuffer->count_ = count;
 	pbuffer->type_ = type;
@@ -2745,6 +2537,7 @@ void __stdcall gos_DestroyBuffer(gosBuffer* buffer)
     gosASSERT(g_gos_renderer);
 	bool rv = g_gos_renderer->deleteBuffer(buffer);
     (void)rv;
+	gos_render::device()->destroyBuffer(buffer->buffer_); // used to leak
 	delete buffer;
 }
 
@@ -2752,18 +2545,16 @@ void __stdcall gos_BindBufferBase(gosBuffer* buffer, uint32_t slot)
 {
 	gosASSERT(buffer);
 
-	GLenum gl_target = getGLBufferType(buffer->type_);
-	glBindBufferBase(gl_target, slot, buffer->buffer_);
+	gosASSERT(buffer->type_ == gosBUFFER_TYPE::UNIFORM);
+	gos_render::device()->bindUniformBuffer((int)slot, buffer->buffer_);
 }
 
 void __stdcall gos_UpdateBuffer(HGOSBUFFER buffer, void* data, size_t offset, size_t num_bytes)
 {
 	gosASSERT(buffer);
     gosASSERT(buffer->element_size_ * buffer->count_ >= num_bytes);
-	GLenum gl_target = getGLBufferType(buffer->type_);
-    glBindBuffer(gl_target, buffer->buffer_);
-	glBufferData(gl_target, num_bytes, data, GL_DYNAMIC_DRAW);
-    glBindBuffer(gl_target, 0);
+	(void)offset; // whole buffer replaced, as before
+	gos_render::device()->updateBuffer(buffer->buffer_, toBufferKind(buffer->type_), data, num_bytes);
 }
 
 HGOSVERTEXDECLARATION __stdcall gos_CreateVertexDeclaration(gosVERTEX_FORMAT_RECORD* records, int count)

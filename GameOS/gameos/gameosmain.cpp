@@ -7,8 +7,7 @@
 #include "gos_input.h"
 
 #include "utils/camera.h"
-#include "utils/shader_builder.h"
-#include "utils/gl_utils.h"
+#include "render/render_device.h"
 #include "utils/timing.h"
 #include "utils/run_options.h"
 #include "utils/png_writer.h"
@@ -16,10 +15,11 @@
 #include "platform_clock.h"
 
 #include <vector>
+#include <chrono>
 
 #include <signal.h>
 
-extern void gos_CreateRenderer(graphics::RenderContextHandle ctx_h, graphics::RenderWindowHandle win_h, int w, int h);
+extern bool gos_CreateRenderer(graphics::RenderContextHandle ctx_h, graphics::RenderWindowHandle win_h, int w, int h);
 extern void gos_DestroyRenderer();
 extern void gos_RendererBeginFrame();
 extern void gos_RendererEndFrame();
@@ -71,7 +71,7 @@ static void process_events( void ) {
             // mouse coordinates are normalised by the drawable size
             Environment.drawableWidth = event.window.data1;
             Environment.drawableHeight = event.window.data2;
-            glViewport(0, 0, (GLsizei)event.window.data1, (GLsizei)event.window.data2);
+            gos_render::device()->setViewport(0, 0, event.window.data1, event.window.data2);
             SPEW(("INPUT", "resize event: w: %d h:%d\n", event.window.data1, event.window.data2));
             break;
         case SDL_EVENT_MOUSE_MOTION:
@@ -92,125 +92,23 @@ extern bool g_disable_quads;
 static void draw_screen( void )
 {
     g_disable_quads = false;
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    glCullFace(GL_FRONT);
-    //CHECK_GL_ERROR;
-    
-	const int viewport_w = Environment.drawableWidth;
-	const int viewport_h = Environment.drawableHeight;
-    glViewport(0, 0, viewport_w, viewport_h);
-#if 0
-    mat4 proj;
-    g_camera.get_projection(&proj);
-    mat4 viewM;
-    g_camera.get_view(&viewM);
-#endif
-
-#if 0
-    gos_VERTEX q[4];
-    q[0].x = 10; q[0].y = 10;
-    q[0].z = 0.0;
-    q[0].rhw = 1;
-    q[0].argb = 0xffff0000;
-    q[1] = q[2] = q[3] = q[0];
-
-    q[1].x = 210; q[1].y = 10;
-    q[2].x = 110; q[2].y = 210;
-    q[3].x = 10; q[3].y = 210;
-
-    g_disable_quads = false;
-    gos_DrawQuads(&q[0], 4);
-    g_disable_quads = true;
-#endif
-	/*
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadTransposeMatrixf((const float*)proj);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadTransposeMatrixf((const float*)viewM);
-	*/
-
-    CHECK_GL_ERROR;
+    gos_render::Device* dev = gos_render::device();
+    dev->setViewport(0, 0, Environment.drawableWidth, Environment.drawableHeight);
 
     // Render states deliberately persist across frames (GameOS semantics the
-    // game code relies on). Only the depth write mask is forced, because
-    // glClear() honours it and the depth buffer must be cleared every frame.
-    glDepthMask(GL_TRUE);
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    // game code relies on); clear() forces depth writes on so the depth
+    // buffer is cleared every frame.
+    dev->clear(true, true);
 
     gos_RendererBeginFrame();
     Environment.UpdateRenderers();
     gos_RendererEndFrame();
 
-    glUseProgram(0);
-    //CHECK_GL_ERROR;
+    dev->endShader();
 }
 
 extern float frameRate;
 
-
-const char* getStringForType(GLenum type)
-{
-	switch (type)
-	{
-	case GL_DEBUG_TYPE_ERROR: return "DEBUG_TYPE_ERROR";
-	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEBUG_TYPE_DEPRECATED_BEHAVIOR";
-	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "DEBUG_TYPE_UNDEFINED_BEHAVIOR";
-	case GL_DEBUG_TYPE_PERFORMANCE: return "DEBUG_TYPE_PERFORMANCE";
-	case GL_DEBUG_TYPE_PORTABILITY: return "DEBUG_TYPE_PORTABILITY";
-	case GL_DEBUG_TYPE_MARKER: return "DEBUG_TYPE_MARKER";
-	case GL_DEBUG_TYPE_PUSH_GROUP: return "DEBUG_TYPE_PUSH_GROUP";
-	case GL_DEBUG_TYPE_POP_GROUP: return "DEBUG_TYPE_POP_GROUP";
-	case GL_DEBUG_TYPE_OTHER: return "DEBUG_TYPE_OTHER";
-	default: return "(undefined)";
-	}
-}
-
-const char* getStringForSource(GLenum type)
-{
-	switch (type)
-	{
-	case GL_DEBUG_SOURCE_API: return "DEBUG_SOURCE_API";
-	case GL_DEBUG_SOURCE_SHADER_COMPILER: return "DEBUG_SOURCE_SHADER_COMPILER";
-	case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "DEBUG_SOURCE_WINDOW_SYSTEM";
-	case GL_DEBUG_SOURCE_THIRD_PARTY: return "DEBUG_SOURCE_THIRD_PARTY";
-	case GL_DEBUG_SOURCE_APPLICATION: return "DEBUG_SOURCE_APPLICATION";
-	case GL_DEBUG_SOURCE_OTHER: return "DEBUG_SOURCE_OTHER";
-	default: return "(undefined)";
-	}
-}
-
-const char* getStringForSeverity(GLenum type)
-{
-	switch (type)
-	{
-	case GL_DEBUG_SEVERITY_HIGH: return "DEBUG_SEVERITY_HIGH";
-	case GL_DEBUG_SEVERITY_MEDIUM: return "DEBUG_SEVERITY_MEDIUM";
-	case GL_DEBUG_SEVERITY_LOW: return "DEBUG_SEVERITY_LOW";
-	case GL_DEBUG_SEVERITY_NOTIFICATION: return "DEBUG_SEVERITY_NOTIFICATION";
-	default: return "(undefined)";
-	}
-}
-//typedef void (GLAPIENTRY *GLDEBUGPROCARB)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
-#ifdef PLATFORM_WINDOWS
-void GLAPIENTRY OpenGLDebugLog(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
-#else
-void GLAPIENTRY OpenGLDebugLog(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* userParam)
-#endif
-{
-	if (severity != GL_DEBUG_SEVERITY_NOTIFICATION && severity != GL_DEBUG_SEVERITY_LOW)
-	{
-		printf("Type: %s; Source: %s; ID: %d; Severity : %s\n",
-			getStringForType(type),
-			getStringForSource(source),
-			id,
-			getStringForSeverity(severity)
-		);
-		printf("Message : %s\n", message);
-	}
-}
 
 static void apply_script_event(const input_script::Event& e)
 {
@@ -242,9 +140,8 @@ static bool capture_frame(graphics::RenderWindowHandle win, const gos_run_option
     if (w <= 0 || h <= 0)
         return false;
     std::vector<uint8_t> pixels((size_t)w * h * 4);
-    glReadBuffer(GL_BACK);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    if (!gos_render::device()->readPixels(w, h, pixels.data()))
+        return false;
     const std::string path = opts.capture_dir + "/" + gos_run_options::capture_file_name(frame);
     const bool ok = png_writer::write_file(path, pixels.data(), w, h, w * 4, true);
     fprintf(stderr, "CAPTURE: frame %u -> %s%s\n", frame, path.c_str(), ok ? "" : " (FAILED)");
@@ -278,6 +175,16 @@ int main(int argc, char** argv)
         input::setScriptedInput(true);
     }
     input_script::Player script_player(std::move(script_events));
+
+    FILE* perf_csv = NULL;
+    if (!run_opts.perf_csv.empty()) {
+        perf_csv = fopen(run_opts.perf_csv.c_str(), "w");
+        if (!perf_csv) {
+            fprintf(stderr, "error: cannot write %s\n", run_opts.perf_csv.c_str());
+            return 2;
+        }
+        fprintf(perf_csv, "frame,frame_ms,draw_calls,pipeline_changes,pipelines\n");
+    }
 
     //signal(SIGTRAP, SIG_IGN);
 
@@ -316,52 +223,8 @@ int main(int argc, char** argv)
 
     graphics::make_current_context(ctx);
 
-    GLenum err = glewInit();
-    if (GLEW_OK != err)
-    {
-        SPEW(("GLEW", "Error: %s\n", glewGetErrorString(err)));
+    if (!gos_CreateRenderer(ctx, win, w, h))
         return 1;
-    }
-    // glewInit() probes extensions with glGetString(GL_EXTENSIONS), which
-    // raises GL_INVALID_ENUM on core profile contexts. Drain that error so it
-    // is not reported later by an unrelated CHECK_GL_ERROR.
-    while (glGetError() != GL_NO_ERROR) {}
-
-	glEnable(GL_DEBUG_OUTPUT);
-	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	//glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 76, 1, "My debug group");
-	glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-	glDebugMessageCallbackARB((GLDEBUGPROC)&OpenGLDebugLog, NULL);
-
-
-    SPEW(("GRAPHICS", "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION)));
-    //if ((!GLEW_ARB_vertex_program || !GLEW_ARB_fragment_program))
-    //{
-     //   SPEW(("GRAPHICS", "No shader program support\n"));
-      //  return 1;
-    //}
-
-    if(!glewIsSupported("GL_VERSION_3_0")) {
-        SPEW(("GRAPHICS", "Minimum required OpenGL version is 3.0\n"));
-        return 1;
-    }
-
-    const char* glsl_version = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-    SPEW(("GRAPHICS", "GLSL version supported: %s\n", glsl_version));
-
-    int glsl_maj = 0, glsl_min = 0;
-    sscanf(glsl_version, "%d.%d", &glsl_maj, &glsl_min);
-
-    if(glsl_maj < 3 || (glsl_maj==3 && glsl_min < 30) ) {
-        SPEW(("GRAPHICS", "Minimum required OpenGL version is 330 ES, current: %d.%d\n", glsl_maj, glsl_min));
-        return 1;
-    }
-
-    char version[16] = {0};
-    snprintf(version, sizeof(version), "%d%d", glsl_maj, glsl_min);
-    SPEW(("GRAPHICS", "Using %s shader version\n", version));
-
-    gos_CreateRenderer(ctx, win, w, h);
     if(!gos_CreateAudio())
     {   // not an error
         SPEW(("AUDIO", "Failed to create audio\n"));
@@ -382,6 +245,7 @@ int main(int argc, char** argv)
     while( !g_exit ) {
 
 		uint64_t start_tick = timing::gettickcount();
+		const auto perf_start = std::chrono::steady_clock::now();
 		++frame_number;
 		if (platform_clock::is_fixed()) {
 			// Deterministic mode: the game sees a constant frame time no
@@ -410,6 +274,13 @@ int main(int argc, char** argv)
             capture_frame(win, run_opts, frame_number);
         graphics::swap_window(win);
 
+        if (perf_csv) {
+            const gos_render::Device::Stats st = gos_render::device()->stats();
+            const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - perf_start).count();
+            fprintf(perf_csv, "%u,%.3f,%u,%u,%u\n", frame_number, ms, st.draw_calls,
+                    st.pipeline_changes, st.pipeline_cache_size);
+        }
+
         g_exit |= gosExitGameOS();
         if (run_opts.exit_after_frame && frame_number >= run_opts.exit_after_frame)
             g_exit = true;
@@ -423,6 +294,9 @@ int main(int argc, char** argv)
         }
     }
     
+    if (perf_csv)
+        fclose(perf_csv);
+
     Environment.TerminateGameEngine();
 
     gos_DestroyRenderer();

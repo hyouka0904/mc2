@@ -45,8 +45,10 @@
 ├──────────────────────────────────────────────────────────────┤
 │ GameOS/    平台抽象層（本專案重新實作的部分）                     │
 │   ├ include/   原始 GameOS 介面 + Win32 型別定義                 │
-│   ├ gameos/    以 SDL3 / OpenGL / SDL3_mixer 實作繪圖、輸入、音效、 │
-│   │            檔案、字型、除錯；utils/ 為著色器、影像、矩陣等工具   │
+│   ├ gameos/    以 SDL3 / SDL3_mixer 實作視窗、輸入、音效、檔案、字型；  │
+│   │   └ render/  繪圖後端介面（Device / Shader / PipelineState）；     │
+│   │       └ gl/  OpenGL 實作（全專案唯一呼叫 OpenGL 的地方）        │
+│   │            utils/ 為影像、矩陣、截圖、輸入腳本等工具             │
 │   └ src/       Win32 API 的替代實作（字串、檔案、訊息框、時間…）    │
 ├──────────────────────────────────────────────────────────────┤
 │ 第三方函式庫：SDL3、SDL3_mixer、SDL3_ttf、GLEW、OpenGL、zlib       │
@@ -200,6 +202,8 @@ ctest --test-dir build --output-on-failure
 | `unit_pqueue` | 路徑搜尋優先佇列，包含與參考模型比對的隨機測試 |
 | `unit_run_options` | 決定性模式參數、PNG 截圖編碼、固定步長時鐘、輸入腳本解析 |
 | `unit_sound` | 音效 API（SDL3_mixer）：播放一次 / 迴圈 / 暫停 / 停止、音量線性、左右聲道定位、釋放資源；不需要音效卡 |
+| `unit_render_state` | 由 GameOS 渲染狀態推出的管線描述、32 位元管線鍵（可逆、互不重複）、管線快取 |
+| `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
 | `unit_stuff` | 執行原版 Stuff 數學函式庫內建、但從未被呼叫的自我測試 |
 | `tool_fastfile` / `tool_pak` / `tool_rsp` | 資料工具的打包→解包往返測試 |
 | `tool_text_tool` | 在沒有顯示器的環境下烘焙字型 |
@@ -245,6 +249,7 @@ scripts/smoke_test.sh game mc2_01 60
 | `-capture-dir <dir>` | 截圖輸出目錄 |
 | `-exit-after <n>` | 第 `<n>` 幀後結束（預設為最後一個截圖幀） |
 | `-input-script <file>` | 依腳本重播滑鼠／鍵盤事件，期間忽略真實輸入（格式見 `GameOS/gameos/utils/input_script.h`） |
+| `-perf-csv <file>` | 每幀寫一行統計：幀號、實際耗時（毫秒）、draw call 數、管線狀態切換次數、出現過的不同管線數 |
 | `-windowed` | 忽略遊戲的全螢幕設定，一律以視窗執行（全螢幕行為取決於視窗管理員，會讓截圖因環境而異） |
 
 測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 16 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、

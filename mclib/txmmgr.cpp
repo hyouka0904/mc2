@@ -47,7 +47,8 @@
 #include<gameos.hpp>
 #include<mlr/mlr.hpp>
 #include<gosfx/gosfxheaders.hpp>
-#include <utils/gl_utils.h>
+#include "render/render_types.h" // uint32_to_vec4
+#include "utils/vec.h"
 
 //---------------------------------------------------------------------------
 // static globals

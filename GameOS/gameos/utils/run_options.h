@@ -13,6 +13,8 @@
 //   -capture-dir <dir>       where captures go (default: current directory)
 //   -exit-after <n>          quit after frame <n> (default: last capture frame)
 //   -input-script <file>     replay mouse/keyboard events (utils/input_script.h)
+//   -perf-csv <file>         write per-frame statistics (frame, wall-clock ms,
+//                            draw calls, pipeline changes, distinct pipelines)
 //   -windowed                stay in a window even if the game asks for
 //                            fullscreen (fullscreen depends on the window
 //                            manager, which makes captures environment specific)
@@ -32,6 +34,7 @@ struct Options {
     uint32_t exit_after_frame = 0;  // 0 = never
     std::string input_script;       // empty = none
     bool windowed = false;
+    std::string perf_csv;           // empty = none
 
     bool should_capture(uint32_t frame) const;
 };

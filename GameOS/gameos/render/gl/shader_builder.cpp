@@ -9,8 +9,8 @@
 
 #include "utils/stream.h"
 #include "utils/logging.h"
-#include "utils/gl_utils.h"
-#include "utils/shader_builder.h"
+#include "render/gl/gl_utils.h"
+#include "render/gl/shader_builder.h"
 #include "utils/timing.h"
 #include "utils/file_utils.h"
 

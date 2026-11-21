@@ -4,6 +4,8 @@
 #  unit_kv_registry   registry emulation (GameOS/gameos/utils/kv_registry)
 #  unit_image_tga     TGA texture decoding (GameOS/gameos/utils/Image)
 #  unit_sound         GameOS sound API on SDL3_mixer (no audio device needed)
+#  unit_render_state  pipeline keys / cache derived from GameOS render states
+#  render_isolation   OpenGL is only used under GameOS/gameos/render/gl/
 #  unit_stuff         original Stuff library self-tests (mclib/stuff)
 #  unit_pqueue        A* open list (mclib/pqueue)
 #  unit_run_options   deterministic-mode options, PNG capture writer, clock
@@ -72,3 +74,12 @@ mc2_add_unit_test(unit_sound
     INCLUDES ${COMMON_INCLUDE_DIRS}
     LIBS gameos windows MC2::SDL MC2::Mixer GLEW::GLEW OpenGL::GL ZLIB::ZLIB ${ADDITIONAL_LIBS})
 set_tests_properties(unit_sound PROPERTIES ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
+mc2_add_unit_test(unit_render_state
+    SOURCES unit/test_render_state.cpp ${MC2_GAMEOS_DIR}/render/render_state.cpp
+    INCLUDES ${COMMON_INCLUDE_DIRS})
+
+if(NOT WIN32)
+    add_test(NAME render_isolation
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_render_isolation.sh ${CMAKE_SOURCE_DIR})
+endif()
