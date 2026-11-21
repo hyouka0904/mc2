@@ -65,5 +65,10 @@ cp -r data assets ./*.cfg ./*.fst testtxm.tga "$game_dir/"
 cp "$build_dir/mc2" "$game_dir/"
 cp "$build_dir/out/res/libmc2res_64.so" "$game_dir/libmc2res.so"
 cp -r "$repo_dir/shaders" "$game_dir/"
+# precompiled shaders for the non-OpenGL backends, when the build made them
+if [ -d "$build_dir/shaders_out" ]; then
+    rm -rf "$game_dir/shaders/compiled"
+    cp -r "$build_dir/shaders_out" "$game_dir/shaders/compiled"
+fi
 
 echo "Done. Run the game with:  cd $game_dir && ./mc2"

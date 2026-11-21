@@ -219,6 +219,14 @@ TEST(run_options_windowed_flag)
     CHECK(o.windowed);
 }
 
+TEST(run_options_shader_reload_flag)
+{
+    Options o;
+    CHECK(!o.shader_reload);
+    CHECK(parseArgs({"-shader-reload"}, o));
+    CHECK(o.shader_reload);
+}
+
 TEST(run_options_perf_csv_flag)
 {
     Options o;

@@ -44,6 +44,10 @@ struct glsl_uniform
     GLint index_;
     unsigned char* data_;
     bool is_dirty_;
+    // Member of the PerDraw uniform block: its byte offset in the block
+    // (-1 for a plain uniform) and, for matrices, the row stride.
+    GLint block_offset_ = -1;
+    GLint matrix_stride_ = 0;
 };
 
 struct glsl_uniform_block
@@ -142,5 +146,13 @@ private:
     static UNIFORM_FUNC uniformFuncs[15];
 
     bool is_valid_;
+
+    // PerDraw uniform block (render/shader_params.h): setters write into
+    // per_draw_data_, apply() uploads it to the program's own buffer.
+    void setupPerDraw();
+    GLuint per_draw_ubo_ = 0;
+    GLint per_draw_binding_ = -1;
+    std::vector<unsigned char> per_draw_data_;
+    bool per_draw_dirty_ = false;
 };
 

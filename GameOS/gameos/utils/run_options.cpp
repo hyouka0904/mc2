@@ -95,6 +95,8 @@ bool parse(int argc, const char* const* argv, Options& out, std::string* error)
             ++i;
         } else if (!strcmp(a, "-windowed")) {
             out.windowed = true;
+        } else if (!strcmp(a, "-shader-reload")) {
+            out.shader_reload = true;
         } else if (!strcmp(a, "-input-script")) {
             if (!value || !*value)
                 return fail(a, "expected a file name");

@@ -186,6 +186,28 @@ endif()
 add_executable(mc2 ${SOURCES} ${MAIN_SRC})
 target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main windows ZLIB::ZLIB MC2::SDL GLEW::GLEW MC2::Mixer ${ADDITIONAL_LIBS} OpenGL::GL)
 
+# Shaders for the non-OpenGL backends (SPIR-V, MSL, HLSL, DXIL when dxc is
+# installed) are compiled into ${CMAKE_BINARY_DIR}/shaders_out at build time.
+# The OpenGL backend compiles shaders/ at run time and does not need them.
+find_package(Python3 COMPONENTS Interpreter QUIET)
+find_program(MC2_GLSLANG glslangValidator)
+find_program(MC2_SPIRV_VAL spirv-val)
+if(Python3_FOUND AND MC2_GLSLANG AND MC2_SPIRV_VAL)
+    file(GLOB MC2_SHADER_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_SOURCE_DIR}/shaders/*.vert ${CMAKE_SOURCE_DIR}/shaders/*.frag
+        ${CMAKE_SOURCE_DIR}/shaders/include/*.hglsl)
+    add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/shaders_out/shaders.json
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/build_shaders.py
+                ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_BINARY_DIR}/shaders_out
+        DEPENDS ${MC2_SHADER_SOURCES} ${CMAKE_SOURCE_DIR}/scripts/build_shaders.py
+        COMMENT "Compiling shaders to SPIR-V / MSL / HLSL"
+        VERBATIM)
+    add_custom_target(mc2_shaders ALL DEPENDS ${CMAKE_BINARY_DIR}/shaders_out/shaders.json)
+else()
+    message(STATUS "glslangValidator / spirv-val not found: SPIR-V shaders are not built")
+endif()
+
 add_subdirectory("./res" "./out/res")
 add_subdirectory("./data_tools" "./out/data_tools")
 add_subdirectory("./text_tool" "./out/text_tool")

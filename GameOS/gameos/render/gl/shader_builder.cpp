@@ -11,6 +11,7 @@
 #include "utils/logging.h"
 #include "render/gl/gl_utils.h"
 #include "render/gl/shader_builder.h"
+#include "render/shader_params.h"
 #include "utils/timing.h"
 #include "utils/file_utils.h"
 
@@ -452,6 +453,20 @@ void parse_uniforms(GLuint pprogram, glsl_program::UniArr_t* puniforms, glsl_pro
         puni->is_dirty_ = true;
         puni->index_ = glGetUniformLocation(pprogram, buf);
 
+        // Members of a uniform block have no location; remember where they
+        // live in the PerDraw block (other blocks are filled by buffers).
+        GLuint uidx = (GLuint)i;
+        GLint block_index = -1;
+        glGetActiveUniformsiv(pprogram, 1, &uidx, GL_UNIFORM_BLOCK_INDEX, &block_index);
+        if (block_index >= 0) {
+            GLchar block_name[64] = {0};
+            glGetActiveUniformBlockName(pprogram, (GLuint)block_index, sizeof(block_name), NULL, block_name);
+            if (0 == strcmp(block_name, gos_render::kPerDrawBlockName)) {
+                glGetActiveUniformsiv(pprogram, 1, &uidx, GL_UNIFORM_OFFSET, &puni->block_offset_);
+                glGetActiveUniformsiv(pprogram, 1, &uidx, GL_UNIFORM_MATRIX_STRIDE, &puni->matrix_stride_);
+            }
+        }
+
         switch(type)
         {
             case GL_FLOAT:
@@ -650,6 +665,7 @@ glsl_program* glsl_program::makeProgram2(const char* name, const char* vp, const
 
     parse_uniforms(shp, &pprogram->uniforms_, &pprogram->samplers_);
     parse_uniform_blocks(shp, &pprogram->uniform_blocks_);
+    pprogram->setupPerDraw();
 
     pprogram->last_load_time_ = timing::get_wall_time_ms();
 
@@ -686,6 +702,25 @@ glsl_program::~glsl_program()
 		}
         glDeleteProgram(shp_);
 	}
+    if (per_draw_ubo_)
+        glDeleteBuffers(1, &per_draw_ubo_);
+}
+
+void glsl_program::setupPerDraw()
+{
+    per_draw_binding_ = -1;
+    per_draw_data_.clear();
+    UniBlockArr_t::iterator it = uniform_blocks_.find(gos_render::kPerDrawBlockName);
+    if (it == uniform_blocks_.end())
+        return;
+    per_draw_binding_ = it->second->binding_;
+    per_draw_data_.assign(it->second->data_size_, 0);
+    per_draw_dirty_ = true;
+    if (!per_draw_ubo_)
+        glGenBuffers(1, &per_draw_ubo_);
+    glBindBuffer(GL_UNIFORM_BUFFER, per_draw_ubo_);
+    glBufferData(GL_UNIFORM_BUFFER, per_draw_data_.size(), NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void glsl_program::apply()
@@ -697,7 +732,23 @@ void glsl_program::apply()
     for(;it!=end;++it)
     {
         glsl_uniform* puni = it->second;
-        if(puni->is_dirty_)
+        if(puni->is_dirty_ && puni->block_offset_ >= 0)
+        {
+            // PerDraw member: copy into the block image
+            const size_t size = constantSizes[puni->type_] * puni->num_el_;
+            unsigned char* dst = per_draw_data_.data() + puni->block_offset_;
+            if (puni->type_ >= CONSTANT_MAT2 && puni->matrix_stride_ > 0) {
+                const int rows = puni->type_ == CONSTANT_MAT2 ? 2 : (puni->type_ == CONSTANT_MAT3 ? 3 : 4);
+                const size_t row_size = rows * sizeof(float);
+                for (int r = 0; r < rows * puni->num_el_; ++r)
+                    memcpy(dst + r * puni->matrix_stride_, puni->data_ + r * row_size, row_size);
+            } else {
+                memcpy(dst, puni->data_, size);
+            }
+            puni->is_dirty_ = false;
+            per_draw_dirty_ = true;
+        }
+        else if(puni->is_dirty_)
         {
             if (puni->type_ >= CONSTANT_MAT2){
                 ((UNIFORM_MAT_FUNC) uniformFuncs[puni->type_])(puni->index_, puni->num_el_, GL_TRUE, (float *) puni->data_);
@@ -708,6 +759,17 @@ void glsl_program::apply()
             }
             puni->is_dirty_ = false;
         }
+    }
+
+    if (per_draw_binding_ >= 0) {
+        if (per_draw_dirty_) {
+            glBindBuffer(GL_UNIFORM_BUFFER, per_draw_ubo_);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, per_draw_data_.size(), per_draw_data_.data());
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            per_draw_dirty_ = false;
+        }
+        // the binding point is shared by every program
+        glBindBufferBase(GL_UNIFORM_BUFFER, per_draw_binding_, per_draw_ubo_);
     }
 }
 
@@ -757,6 +819,7 @@ bool glsl_program::reload()
 
     parse_uniforms(shp_, &uniforms_, &samplers_);
     parse_uniform_blocks(shp_, &uniform_blocks_);
+    setupPerDraw();
     
     last_load_time_ = timing::get_wall_time_ms();
 

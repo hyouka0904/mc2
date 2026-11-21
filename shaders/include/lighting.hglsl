@@ -2,9 +2,6 @@
 
 #define ENABLE_VERTEX_LIGHTING              0
 
-// should be in sync with C++ code
-#define     LIGHT_DATA_ATTACHMENT_SLOT      0
-
 #define 	TG_LIGHT_AMBIENT				0
 #define		TG_LIGHT_INFINITE				1
 #define		TG_LIGHT_INFINITEWITHFALLOFF	2
@@ -22,7 +19,7 @@ struct ObjectLights {
     ivec4 numLights;
 };
 
-layout (binding = LIGHT_DATA_ATTACHMENT_SLOT, std140) uniform LightsData
+GOS_UBO(LIGHT_DATA_ATTACHMENT_SLOT, 1) uniform LightsData
 {
     ObjectLights light[32];
 };

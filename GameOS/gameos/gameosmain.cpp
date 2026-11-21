@@ -30,6 +30,7 @@ extern bool gos_RenderGetEnableDebugDrawCalls();
 
 extern bool gosExitGameOS();
 extern void gos_SetForceWindowed(bool windowed);
+extern void gos_SetShaderHotReload(bool enable);
 
 #include "gameos_sound.h"
 #include "mods/gos_mods.h"
@@ -165,6 +166,7 @@ int main(int argc, char** argv)
     if (run_opts.has_seed)
         gos_SetFixedRandomSeed(run_opts.seed);
     gos_SetForceWindowed(run_opts.windowed);
+    gos_SetShaderHotReload(run_opts.shader_reload);
 
     // Mods must be active before the game opens its first data file
     {

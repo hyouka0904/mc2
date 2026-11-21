@@ -1,7 +1,3 @@
-//#version 300 es
-// using this because it is required if we want to use "binding" qualifier in layout (can be set in cpp code but it is easier to do in shader, so procedd like this and maybe change later)
-//#version 420
-
 #include <include/lighting.hglsl>
 
 layout(location = 0) in vec3 pos;
@@ -9,31 +5,16 @@ layout(location = 1) in vec3 normal;
 layout(location = 2) in vec4 aRGBLight;
 layout(location = 3) in vec2 texcoord;
 
-layout (binding = 1, std140) uniform mesh_data
-{ 
-  vec4 ambient;
-  vec4 diffuse;
-};
+// Parameters (wvp_, world_, projection_, vp, light_offset_...) are in the
+// PerDraw block of gos_common.hglsl.
 
-uniform vec4 light_offset_;
-
-uniform mat4 world_;
-uniform mat4 view_;
-uniform mat4 wvp_;
-
-// common parameters
-uniform mat4 projection_;
-uniform vec4 vp; //viewport
-
-uniform float forceZ; // baked in a wvp matrix
-
-out vec3 Normal;
-out float FogValue;
-out vec2 Texcoord;
-out vec4 VertexColor;
-out vec3 VertexLight;
-out vec3 WorldPos;
-out vec3 CameraPos;
+layout(location = 0) out vec3 Normal;
+layout(location = 1) out float FogValue;
+layout(location = 2) out vec2 Texcoord;
+layout(location = 3) out vec4 VertexColor;
+layout(location = 4) out vec3 VertexLight;
+layout(location = 5) out vec3 WorldPos;
+layout(location = 6) out vec3 CameraPos;
 
 void main(void)
 {
@@ -54,7 +35,7 @@ void main(void)
 
     //mat4 norm_view_mat = inverse(view_);
 
-    gl_Position = p2 / p.w;
+    gl_Position = gos_clip(p2 / p.w);
     //Normal = ((world_ * view_) * vec4(normal, 0)).xyz;
     Normal = (world_ * vec4(normal, 0)).xyz;
     //FogValue = fog.w;
@@ -73,5 +54,7 @@ void main(void)
 #endif
 
     VertexColor = aRGBLight.bgra;
+    FogValue = 0.0;
+    CameraPos = vec3(0.0); // unused: fog uses g_scene.cameraPos
 }
 

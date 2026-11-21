@@ -1384,8 +1384,15 @@ void gosRenderer::beginFrame()
     num_draw_calls_ = 0;
 }
 
+// Shader hot reload is a development feature (-shader-reload): it stat()s
+// every shader source twice a second.
+static bool g_shader_hot_reload = false;
+void gos_SetShaderHotReload(bool enable) { g_shader_hot_reload = enable; }
+
 void gosRenderer::endFrame()
 {
+    if (!g_shader_hot_reload)
+        return;
     // Check shader files for changes (hot reload) every half second.
     static uint64_t last_check_time = timing::get_wall_time_ms();
     const uint64_t now = timing::get_wall_time_ms();

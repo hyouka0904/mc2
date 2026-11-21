@@ -1,0 +1,65 @@
+#ifndef __GOS_COMMON_HGLSL__
+#define __GOS_COMMON_HGLSL__
+
+// Shared declarations for every GameOS shader.
+//
+// The same source is compiled for two targets:
+//   OpenGL  at run time by the driver ("#version 420" is prepended by GameOS).
+//   Vulkan  at build time by glslangValidator -V (which defines VULKAN) into
+//           SPIR-V, then converted to MSL / HLSL (scripts/build_shaders.py).
+//           The build also defines GOS_VERTEX_SHADER or GOS_FRAGMENT_SHADER.
+//
+// Resource layout follows the SDL3 GPU API conventions for SPIR-V:
+//   vertex   stage: set 0 = sampled textures, set 1 = uniform buffers
+//   fragment stage: set 2 = sampled textures, set 3 = uniform buffers
+// OpenGL ignores sets; there the GL binding point / texture unit is used.
+
+#ifdef VULKAN
+#  ifdef GOS_VERTEX_SHADER
+#    define GOS_UBO_SET     1
+#    define GOS_SAMPLER_SET 0
+#  else
+#    define GOS_UBO_SET     3
+#    define GOS_SAMPLER_SET 2
+#  endif
+// gl_binding: GL binding point, slot: index of the uniform buffer in the stage
+#  define GOS_UBO(gl_binding, slot)     layout(set = GOS_UBO_SET, binding = slot, std140)
+#  define GOS_SAMPLER(unit)             layout(set = GOS_SAMPLER_SET, binding = unit)
+#else
+#  define GOS_UBO(gl_binding, slot)     layout(binding = gl_binding, std140)
+#  define GOS_SAMPLER(unit)             layout(binding = unit)
+#endif
+
+// GL binding points (keep in sync with GameOS/gameos/render/shader_params.h)
+#define LIGHT_DATA_ATTACHMENT_SLOT  0
+#define SCENE_DATA_ATTACHMENT_SLOT  1
+#define PER_DRAW_ATTACHMENT_SLOT    2
+
+// Per draw parameters: every parameter the C++ side sets by name
+// (gos_render::Shader::setMat4 / setFloat4). One block shared by all
+// programs, so the CPU side has a single layout (struct gos_render::PerDraw).
+// Matrices are uploaded row major, as GameOS stores them.
+GOS_UBO(PER_DRAW_ATTACHMENT_SLOT, 0) uniform PerDraw
+{
+    layout(row_major) mat4 mvp;         // gos_vertex*, gos_tex_vertex, gos_text
+    layout(row_major) mat4 projection_; // *_lighted: screen -> clip
+    layout(row_major) mat4 world_;
+    layout(row_major) mat4 view_;
+    layout(row_major) mat4 wvp_;
+    vec4 vp;                            // viewport: x, y, w, h
+    vec4 light_offset_;                 // x: index into LightsData
+    vec4 fog_color;
+    vec4 Foreground;                    // gos_text colour
+};
+
+// Maps an OpenGL clip space position to the target's convention: Vulkan, Metal
+// and D3D use a depth range of 0..1 instead of -1..1.
+vec4 gos_clip(vec4 p)
+{
+#ifdef VULKAN
+    p.z = (p.z + p.w) * 0.5;
+#endif
+    return p;
+}
+
+#endif // __GOS_COMMON_HGLSL__

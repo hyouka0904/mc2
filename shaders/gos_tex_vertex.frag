@@ -1,15 +1,14 @@
-//#version 300 es
+#include <include/gos_common.hglsl>
 
 #define PREC highp
 
-in PREC vec4 Color;
-in PREC vec2 Texcoord;
-in PREC float FogValue;
+layout(location = 0) in PREC vec4 Color;
+layout(location = 1) in PREC float FogValue;
+layout(location = 2) in PREC vec2 Texcoord;
 
 layout (location=0) out PREC vec4 FragColor;
 
-uniform sampler2D tex1;
-uniform PREC vec4 fog_color;
+GOS_SAMPLER(0) uniform sampler2D tex1;
 
 void main(void)
 {
@@ -26,4 +25,3 @@ void main(void)
     	c.rgb = mix(fog_color.rgb, c.rgb, FogValue);
 	FragColor = c;
 }
-

@@ -18,6 +18,8 @@
 //   -mods <dir>              load the enabled mods from <dir> (default: ./mods
 //                            if it exists)
 //   -modpack <modpack.ini>   load exactly the mods a modpack lists
+//   -shader-reload           development: recompile shaders whose source files
+//                            changed (checked twice a second)
 //   -windowed                stay in a window even if the game asks for
 //                            fullscreen (fullscreen depends on the window
 //                            manager, which makes captures environment specific)
@@ -37,6 +39,7 @@ struct Options {
     uint32_t exit_after_frame = 0;  // 0 = never
     std::string input_script;       // empty = none
     bool windowed = false;
+    bool shader_reload = false;
     std::string perf_csv;           // empty = none
     std::string mods_dir;           // empty = ./mods if present
     std::string modpack;            // empty = none

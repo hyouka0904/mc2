@@ -64,7 +64,7 @@
 | `mclib/` | 遊戲引擎核心。例如 `move.cpp`（A* 路徑搜尋）、`pqueue.cpp`（路徑搜尋用的優先佇列）、`txmmgr.cpp`（貼圖與繪製批次管理）、`abl*.cpp`（ABL 任務腳本直譯器）、`ffile.cpp` / `packet.cpp`（`.fst` / `.pak` 資料包格式）。 |
 | `gui/` | 介面元件庫。 |
 | `GameOS/` | 平台層，見上方分層圖。 |
-| `shaders/` | GLSL 著色器，執行時從遊戲目錄的 `shaders/` 載入（修改後會自動重新載入）。 |
+| `shaders/` | GLSL 著色器。OpenGL 後端執行時從遊戲目錄的 `shaders/` 載入；建置時另外編成 SPIR-V / MSL / HLSL（見「著色器」）。 |
 | `res/` | 字串資源動態函式庫 `libmc2res_64.so`，內容來自 `test_scripts/res_conv/strings.res.cpp`。 |
 | `data_tools/` | 資料建置工具：`aseconv`（ASE 模型轉 TGL）、`makefst`（打包 / 解包 `.fst`）、`makersp`（產生檔案清單）、`pak`（打包 / 解包 `.pak`）。 |
 | `text_tool/` | 字型烘焙工具：把 TTF 字型轉成遊戲使用的字型圖集（`.bmp`）與字元資訊（`.glyph`）。不需要顯示器。 |
@@ -368,6 +368,7 @@ ctest --test-dir build --output-on-failure
 | `unit_render_state` | 由 GameOS 渲染狀態推出的管線描述、32 位元管線鍵（可逆、互不重複）、管線快取 |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
 | `shader_validation` | 以 glslangValidator 離線編譯並連結所有著色器變體（與執行時相同的 `#version 420`、`ALPHA_TEST` 定義與 `#include` 展開），不需要 GPU；未安裝 `glslang-tools` 時略過 |
+| `shader_spirv` | 所有變體編成 Vulkan SPIR-V 並通過 `spirv-val`、兩個階段的介面能連結、轉出 MSL / HLSL，並檢查 `PerDraw` uniform block 與 C++ 結構的位移一致；`-DMC2_SHADER_REQUIRE=msl,hlsl` 可要求轉換器必須存在（CI 使用） |
 | `unit_mods` / `tool_mc2mod` | Mod 系統與製作工具（詳見 Mod 章節） |
 | `unit_stuff` | 執行原版 Stuff 數學函式庫內建、但從未被呼叫的自我測試 |
 | `tool_fastfile` / `tool_pak` / `tool_rsp` | 資料工具的打包→解包往返測試 |
@@ -417,6 +418,7 @@ scripts/smoke_test.sh game mc2_01 60
 | `-perf-csv <file>` | 每幀寫一行統計：幀號、實際耗時（毫秒）、draw call 數、管線狀態切換次數、出現過的不同管線數 |
 | `-mods <dir>` / `-modpack <file>` | 啟用 Mod / Modpack（見 [Mod / Modding / Modpack](#mod--modding--modpack)） |
 | `-windowed` | 忽略遊戲的全螢幕設定，一律以視窗執行（全螢幕行為取決於視窗管理員，會讓截圖因環境而異） |
+| `-shader-reload` | 開發用：著色器原始碼變更時在遊戲中重新編譯（每半秒檢查一次，預設關閉） |
 
 測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 18 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
 暫停中的任務，以及載入範例 Mod / Modpack 的主選單。執行與比對：
@@ -471,6 +473,25 @@ cmake.exe -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=c:/path_to_your_
 
 ## 已知限制與待辦事項
 
+### 著色器
+
+`shaders/` 是同一份 GLSL 原始碼，供兩種目標使用：
+
+| 目標 | 編譯時機 | 說明 |
+|---|---|---|
+| OpenGL | 執行時，由驅動程式編譯 | GameOS 在前面加上 `#version 420` 與變體定義（如 `ALPHA_TEST`） |
+| Vulkan / Metal / D3D12 | 建置時，`scripts/build_shaders.py` | glslangValidator 編成 SPIR-V → `spirv-val` 驗證 → spirv-cross 轉 MSL 與 HLSL → 有安裝 `dxc` 時再編成 DXIL |
+
+建置輸出在 `<build>/shaders_out/{spirv,msl,hlsl,dxil}/<程式>.<變體>.<階段>.*`，另有 `shaders.json` 列出每個階段使用的取樣器與 uniform buffer 數量（SDL3 GPU 建立著色器時需要）。`prepare_game_dir.sh` 會把它複製到遊戲目錄的 `shaders/compiled/`。CMake 找不到 `glslangValidator` 或 `spirv-val` 時略過這一步，不影響 OpenGL 版。
+
+撰寫規則（`shaders/include/gos_common.hglsl`）：
+
+- 不要寫 `#version`，也不要宣告零散的 `uniform`。所有由 C++ 以名稱設定的參數（`mvp`、`wvp_`、`vp`、`fog_color`、`Foreground`…）都在共用的 `PerDraw` uniform block 裡，對應 `GameOS/gameos/render/shader_params.h` 的 `gos_render::PerDraw`。新增參數時兩邊一起改，並更新 `build_shaders.py` 的位移表。
+- uniform block 用 `GOS_UBO(GL 綁定點, 階段內序號)`，貼圖用 `GOS_SAMPLER(單元)`。在 Vulkan 下它們會依 SDL3 GPU 的規則展開成 `set` / `binding`（頂點階段：貼圖 set 0、uniform set 1；片段階段：貼圖 set 2、uniform set 3）。
+- 階段之間的 `in` / `out` 都要寫 `layout(location = N)`，兩個階段的編號要一致。
+- `gl_Position` 經過 `gos_clip()`：OpenGL 下不變，其他目標會把深度範圍從 -1..1 轉成 0..1。
+- 加上 `-shader-reload` 參數時，修改 `shaders/` 下的檔案會在遊戲中自動重新編譯（開發用，預設關閉）。
+
 ### 現代化計畫進度
 
 依「MC2 GameOS 現代化計畫」各階段：
@@ -481,7 +502,7 @@ cmake.exe -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=c:/path_to_your_
 | 1 SDL2 → SDL3 | 完成 | 視窗、輸入、事件、動態載入改用 SDL3；與 SDL2 版逐像素相同 |
 | 2 SDL3_mixer / SDL3_ttf | 完成 | 音效與字型工具改寫；修正音量截斷、資源洩漏、8 位元 PCM；執行檔不再連結任何 SDL2 |
 | 3 繪圖後端抽象 | 完成 | `render/` 介面、OpenGL 只在 `render/gl/`、移除固定管線程式碼（純 Core Profile）、管線鍵與快取、可鎖定貼圖的 CPU 影子副本、`-perf-csv` |
-| 4 著色器 | 部分 | 已有離線驗證（glslangValidator 編譯並連結所有變體）並移除未使用的著色器；**尚未**改寫為 Vulkan 風格 GLSL / SPIR-V |
+| 4 著色器 | 完成（DXIL 待 CI 安裝 dxc） | Vulkan 風格 GLSL（`PerDraw` / `LightsData` / `SceneData` 三個 uniform block、明確的 set / binding / location）；建置時編成 SPIR-V（通過 `spirv-val`）、MSL、HLSL；OpenGL 後端改用 uniform block 後 18 張截圖逐像素相同；熱重載改為 `-shader-reload` 開發選項 |
 | 5 SDL3 GPU 後端 | 未開始 | 介面已備妥（`gos_render::Device`）；量測顯示遊戲只用到 8 種管線狀態，有利於日後的管線快取 |
 | 6 移除 OpenGL / GLEW | 未開始 | 依賴階段 5 |
 | 7 新繪圖 API | 未開始 | |

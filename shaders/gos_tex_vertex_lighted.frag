@@ -1,25 +1,17 @@
-//#version 300 es
-// using this because it is required if we want to use "binding" qualifier in layout (can be set in cpp code but it is easier to do in shader, so procedd like this and maybe change later)
-//#version 420
-
 #define PREC highp
 
 #include <include/lighting.hglsl>
 
-uniform vec4 light_offset_;
-
-in PREC vec3 Normal;
-//in PREC float FogValue;
-in PREC vec2 Texcoord;
-in PREC vec4 VertexColor;
-in PREC vec3 VertexLight;
-in PREC vec3 WorldPos;
-in PREC vec3 CameraPos;
+layout(location = 0) in PREC vec3 Normal;
+layout(location = 2) in PREC vec2 Texcoord;
+layout(location = 3) in PREC vec4 VertexColor;
+layout(location = 4) in PREC vec3 VertexLight;
+layout(location = 5) in PREC vec3 WorldPos;
+layout(location = 6) in PREC vec3 CameraPos;
 
 layout (location=0) out PREC vec4 FragColor;
 
-uniform sampler2D tex1;
-uniform PREC vec4 fog_color;
+GOS_SAMPLER(0) uniform sampler2D tex1;
 
 void main(void)
 {

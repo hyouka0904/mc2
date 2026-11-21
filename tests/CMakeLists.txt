@@ -9,6 +9,8 @@
 #  unit_mods          mod system: versions, manifests, modpacks, load order, overlay
 #  tool_mc2mod        modding workflow through the mc2mod command line tool
 #  shader_validation  every shader variant compiles and links (glslangValidator)
+#  shader_spirv       every variant compiles to valid SPIR-V and converts to
+#                     MSL / HLSL (MC2_SHADER_REQUIRE lists required outputs)
 #  unit_stuff         original Stuff library self-tests (mclib/stuff)
 #  unit_pqueue        A* open list (mclib/pqueue)
 #  unit_run_options   deterministic-mode options, PNG capture writer, clock
@@ -102,4 +104,15 @@ if(Python3_FOUND)
     add_test(NAME shader_validation
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/validate_shaders.py ${CMAKE_SOURCE_DIR}/shaders)
     set_tests_properties(shader_validation PROPERTIES SKIP_RETURN_CODE 77)
+    # SPIR-V for Vulkan (spirv-val), MSL / HLSL conversion, PerDraw layout
+    set(MC2_SHADER_REQUIRE "" CACHE STRING "Shader outputs shader_spirv must produce, e.g. msl,hlsl,dxil")
+    set(_require_args)
+    if(MC2_SHADER_REQUIRE)
+        set(_require_args --require ${MC2_SHADER_REQUIRE})
+    endif()
+    add_test(NAME shader_spirv
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/build_shaders.py
+                ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_CURRENT_BINARY_DIR}/shader_spirv_out
+                ${_require_args})
+    set_tests_properties(shader_spirv PROPERTIES SKIP_RETURN_CODE 77)
 endif()
