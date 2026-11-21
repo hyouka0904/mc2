@@ -15,6 +15,7 @@
 //---------------------------------------------------------------------------
 // Include files
 #ifndef FILE_H
+#include "mods/gos_mods.h"
 #include"file.h"
 #endif
 
@@ -89,6 +90,10 @@ void createTrafficLog (void)
 // Global Functions
 long fileExists (const char* fName, long destination_mask)
 {
+	// a mod may add the file (counts as a loose file)
+	if (gos_ModResolvePath(fName))
+		return 1 & destination_mask;
+
 	struct _stat st;
 	if (_stat(fName,&st) != -1)
 	{
@@ -243,7 +248,9 @@ long File::open (const char* fName, FileMode _mode, long numChild, bool doNotLow
 		gosASSERT(fileMode == READ);
 		//----------------------------------------------------------------
 		//-- First, see if file is in normal place.  Useful for patches!!
-		handle = _open(fileName,_O_RDONLY | _O_BINARY);
+		// Mods (gos_mods.h) come first: they replace loose and packed files
+		const char* modPath = gos_ModResolvePath(fileName);
+		handle = _open(modPath ? modPath : fileName,_O_RDONLY | _O_BINARY);
 
 		//------------------------------------------
 		//-- Next, see if file is in fastFile.

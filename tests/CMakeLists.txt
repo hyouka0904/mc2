@@ -6,6 +6,8 @@
 #  unit_sound         GameOS sound API on SDL3_mixer (no audio device needed)
 #  unit_render_state  pipeline keys / cache derived from GameOS render states
 #  render_isolation   OpenGL is only used under GameOS/gameos/render/gl/
+#  unit_mods          mod system: versions, manifests, modpacks, load order, overlay
+#  tool_mc2mod        modding workflow through the mc2mod command line tool
 #  unit_stuff         original Stuff library self-tests (mclib/stuff)
 #  unit_pqueue        A* open list (mclib/pqueue)
 #  unit_run_options   deterministic-mode options, PNG capture writer, clock
@@ -82,4 +84,14 @@ mc2_add_unit_test(unit_render_state
 if(NOT WIN32)
     add_test(NAME render_isolation
         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_render_isolation.sh ${CMAKE_SOURCE_DIR})
+endif()
+
+mc2_add_unit_test(unit_mods
+    SOURCES unit/test_mods.cpp
+    LIBS mc2mods)
+set_target_properties(unit_mods PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+
+if(NOT WIN32)
+    add_test(NAME tool_mc2mod
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_mc2mod.sh $<TARGET_FILE:mc2mod> ${CMAKE_SOURCE_DIR})
 endif()

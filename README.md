@@ -20,10 +20,11 @@
 1. [專案架構](#專案架構)
 2. [在 Linux 上建置](#在-linux-上建置)
 3. [建置遊戲資料並執行](#建置遊戲資料並執行)
-4. [自動化測試](#自動化測試)
-5. [在 Windows 上建置](#在-windows-上建置)
-6. [已知限制與待辦事項](#已知限制與待辦事項)
-7. [授權](#授權)
+4. [Mod / Modding / Modpack](#mod--modding--modpack)
+5. [自動化測試](#自動化測試)
+6. [在 Windows 上建置](#在-windows-上建置)
+7. [已知限制與待辦事項](#已知限制與待辦事項)
+8. [授權](#授權)
 
 ---
 
@@ -68,6 +69,9 @@
 | `data_tools/` | 資料建置工具：`aseconv`（ASE 模型轉 TGL）、`makefst`（打包 / 解包 `.fst`）、`makersp`（產生檔案清單）、`pak`（打包 / 解包 `.pak`）。 |
 | `text_tool/` | 字型烘焙工具：把 TTF 字型轉成遊戲使用的字型圖集（`.bmp`）與字元資訊（`.glyph`）。不需要顯示器。 |
 | `Viewer/` | 模型檢視器（開發用）。 |
+| `GameOS/gameos/mods/` | Mod 系統（`mod_system.h`：版本、manifest、Modpack、載入順序、檔案覆蓋層；`gos_mods.h`：遊戲端掛勾）。 |
+| `tools/mc2mod/` | Mod 製作工具 `mc2mod`（建立、檢查、列出、解析載入順序）。 |
+| `examples/mods/`、`examples/modpacks/` | 範例 Mod 與 Modpack（也用於自動測試）。 |
 | `tests/` | 自動化測試（見[自動化測試](#自動化測試)）。 |
 | `scripts/` | `prepare_game_dir.sh`（建置遊戲資料並組出可執行的遊戲目錄）、`smoke_test.sh`（無頭端到端測試）。 |
 | `cmake/MC2Dependencies.cmake` | 取得 SDL3 / SDL3_mixer / SDL3_ttf：優先用已安裝的版本，否則自動下載固定版本並靜態編譯。 |
@@ -186,6 +190,165 @@ cd game && ./mc2
 
 ---
 
+## Mod / Modding / Modpack
+
+| 名詞 | 在本專案中的意義 |
+|---|---|
+| **Mod**（遊戲模組） | 一個資料夾：`mod.ini`（描述）＋ `content/`（內容）。`content/` 的目錄結構與遊戲目錄相同，裡面的檔案會**取代**遊戲原本的檔案（包括打包在 `.fst` 裡的檔案）或**新增**檔案。 |
+| **Modding**（製作模組） | 用 `mc2mod` 工具建立、檢查、除錯 Mod；或在程式中使用 `mods/mod_system.h` 的 API。 |
+| **Modpack**（模組包） | 一個 `modpack.ini`：列出要啟用的 Mod 與版本要求，可覆寫優先序，也可以在旁邊的 `mods/` 資料夾自帶 Mod。 |
+
+### 能改什麼
+
+《MechCommander 2》的遊戲內容幾乎都是資料檔，所以 Mod 可以修改或新增：
+
+| 內容 | 路徑（`content/` 底下） |
+|---|---|
+| 機甲、載具、武器、駕駛員等數值（物品） | `data/objects/*.csv`、`*.fit` |
+| 任務與地圖（新增任務後可用 `-mission <名稱>` 直接啟動） | `data/missions/`、`data/terrain/` |
+| 遊戲邏輯與 AI（ABL 腳本） | `data/missions/*.abl`、`data/missions/warriors/` 等 |
+| 介面版面與圖片 | `data/art/*.fit`、`*.tga` |
+| 音效、字型、著色器 | `data/sound/`、`assets/graphics/`、`shaders/` |
+
+檔名不分大小寫（遊戲開檔前一律轉小寫），`\` 與 `/` 視為相同。
+
+### Mod 的結構
+
+```
+mods/
+└── laser_rebalance/
+    ├── mod.ini
+    └── content/
+        └── data/objects/...
+```
+
+```ini
+[mod]
+id = laser_rebalance          ; 小寫英數與 _ . -，必須唯一
+name = Laser Rebalance
+version = 1.2.0
+author = 你的名字
+description = 調整雷射武器數值
+priority = 0                  ; 數字越大越晚載入，同名檔案以晚載入者為準
+enabled = true                ; 未使用 Modpack 時是否啟用
+
+[dependencies]                ; 必須存在的 Mod 與版本要求
+core_tweaks = ^1.0
+
+[optional]                    ; 存在時才影響載入順序
+fancy_ui = >=2.0
+
+[conflicts]                   ; 不能同時使用的 Mod（與版本）
+old_lasers = *
+```
+
+版本要求語法：`*`、`1.2.3`（完全相同）、`>=1.0`、`>1.0`、`<=2`、`<2`、`^1.2`（≥1.2.0 且 <2.0.0）、
+`~1.2`（≥1.2.0 且 <1.3.0），多個條件以逗號連接表示「且」：`>=1.0, <1.5`。
+
+### 載入順序規則
+
+1. 一個 Mod 一定在它所依賴的 Mod **之後**載入（依賴未被選取但已安裝時會自動加入）。
+2. 其餘依 `priority` 由小到大，相同時依 id 字母順序。
+3. 多個 Mod 提供同一個檔案時，**最後載入者勝出**。
+4. 找不到依賴、版本不符、互相衝突、循環依賴時，遊戲會列出原因並以結束碼 3 結束，不會帶著錯誤設定執行。
+
+### Modpack
+
+```ini
+[modpack]
+id = hardcore
+name = Hardcore Pack
+version = 1.0.0
+
+[mods]                        ; 要啟用的 Mod = 版本要求（只啟用這些）
+laser_rebalance = ^1.2
+core_tweaks = *
+
+[priority]                    ; 選用：覆寫個別 Mod 的優先序
+laser_rebalance = 50
+```
+
+Modpack 資料夾中若有 `mods/` 子資料夾，裡面的 Mod 會優先於全域 Mod 目錄中同 id 的版本。
+
+### 在遊戲中使用
+
+| 方式 | 效果 |
+|---|---|
+| 遊戲目錄下有 `mods/` 資料夾 | 自動啟用其中 `enabled = true` 的所有 Mod |
+| `./mc2 -mods <資料夾>` | 使用指定資料夾中啟用的 Mod |
+| `./mc2 -mods <資料夾> -modpack <modpack.ini>` | 只啟用 Modpack 列出的 Mod |
+
+啟用時，遊戲啟動會在 stderr 印出 `MODS:` 開頭的載入順序與檔案覆蓋清單。
+
+### 製作工具 mc2mod
+
+建置後位於 `build/out/tools/mc2mod/mc2mod`：
+
+```bash
+mc2mod new mods laser_rebalance "Laser Rebalance"
+```
+
+```bash
+mc2mod validate mods/laser_rebalance
+```
+
+```bash
+mc2mod list mods
+```
+
+```bash
+mc2mod resolve mods --pack packs/hardcore/modpack.ini
+```
+
+```bash
+mc2mod which mods data/objects/pilots.csv
+```
+
+```bash
+mc2mod new-pack packs/hardcore/modpack.ini hardcore laser_rebalance=^1.2 core_tweaks
+```
+
+| 指令 | 說明 |
+|---|---|
+| `new` | 建立 Mod 骨架（`mod.ini`、`content/data/...`、README） |
+| `validate` | 檢查 manifest、`content/` 是否為空、是否有只差大小寫的檔名 |
+| `list` | 列出已安裝的 Mod |
+| `resolve` | 顯示載入順序、被多個 Mod 提供的檔案與所有錯誤（有錯誤時結束碼為 1） |
+| `which` | 查詢某個遊戲檔案最終由哪個 Mod 提供、覆蓋了誰 |
+| `new-pack` | 產生 Modpack manifest |
+
+### 程式介面
+
+- `GameOS/gameos/mods/mod_system.h`（命名空間 `mc2mod`）：`Version` / `VersionReq`、`ModManifest`、`ModpackManifest`、
+  `ModRegistry`、`resolveLoadOrder()`、`Overlay`（虛擬檔案系統）、`describe()`、`createModSkeleton()`、`validateMod()`。
+  不依賴遊戲其他部分，可給工具或其他程式使用。
+- `GameOS/gameos/mods/gos_mods.h`：遊戲端介面 `gos_ModsInit()`、`gos_ModResolvePath()`、`gos_ModsShutdown()`。
+  `mclib/file.cpp` 的 `File::open()` 與 `fileExists()` 在讀檔前會先問覆蓋層，因此所有透過遊戲檔案層讀取的資料都能被 Mod 取代。
+
+### 範例
+
+`examples/mods/` 有兩個範例 Mod，都替換主選單的背景貼圖 `data/art/mcl_mm_1.tga`（原檔在 `art.fst` 內）：
+`red_main_menu`（紅）與 `blue_main_menu`（藍，`priority = 5`）。兩者同時啟用時藍色勝出；
+`examples/modpacks/red_menu_pack` 以 `[priority]` 覆寫，讓紅色勝出。
+
+```bash
+./mc2 -mods ../examples/mods
+```
+
+```bash
+./mc2 -mods ../examples/mods -modpack ../examples/modpacks/red_menu_pack/modpack.ini
+```
+
+### 測試
+
+| 測試 | 內容 |
+|---|---|
+| `unit_mods` | 18 個案例：版本與版本要求、INI 解析、manifest 錯誤回報、Modpack、依賴排序、自動帶入依賴、缺少依賴 / 版本不符 / 循環 / 衝突、選用依賴、覆蓋層與大小寫、骨架與檢查、遊戲端掛勾 |
+| `tool_mc2mod` | 以 `mc2mod` 走完整個製作流程（建立 → 加內容 → 檢查 → 加依賴 → 解析 → 查詢 → 錯誤的 Modpack），並檢查範例 |
+| 截圖比對 `main_menu_mods` / `main_menu_modpack` | 實際啟動遊戲載入範例 Mod 與 Modpack，確認畫面上的貼圖分別被換成藍色與紅色 |
+
+---
+
 ## 自動化測試
 
 ### 單元與工具測試（CTest）
@@ -204,6 +367,7 @@ ctest --test-dir build --output-on-failure
 | `unit_sound` | 音效 API（SDL3_mixer）：播放一次 / 迴圈 / 暫停 / 停止、音量線性、左右聲道定位、釋放資源；不需要音效卡 |
 | `unit_render_state` | 由 GameOS 渲染狀態推出的管線描述、32 位元管線鍵（可逆、互不重複）、管線快取 |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
+| `unit_mods` / `tool_mc2mod` | Mod 系統與製作工具（詳見 Mod 章節） |
 | `unit_stuff` | 執行原版 Stuff 數學函式庫內建、但從未被呼叫的自我測試 |
 | `tool_fastfile` / `tool_pak` / `tool_rsp` | 資料工具的打包→解包往返測試 |
 | `tool_text_tool` | 在沒有顯示器的環境下烘焙字型 |
@@ -250,10 +414,11 @@ scripts/smoke_test.sh game mc2_01 60
 | `-exit-after <n>` | 第 `<n>` 幀後結束（預設為最後一個截圖幀） |
 | `-input-script <file>` | 依腳本重播滑鼠／鍵盤事件，期間忽略真實輸入（格式見 `GameOS/gameos/utils/input_script.h`） |
 | `-perf-csv <file>` | 每幀寫一行統計：幀號、實際耗時（毫秒）、draw call 數、管線狀態切換次數、出現過的不同管線數 |
+| `-mods <dir>` / `-modpack <file>` | 啟用 Mod / Modpack（見 [Mod / Modding / Modpack](#mod--modding--modpack)） |
 | `-windowed` | 忽略遊戲的全螢幕設定，一律以視窗執行（全螢幕行為取決於視窗管理員，會讓截圖因環境而異） |
 
-測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 16 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
-暫停中的任務。執行與比對：
+測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 18 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
+暫停中的任務，以及載入範例 Mod / Modpack 的主選單。執行與比對：
 
 ```bash
 sudo apt-get install python3-pil python3-numpy

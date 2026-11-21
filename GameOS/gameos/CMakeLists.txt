@@ -40,8 +40,14 @@ set(MAIN_SRC gameosmain.cpp)
 
 include_directories("../include"  ".")
 
+# Mod system (C++17 for std::filesystem; headers are C++11). Shared by the
+# game, the mc2mod tool and the tests.
+add_library(mc2mods mods/mod_system.cpp mods/gos_mods.cpp)
+set_target_properties(mc2mods PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+target_include_directories(mc2mods PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/mods)
+
 add_library(gameos ${SOURCES})
-target_link_libraries(gameos MC2::SDL MC2::Mixer)
+target_link_libraries(gameos MC2::SDL MC2::Mixer mc2mods)
 add_library(gameos_main ${MAIN_SRC})
 # main() uses the run options / PNG capture helpers from gameos
 target_link_libraries(gameos_main gameos windows ZLIB::ZLIB MC2::SDL)

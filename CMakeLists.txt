@@ -189,6 +189,7 @@ target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main windows Z
 add_subdirectory("./res" "./out/res")
 add_subdirectory("./data_tools" "./out/data_tools")
 add_subdirectory("./text_tool" "./out/text_tool")
+add_subdirectory("./tools/mc2mod" "./out/tools/mc2mod")
 add_subdirectory("./Viewer" "./out/Viewer")
 
 option(MC2_BUILD_TESTS "Build the automated tests (run with ctest)" ON)

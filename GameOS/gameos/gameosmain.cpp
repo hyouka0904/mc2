@@ -32,6 +32,7 @@ extern bool gosExitGameOS();
 extern void gos_SetForceWindowed(bool windowed);
 
 #include "gameos_sound.h"
+#include "mods/gos_mods.h"
 
 static bool g_exit = false;
 #if 0
@@ -164,6 +165,19 @@ int main(int argc, char** argv)
     if (run_opts.has_seed)
         gos_SetFixedRandomSeed(run_opts.seed);
     gos_SetForceWindowed(run_opts.windowed);
+
+    // Mods must be active before the game opens its first data file
+    {
+        std::string report;
+        const bool ok = gos_ModsInit(run_opts.mods_dir.empty() ? NULL : run_opts.mods_dir.c_str(),
+                                     run_opts.modpack.empty() ? NULL : run_opts.modpack.c_str(), &report);
+        if (gos_ModsActive() || !ok)
+            fprintf(stderr, "MODS: %s", report.c_str());
+        if (!ok) {
+            fprintf(stderr, "error: the requested mods cannot be loaded (see above)\n");
+            return 3;
+        }
+    }
 
     std::vector<input_script::Event> script_events;
     if (!run_opts.input_script.empty()) {
@@ -305,6 +319,7 @@ int main(int argc, char** argv)
     graphics::destroy_window(win);
 
     gos_DestroyAudio();
+    gos_ModsShutdown();
 
     return 0;
 }

@@ -15,6 +15,9 @@
 //   -input-script <file>     replay mouse/keyboard events (utils/input_script.h)
 //   -perf-csv <file>         write per-frame statistics (frame, wall-clock ms,
 //                            draw calls, pipeline changes, distinct pipelines)
+//   -mods <dir>              load the enabled mods from <dir> (default: ./mods
+//                            if it exists)
+//   -modpack <modpack.ini>   load exactly the mods a modpack lists
 //   -windowed                stay in a window even if the game asks for
 //                            fullscreen (fullscreen depends on the window
 //                            manager, which makes captures environment specific)
@@ -35,6 +38,8 @@ struct Options {
     std::string input_script;       // empty = none
     bool windowed = false;
     std::string perf_csv;           // empty = none
+    std::string mods_dir;           // empty = ./mods if present
+    std::string modpack;            // empty = none
 
     bool should_capture(uint32_t frame) const;
 };

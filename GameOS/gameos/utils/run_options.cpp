@@ -83,6 +83,11 @@ bool parse(int argc, const char* const* argv, Options& out, std::string* error)
                 return fail(a, "expected a directory");
             out.capture_dir = value;
             ++i;
+        } else if (!strcmp(a, "-mods") || !strcmp(a, "-modpack")) {
+            if (!value || !*value)
+                return fail(a, "expected a path");
+            (a[4] == 'p' ? out.modpack : out.mods_dir) = value;
+            ++i;
         } else if (!strcmp(a, "-perf-csv")) {
             if (!value || !*value)
                 return fail(a, "expected a file name");

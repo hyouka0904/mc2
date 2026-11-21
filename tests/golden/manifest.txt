@@ -20,3 +20,8 @@ main_menu             600
 campaign_select       1500     -input-script @scripts/new_campaign.txt
 solo_mission          1300     -input-script @scripts/solo_mission.txt
 mc2_01_paused         1000     -mission mc2_01 -input-script @scripts/pause.txt
+
+# Mods (examples/mods): blue_main_menu wins by priority; the modpack makes
+# red_main_menu win. Both replace data/art/mcl_mm_1.tga from art.fst.
+main_menu_mods        600      -mods @../../examples/mods
+main_menu_modpack     600      -mods @../../examples/mods -modpack @../../examples/modpacks/red_menu_pack/modpack.ini
