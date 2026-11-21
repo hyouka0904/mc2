@@ -73,7 +73,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             libsdl2-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 libglew2.2 \
             libopengl0 libgl1 libglx0 libglx-mesa0 libgl1-mesa-dri \
-            xvfb x11-utils imagemagick ffmpeg
+            xvfb x11-utils imagemagick ffmpeg python3-pil python3-numpy
           chmod +x build/mc2 build/out/data_tools/* build/out/text_tool/text_tool
 
       - name: Build game data
@@ -87,9 +87,14 @@ jobs:
           MC2_SMOKE_OUT: smoke
         run: scripts/smoke_test.sh game mc2_01 60
 
+      - name: Screenshot comparison (tests/golden)
+        run: python3 scripts/run_screenshot_tests.py game shots
+
       - name: Upload screenshot and log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: smoke-test-result
-          path: smoke/
+          path: |
+            smoke/
+            shots/

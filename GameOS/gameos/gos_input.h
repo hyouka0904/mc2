@@ -47,6 +47,15 @@ void updateKeyboardState();
 
 void resetKeypress();
 
+// Scripted input for automated tests (-input-script). While enabled, the real
+// mouse position, mouse buttons and keyboard are ignored and these calls
+// define the state instead. Take effect on the next update*State().
+void setScriptedInput(bool enabled);
+bool isScriptedInput();
+void scriptedMouseMove(int x, int y);
+void scriptedMouseButton(int index, bool down); // 0 left, 1 middle, 2 right
+void scriptedKey(int scancode, bool down);
+
 }
 
 #endif //GOS_INPUT_H

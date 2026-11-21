@@ -366,7 +366,7 @@ GameObjectPtr LastCoreAttackTarget = NULL;
 
 void SeedRandomNumbers (void) {
 
-	srand((unsigned)time(NULL));
+	srand(gos_GetRandomSeed());
 }
 
 //---------------------------------------------------------------------------

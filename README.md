@@ -192,6 +192,7 @@ ctest --test-dir build --output-on-failure
 | `unit_kv_registry` | Windows 登錄檔模擬（讀寫、格式、邊界情況） |
 | `unit_image_tga` | TGA 貼圖解碼：未壓縮與 RLE 壓縮、24/32/16 位元、損壞資料 |
 | `unit_pqueue` | 路徑搜尋優先佇列，包含與參考模型比對的隨機測試 |
+| `unit_run_options` | 決定性模式參數、PNG 截圖編碼、固定步長時鐘、輸入腳本解析 |
 | `unit_stuff` | 執行原版 Stuff 數學函式庫內建、但從未被呼叫的自我測試 |
 | `tool_fastfile` / `tool_pak` / `tool_rsp` | 資料工具的打包→解包往返測試 |
 | `tool_text_tool` | 在沒有顯示器的環境下烘焙字型 |
@@ -225,12 +226,41 @@ scripts/smoke_test.sh game mc2_01 60
 若遊戲提前結束（當機）、跳出訊息框、出現 OpenGL 錯誤、不回應 SIGTERM，或畫面全黑，測試就會失敗。
 結果截圖會存為 `game/smoke.png`。
 
+### 截圖比對測試（決定性模式）
+
+遊戲支援幾個 GameOS 層的命令列參數，讓每次執行都產生逐像素相同的畫面：
+
+| 參數 | 作用 |
+|---|---|
+| `-fixedstep <ms>` | 決定性模式：每一幀時鐘固定前進 `<ms>` 毫秒，`frameRate` 固定為 `1000/<ms>`，主迴圈不再 sleep |
+| `-seed <n>` | 固定亂數種子，取代所有以時間為種子的地方（`gos_srand`、`srand(time)`、ABL `seedRandom(-1)`） |
+| `-capture-frames a,b,c` | 在指定幀（從 1 起算）讀回 back buffer 存成 PNG |
+| `-capture-dir <dir>` | 截圖輸出目錄 |
+| `-exit-after <n>` | 第 `<n>` 幀後結束（預設為最後一個截圖幀） |
+| `-input-script <file>` | 依腳本重播滑鼠／鍵盤事件，期間忽略真實輸入（格式見 `GameOS/gameos/utils/input_script.h`） |
+
+`tests/golden/manifest.txt` 列出 16 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
+暫停中的任務。執行與比對：
+
+```bash
+sudo apt-get install python3-pil python3-numpy
+```
+
+```bash
+scripts/run_screenshot_tests.py game shots
+```
+
+任一通道差異大於 8/255 的像素算「不同」，不同像素達 0.5% 即失敗，並在 `shots/diff/` 輸出熱度圖。
+畫面刻意變更（例如修改 shader）後，用 `--update` 重新產生基準圖並一起提交。
+單獨比較兩張圖或兩個資料夾可用 `scripts/compare_screenshots.py`。
+
 ### 持續整合
 
 `.github/workflows/ci.yml` 在每次 push / PR 時執行：
 
-1. 建置並執行全部 CTest 測試；
-2. 下載遊戲資料、建置資料，並以冒煙測試實際遊玩 `mc2_01` 60 秒，同時上傳截圖。
+1. 以 RelWithDebInfo 與 Debug 建置並執行全部 CTest 測試；
+2. 下載遊戲資料、建置資料，並以冒煙測試實際遊玩 `mc2_01` 60 秒；
+3. 執行截圖比對測試，上傳截圖、熱度圖與記錄檔。
 
 ---
 

@@ -5,6 +5,7 @@
 #  unit_image_tga     TGA texture decoding (GameOS/gameos/utils/Image)
 #  unit_stuff         original Stuff library self-tests (mclib/stuff)
 #  unit_pqueue        A* open list (mclib/pqueue)
+#  unit_run_options   deterministic-mode options, PNG capture writer, clock
 #  tool_*             round trips through the data-pack tools
 #
 # The end-to-end game smoke test needs built game data and a display server,
@@ -37,6 +38,12 @@ mc2_add_unit_test(unit_image_tga
     SOURCES unit/test_image_tga.cpp ${MC2_GAMEOS_DIR}/utils/Image.cpp
     INCLUDES ${MC2_GAMEOS_DIR} ${CMAKE_SOURCE_DIR}/GameOS/include
     LIBS windows)
+
+mc2_add_unit_test(unit_run_options
+    SOURCES unit/test_run_options.cpp ${MC2_GAMEOS_DIR}/utils/run_options.cpp
+            ${MC2_GAMEOS_DIR}/utils/png_writer.cpp ${MC2_GAMEOS_DIR}/utils/input_script.cpp
+    INCLUDES ${MC2_GAMEOS_DIR} ${CMAKE_SOURCE_DIR}/GameOS/include
+    LIBS windows ZLIB::ZLIB)
 
 mc2_add_unit_test(unit_pqueue
     SOURCES unit/test_pqueue.cpp ${CMAKE_SOURCE_DIR}/mclib/pqueue.cpp

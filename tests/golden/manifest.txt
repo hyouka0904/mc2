@@ -1,0 +1,22 @@
+# Screenshot comparison tests: scripts/run_screenshot_tests.py
+#
+# <image name>        <frame>  <game arguments>
+# Every run uses -fixedstep 33 -seed 1. @file names are relative to this
+# directory. Rows with identical arguments share one game run.
+
+mc2_01_0300           300      -mission mc2_01
+mc2_01_0600           600      -mission mc2_01
+mc2_01_0900           900      -mission mc2_01
+mc2_03_0300           300      -mission mc2_03
+mc2_03_0600           600      -mission mc2_03
+mc2_03_0900           900      -mission mc2_03
+mc2_05_0300           300      -mission mc2_05
+mc2_05_0600           600      -mission mc2_05
+mc2_05_0900           900      -mission mc2_05
+mc2_07_0300           300      -mission mc2_07
+mc2_07_0600           600      -mission mc2_07
+mc2_07_0900           900      -mission mc2_07
+main_menu             600
+campaign_select       1500     -input-script @scripts/new_campaign.txt
+solo_mission          1300     -input-script @scripts/solo_mission.txt
+mc2_01_paused         1000     -mission mc2_01 -input-script @scripts/pause.txt

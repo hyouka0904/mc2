@@ -18,6 +18,7 @@
 #ifndef ABL_H
 #include"abl.h"
 #endif
+#include"gameos.hpp" // gos_GetRandomSeed
 
 inline signed int double2long(double _in)
 {
@@ -818,7 +819,7 @@ void execStdSeedRandom (void) {
 	int seed  = ABLi_popInteger();
 
 	if (seed == -1)
-		ABLSeedRandomCallback((unsigned int)time(NULL));
+		ABLSeedRandomCallback(gos_GetRandomSeed());
 	else
 		ABLSeedRandomCallback((unsigned int)seed);
 }

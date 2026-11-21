@@ -1,0 +1,3 @@
+# Pause the mission with P; the simulation must stay frozen
+1 move 512 300
+700 key P

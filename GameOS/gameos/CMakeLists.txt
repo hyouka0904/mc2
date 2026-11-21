@@ -26,6 +26,9 @@ set(SOURCES ${SOURCES}
     utils/string_utils.cpp
     utils/file_utils.cpp
     utils/kv_registry.cpp
+    utils/run_options.cpp
+    utils/png_writer.cpp
+    utils/input_script.cpp
     )
 
 set(MAIN_SRC gameosmain.cpp)
@@ -37,4 +40,6 @@ include_directories("../include"  ".")
 
 add_library(gameos ${SOURCES})
 add_library(gameos_main ${MAIN_SRC})
+# main() uses the run options / PNG capture helpers from gameos
+target_link_libraries(gameos_main gameos windows ZLIB::ZLIB)
 

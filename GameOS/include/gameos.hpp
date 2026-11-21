@@ -1894,6 +1894,10 @@ void __stdcall gos_NetServerCommands( gos_NetCommands Command, DWORD Data1 );
 //
 // Seed the random number generator
 //
+// Returns time(NULL), or the -seed value when a fixed seed is in effect.
+unsigned int __stdcall gos_GetRandomSeed();
+// Makes gos_srand/gos_GetRandomSeed deterministic (command line -seed).
+void gos_SetFixedRandomSeed(unsigned int seed);
 void __stdcall gos_srand( unsigned int seed );
 //
 // Return a random number between 0 and 32767

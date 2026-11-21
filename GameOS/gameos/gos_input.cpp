@@ -6,6 +6,10 @@
 static input::MouseInfo g_mouse_info;
 static input::KeyboardInfo g_keyboard_info;
 
+static bool g_scripted = false;
+static bool g_scripted_buttons[input::MouseInfo::NUM_BUTTONS] = {};
+static Uint8 g_scripted_keys[SDL_NUM_SCANCODES] = {};
+
 namespace input {
 
 MouseInfo::MouseInfo()
@@ -47,8 +51,31 @@ static int sdl2idx(int button) {
     }
 }
 
+void setScriptedInput(bool enabled) { g_scripted = enabled; }
+bool isScriptedInput() { return g_scripted; }
+
+void scriptedMouseMove(int x, int y) {
+    MouseInfo* mi = &g_mouse_info;
+    mi->rel_x_ = (float)x - mi->x_;
+    mi->rel_y_ = (float)y - mi->y_;
+    mi->x_ = (float)x;
+    mi->y_ = (float)y;
+}
+
+void scriptedMouseButton(int index, bool down) {
+    if(index >= 0 && index < MouseInfo::NUM_BUTTONS)
+        g_scripted_buttons[index] = down;
+}
+
+void scriptedKey(int scancode, bool down) {
+    if(scancode > 0 && scancode < SDL_NUM_SCANCODES)
+        g_scripted_keys[scancode] = down ? 1 : 0;
+}
+
 void handleMouseMotion(const SDL_Event* event) {
     assert(event);
+    if(g_scripted)
+        return;
 
     MouseInfo* mi = &g_mouse_info;
     mi->x_ = (float)event->motion.x;
@@ -102,7 +129,9 @@ void updateMouseState() {
 
         KeyState prev_ks = mi->button_state_[idx];
 
-        if(button_state & SDL_BUTTON(buttons[b])) {
+        const bool down = g_scripted ? g_scripted_buttons[idx]
+                                     : (button_state & SDL_BUTTON(buttons[b])) != 0;
+        if(down) {
             mi->button_state_[idx] = 
                 (prev_ks==KS_FREE||prev_ks==KS_RELEASED) ? KS_PRESSED : KS_HELD;
         } else {
@@ -138,6 +167,10 @@ void updateKeyboardState() {
 
     int array_len;
     const Uint8* state = SDL_GetKeyboardState(&array_len);
+    if(g_scripted) {
+        state = g_scripted_keys;
+        array_len = SDL_NUM_SCANCODES;
+    }
     assert(array_len <= sizeof(ki->last_state_)/sizeof(ki->last_state_[0]));
 
     ki->first_pressed_ = -1;

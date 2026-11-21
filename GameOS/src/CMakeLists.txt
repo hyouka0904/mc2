@@ -11,6 +11,7 @@ set(SOURCES ${SOURCES}
     platform_eh.cpp
     platform_io.cpp
     platform_mmsystem.cpp
+    platform_clock.cpp
     platform_str.cpp
 )
 

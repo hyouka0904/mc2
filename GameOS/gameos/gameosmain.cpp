@@ -10,6 +10,12 @@
 #include "utils/shader_builder.h"
 #include "utils/gl_utils.h"
 #include "utils/timing.h"
+#include "utils/run_options.h"
+#include "utils/png_writer.h"
+#include "utils/input_script.h"
+#include "platform_clock.h"
+
+#include <vector>
 
 #include <signal.h>
 
@@ -224,9 +230,72 @@ void GLAPIENTRY OpenGLDebugLog(GLenum source, GLenum type, GLuint id, GLenum sev
 	}
 }
 
+static void apply_script_event(const input_script::Event& e)
+{
+    switch (e.type) {
+    case input_script::Type::Move:
+        input::scriptedMouseMove(e.x, e.y);
+        break;
+    case input_script::Type::ButtonDown:
+    case input_script::Type::ButtonUp:
+        input::scriptedMouseButton(e.button, e.type == input_script::Type::ButtonDown);
+        break;
+    case input_script::Type::KeyDown:
+    case input_script::Type::KeyUp: {
+        SDL_Scancode sc = SDL_GetScancodeFromName(e.key.c_str());
+        if (sc == SDL_SCANCODE_UNKNOWN)
+            fprintf(stderr, "input script: unknown key '%s'\n", e.key.c_str());
+        else
+            input::scriptedKey(sc, e.type == input_script::Type::KeyDown);
+        break;
+    }
+    }
+}
+
+// Reads the back buffer of the frame just drawn and saves it as PNG.
+static bool capture_frame(graphics::RenderWindowHandle win, const gos_run_options::Options& opts, uint32_t frame)
+{
+    int w = 0, h = 0;
+    graphics::get_drawable_size(win, &w, &h);
+    if (w <= 0 || h <= 0)
+        return false;
+    std::vector<uint8_t> pixels((size_t)w * h * 4);
+    glReadBuffer(GL_BACK);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    const std::string path = opts.capture_dir + "/" + gos_run_options::capture_file_name(frame);
+    const bool ok = png_writer::write_file(path, pixels.data(), w, h, w * 4, true);
+    fprintf(stderr, "CAPTURE: frame %u -> %s%s\n", frame, path.c_str(), ok ? "" : " (FAILED)");
+    return ok;
+}
+
 #ifndef DISABLE_GAMEOS_MAIN
 int main(int argc, char** argv)
 {
+    gos_run_options::Options run_opts;
+    {
+        std::string error;
+        if (!gos_run_options::parse(argc, argv, run_opts, &error)) {
+            fprintf(stderr, "error: %s\n", error.c_str());
+            return 2;
+        }
+    }
+    // Before the game initialises: it seeds and reads the clock during startup
+    platform_clock::set_fixed_step(run_opts.fixed_step_us);
+    if (run_opts.has_seed)
+        gos_SetFixedRandomSeed(run_opts.seed);
+
+    std::vector<input_script::Event> script_events;
+    if (!run_opts.input_script.empty()) {
+        std::string error;
+        if (!input_script::load_file(run_opts.input_script, script_events, &error)) {
+            fprintf(stderr, "error: %s\n", error.c_str());
+            return 2;
+        }
+        input::setScriptedInput(true);
+    }
+    input_script::Player script_player(std::move(script_events));
+
     //signal(SIGTRAP, SIG_IGN);
 
     // gather command line
@@ -326,10 +395,21 @@ int main(int argc, char** argv)
 
 	timing::init();
 
+    uint32_t frame_number = 0;
     while( !g_exit ) {
 
 		uint64_t start_tick = timing::gettickcount();
-		timing::sleep(10*1000000);
+		++frame_number;
+		if (platform_clock::is_fixed()) {
+			// Deterministic mode: the game sees a constant frame time no
+			// matter how long the frame really took, and nothing waits.
+			frameRate = 1e6f / (float)platform_clock::fixed_step_us();
+		} else {
+			timing::sleep(10*1000000);
+		}
+
+        for (const input_script::Event& e : script_player.take(frame_number))
+            apply_script_event(e);
 
         if(gos_RenderGetEnableDebugDrawCalls()) {
             gos_RenderUpdateDebugInput();
@@ -343,13 +423,21 @@ int main(int argc, char** argv)
 
         graphics::make_current_context(ctx);
         draw_screen();
+        if (run_opts.should_capture(frame_number))
+            capture_frame(win, run_opts, frame_number);
         graphics::swap_window(win);
 
         g_exit |= gosExitGameOS();
+        if (run_opts.exit_after_frame && frame_number >= run_opts.exit_after_frame)
+            g_exit = true;
 
-		uint64_t end_tick = timing::gettickcount();
-		uint64_t dt = timing::ticks2ms(end_tick - start_tick);
-		frameRate = 1000.0f / (float)dt;
+        if (platform_clock::is_fixed()) {
+            platform_clock::advance_frame();
+        } else {
+            uint64_t end_tick = timing::gettickcount();
+            uint64_t dt = timing::ticks2ms(end_tick - start_tick);
+            frameRate = 1000.0f / (float)(dt ? dt : 1);
+        }
     }
     
     Environment.TerminateGameEngine();

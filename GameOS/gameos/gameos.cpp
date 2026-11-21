@@ -6,6 +6,7 @@
 #include <stdlib.h> // rand
 #include "utils/timing.h"
 #include "utils/kv_registry.h"
+#include "platform_clock.h"
 #include <string>
 
 #ifndef PLATFORM_WINDOWS
@@ -82,31 +83,22 @@ __int64 __stdcall GetCycles()
 #ifdef PLATFORM_WINDOWS
 	return rdtsc();
 #else
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    int64_t v = ts.tv_sec * 1e+9;
-    v += ts.tv_nsec;
-    return v;
+    return (__int64)platform_clock::now_ns();
 #endif
 }
 
-double g_prev_elapsed_time_value = -1;
+static double g_prev_elapsed_time_value = -1;
 double __stdcall gos_GetElapsedTime( int RealTime )
 {
     (void)RealTime;
 
-#ifdef PLATFORM_WINDOWS
-	uint64_t ticks = timing::gettickcount();
-	return (double)timing::ticks2ms(ticks) / 1000.0;
-#else
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    double time_sec = ts.tv_sec;
+    const double time_sec = platform_clock::now_ns() * 1e-9;
     if(g_prev_elapsed_time_value < 0.0) {
         g_prev_elapsed_time_value = time_sec;
         return time_sec;
     }
-    
+
+    // Long stalls (debugger, loading) are reported as at most MaxTimeDelta
     if(Environment.MaxTimeDelta > 0 && time_sec - g_prev_elapsed_time_value > Environment.MaxTimeDelta) {
         g_prev_elapsed_time_value += Environment.MaxTimeDelta;
         return g_prev_elapsed_time_value;
@@ -114,19 +106,11 @@ double __stdcall gos_GetElapsedTime( int RealTime )
 
     g_prev_elapsed_time_value = time_sec;
     return time_sec;
-#endif
 }
 
 double __stdcall gos_GetHiResTime()
 {
-#ifdef PLATFORM_LINUX
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    double time_sec = ts.tv_sec + ((double)ts.tv_nsec)/10.0e+9;
-    return time_sec;
-#else
-	return ((double)timeGetTime()) * 0.001;
-#endif
+    return platform_clock::now_ns() * 1e-9;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -238,9 +222,30 @@ void __stdcall gos_Free(void* ptr)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+static bool g_fixed_seed_enabled = false;
+static unsigned int g_fixed_seed = 0;
+
+void gos_SetFixedRandomSeed(unsigned int seed)
+{
+    g_fixed_seed_enabled = true;
+    g_fixed_seed = seed;
+    srand(seed);
+}
+
+unsigned int __stdcall gos_GetRandomSeed()
+{
+    // Callers used to seed with time(NULL); with -seed every run is the same
+    return g_fixed_seed_enabled ? g_fixed_seed : (unsigned int)time(NULL);
+}
+
 void __stdcall gos_srand(unsigned int seed)
 {
-    return srand(seed);
+    // The game seeds with timeGetTime(). With a fixed seed that value comes
+    // from the virtual clock, so mixing it in keeps runs reproducible while
+    // reseeds at different moments still produce different sequences.
+    if (g_fixed_seed_enabled)
+        seed ^= g_fixed_seed;
+    srand(seed);
 }
 
 int __stdcall gos_rand()

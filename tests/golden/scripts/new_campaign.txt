@@ -1,0 +1,3 @@
+# Main menu -> New Campaign -> campaign selection dialog
+590 move 516 177
+600 click left
