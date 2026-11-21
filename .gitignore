@@ -74,3 +74,4 @@ CMakeToolsMeta.txt
 compile_commands.json
 
 !cmake/sdl2/*.cmake
+__pycache__/
