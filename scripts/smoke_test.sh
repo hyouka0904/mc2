@@ -20,6 +20,9 @@ mission=${2:-mc2_01}
 seconds=${3:-60}
 out_dir=${MC2_SMOKE_OUT:-$game_dir}
 mkdir -p "$out_dir"
+# absolute paths: the script changes into the game directory below
+game_dir=$(cd "$game_dir" && pwd)
+out_dir=$(cd "$out_dir" && pwd)
 log="$out_dir/smoke.log"
 shot="$out_dir/smoke.png"
 

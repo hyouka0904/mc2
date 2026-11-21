@@ -21,7 +21,8 @@ fi
 
 build_dir=$(cd "$1" && pwd)
 data_dir=$(cd "$2" && pwd)
-game_dir=$3
+mkdir -p "$3"
+game_dir=$(cd "$3" && pwd)   # absolute: the script changes directory below
 repo_dir=$(cd "$(dirname "$0")/.." && pwd)
 
 tools="$build_dir/out/data_tools"
@@ -59,7 +60,6 @@ cp "$tools"/{aseconv,makefst,makersp,pak} "$build_dir/out/text_tool/text_tool" "
 make -C "$data_dir/build_scripts" -j"$(nproc)" all BUILD_PLATFORM=linux
 
 echo "Assembling $game_dir"
-mkdir -p "$game_dir"
 cd "$data_dir/build_scripts"
 cp -r data assets ./*.cfg ./*.fst testtxm.tga "$game_dir/"
 cp "$build_dir/mc2" "$game_dir/"
