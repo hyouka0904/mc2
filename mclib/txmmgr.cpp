@@ -794,21 +794,8 @@ public:
 		gos_SetRenderState(gos_State_Texture, texture_id);
 		gos_SetRenderViewport(viewport_[2], viewport_[3], viewport_[0], viewport_[1]);
 
-		HGOSRENDERMATERIAL mat = texture_id == 0 ? gos_getRenderMaterial("gos_vertex_lighted") : gos_getRenderMaterial("gos_tex_vertex_lighted");
-
-		gos_SetRenderMaterialParameterMat4(mat, "world_", (const float*)*world_);
-		//gos_SetRenderMaterialParameterMat4(mat, "view_", (const float*)*view_);
-		gos_SetRenderMaterialParameterMat4(mat, "wvp_", (const float*)*wvp_);
-
-        float ld[4] = { (float)light_index, 0.0f, 0.0f, 0.0f};
-		gos_SetRenderMaterialParameterFloat4(mat, "light_offset_", ld);
-
-		gos_SetRenderMaterialUniformBlockBindingPoint(mat, "LightsData", LIGHT_DATA_ATTACHMENT_SLOT);
-		gos_SetRenderMaterialUniformBlockBindingPoint(mat, "SceneData", SCENE_DATA_ATTACHMENT_SLOT);
-
-		gos_ApplyRenderMaterial(mat);
-
-		gos_RenderIndexedArray(ib, vb, vdecl);
+		// GameOS merges consecutive shapes that share texture, state and light
+		gos_RenderShape(ib, vb, vdecl, (const float*)*world_, (const float*)*wvp_, light_index);
 
 	}
 

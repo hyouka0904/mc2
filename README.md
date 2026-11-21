@@ -503,14 +503,20 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 
 **繪製合併**（`gameos_graphics.cpp`，兩個後端共用）：連續的 `gos_DrawTriangles` / `Quads` / `Lines` / `Points` / 索引三角形呼叫，若渲染狀態完全相同，就合併成一次繪製；狀態改變，或在貼圖／緩衝區更新、其他種類的繪製、文字、幀結束之前，才把累積的頂點畫出去。繪製順序不變（半透明物件依賴順序），截圖比對結果不變。`-no-batching` 可關閉。
 
-量測（mc2_01，第 300–900 幀平均，Xvfb + Mesa 軟體繪圖，`-perf-csv`）：
+**貼圖圖集**：32／64／128 像素的正方形貼圖（地形格子是 64×64）另外複製一份到共用的 1024×1024 圖集頁。若一次繪製的貼圖座標保證只取樣該格子內的像素（最近取樣：0 ≤ u, v < 1；雙線性：u·s 介於 0.5 與 s−0.5），就改用圖集頁並換算座標；取樣位置不變，所以畫面相同，但相鄰格子的繪製可以合併。
 
-| | draw call（第 600 幀） | 平均 draw call | 平均幀時間 |
-|---|---|---|---|
-| OpenGL，未合併 | 242 | 215 | 26.7 ms |
-| OpenGL，合併 | 156 | 140 | 19.9 ms |
-| SDL3 GPU，未合併 | 242 | 215 | 15.6 ms |
-| SDL3 GPU，合併 | 156 | 140 | 14.2 ms |
+**`gos_RenderShape`**（新的繪圖 API，取代以字串設定材質參數再呼叫 `gos_RenderIndexedArray(ib, vb, vdecl)` 的寫法）：遊戲直接傳入網格、世界矩陣、`wvp` 與光源索引。連續的形狀若狀態、光源、頂點格式與攝影機相同，GameOS 會在 CPU 上把頂點轉到世界座標、合併成一次繪製（用共用的 view-projection 矩陣）。`mclib/txmmgr.cpp` 的 3D 模型繪製已改用它。
+
+量測（第 300–900 幀，Xvfb + Mesa 軟體繪圖，`-perf-csv`）：
+
+| | mc2_01 第 600 幀 draw call | mc2_01 平均 | mc2_01 平均幀時間（GL / GPU） | mc2_07 第 600 幀 |
+|---|---|---|---|---|
+| 原本（每次呼叫各畫一次） | 242 | 215 | 26.7 / 15.6 ms | — |
+| 合併連續相同狀態的繪製 | 156 | 140 | 19.9 / 14.2 ms | — |
+| ＋ 貼圖圖集 | 107 | 98 | 16.7 / 10.9 ms | — |
+| ＋ `gos_RenderShape` 合併 3D 模型 | **72** | **63** | **12.5 / 9.4 ms** | 76 |
+
+階段 7 的停止條件（mc2_01 每幀 draw call 低於 100）已達成；所有步驟的截圖比對結果不變。
 
 整場只出現 16 個 SDL3 GPU 管線物件（8 種狀態組合 × 著色器變體），第一次建立的成本可忽略，因此沒有另外做「預先建立」。
 
@@ -546,7 +552,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 4 著色器 | 完成（DXIL 待 CI 安裝 dxc） | Vulkan 風格 GLSL（`PerDraw` / `LightsData` / `SceneData` 三個 uniform block、明確的 set / binding / location）；建置時編成 SPIR-V（通過 `spirv-val`）、MSL、HLSL；OpenGL 後端改用 uniform block 後 18 張截圖逐像素相同；熱重載改為 `-shader-reload` 開發選項 |
 | 5 SDL3 GPU 後端 | 完成 | `render/gpu/`（Vulkan via SDL3 GPU）、`-renderer gl\|gpu`、記錄重播式的即時模式模擬、管線快取、每幀上傳環狀緩衝區；兩個後端共用的繪製合併讓 mc2_01 第 600 幀 draw call 從 242 降到 156；CI 對兩個後端各跑冒煙測試與 18 張截圖比對（GPU 後端開啟 Vulkan 驗證層，零訊息）；兩後端差異最多 0.25%，門檻維持 0.5% |
 | 6 移除 OpenGL / GLEW | 進行中（依決策保留 OpenGL 一個版本週期） | 預設改為 SDL3 GPU，無法啟動時自動退回 OpenGL；OpenGL 後端移到獨立的 `gameos_gl` 函式庫，資料工具（含 `aseconv`）與測試不再連結 libGL / GLEW（CI 以 `ldd` 檢查）；移除 Viewer；修正 OpenGL 結束時重複 `glDetachShader` 的錯誤。待備援期結束後刪除 `render/gl/` 與 GLEW |
-| 7 新繪圖 API | 未開始 | |
+| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併）並把 3D 模型繪製遷移過去；繪製合併與小貼圖圖集；mc2_01 第 600 幀 draw call 242 → 72、平均幀時間 26.7 → 12.5 ms（GL）；截圖比對不變 |
 | 8 平台層精簡 | 未開始 | |
 
 ### 決策紀錄

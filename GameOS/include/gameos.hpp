@@ -2243,6 +2243,15 @@ void __stdcall gos_RenderIndexedArray( gos_VERTEX_3UV* pVertexArray, DWORD Numbe
 void __stdcall gos_RenderIndexedArray(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* mvp); //sebi
 void __stdcall gos_RenderIndexedArray(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl); //sebi
 
+// Draws a lit static mesh (a TG_Shape part) with the current render states
+// (texture, blending...) and viewport: `world` and `wvp` are row-major 4x4
+// matrices, `light_index` selects the entry of the LightsData buffer.
+// Consecutive shapes with the same states, light, vertex declaration and
+// camera are merged into one draw (the vertices are moved to world space
+// on the CPU); the result is the same as drawing them one by one.
+void __stdcall gos_RenderShape(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* world,
+                               const float* wvp, int light_index);
+
 
 void __stdcall gos_SetRenderViewport(float x, float y, float w, float h);
 void __stdcall gos_GetRenderViewport(float* x, float* y, float* w, float* h); //sebi

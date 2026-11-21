@@ -48,6 +48,8 @@ public:
 	uint32_t count_;
 	gosBUFFER_TYPE type_;
 	gosBUFFER_USAGE usage_;
+	// CPU copy of vertex / index data: gos_RenderShape merges shapes on the CPU
+	std::vector<uint8_t> cpu_;
 };
 
 static gos_render::AttribType toAttribType(gosVERTEX_ATTRIB_TYPE type) {
@@ -390,6 +392,7 @@ class gosMesh {
         int getNumVertices() const { return num_vertices_; }
         int getNumIndices() const { return num_indices_; }
         const gos_VERTEX* getVertices() const { return pvertex_data_; }
+        gos_VERTEX* getMutableVertices() { return pvertex_data_; }
         const WORD* getIndices() const { return pindex_data_; }
 
         int getIndexSizeBytes() const { return sizeof(INDEX_TYPE); }
@@ -518,6 +521,16 @@ void gosMesh::drawIndexed(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vd
 
 
 
+class gosTexture;
+// Texture atlas for small square textures (defined after gosTexture)
+void gos_AtlasAdd(gosTexture* t, const void* pixels, TexFormat fmt);
+void gos_AtlasUpdate(gosTexture* t, const void* rgba);
+void gos_AtlasRemove(gosTexture* t);
+
+// -no-batching: every call is drawn on its own (as before batching)
+static bool g_draw_batching = true;
+void gos_SetDrawBatching(bool enable) { g_draw_batching = enable; }
+
 class gosTexture {
     public:
         gosTexture(gos_TextureFormat fmt, const char* fname, DWORD hints, BYTE* pdata, DWORD size, bool from_memory)
@@ -592,6 +605,7 @@ class gosTexture {
             if(texname_)
                 delete[] texname_;
 
+            gos_AtlasRemove(this);
             gos_render::device()->destroyTexture(&tex_);
         }
 
@@ -638,6 +652,8 @@ class gosTexture {
                     dst[i] = swapRedBlue(src[i]);
                 gos_FlushDrawBatch(); // pending draws see the old pixels
                 gos_render::device()->updateTexture(tex_, shadow_.data(), TF_RGBA8);
+                if(atlas_page_ >= 0)
+                    gos_AtlasUpdate(this, shadow_.data());
             }
 
             delete[] plocked_area_;
@@ -671,6 +687,10 @@ class gosTexture {
         bool lock_type_read_only_;
         bool is_from_memory_; // not loaded from file
         std::vector<uint8_t> shadow_; // RGBA8 copy of the pixels, see Lock()
+    public:
+        // Copy in a shared atlas page (gos_AtlasAdd), -1 = none
+        int atlas_page_ = -1;
+        int atlas_slot_ = -1;
 
         // BGRA <-> RGBA (the same swap both ways)
         static DWORD swapRedBlue(DWORD c) {
@@ -679,6 +699,111 @@ class gosTexture {
 };
 
 uint32_t gosTexture::s_shadow_readbacks = 0;
+
+// ------------------------------------------------------------------ atlas
+// Small square textures (terrain tiles are 64x64) also get a copy in a
+// shared 1024x1024 page, one page per tile size. A draw whose texture
+// coordinates stay inside the tile (see gos_AtlasLookup) can then use the
+// page instead, so consecutive draws with different tiles batch together.
+// Sampling positions are unchanged: coordinates are remapped exactly and
+// the tile's own texels are the only ones ever read.
+struct gosAtlasPage {
+    Texture tex;
+    int tile;
+    std::vector<int> free_slots;
+};
+static const int kAtlasPageSize = 1024;
+static std::vector<gosAtlasPage> g_atlas_pages;
+
+static void atlasSlotOrigin(const gosAtlasPage& page, int slot, int* x, int* y) {
+    const int per_row = kAtlasPageSize / page.tile;
+    *x = (slot % per_row) * page.tile;
+    *y = (slot / per_row) * page.tile;
+}
+
+void gos_AtlasAdd(gosTexture* t, const void* pixels, TexFormat fmt) {
+    const int s = t->getTexture().w;
+    if(!g_draw_batching || !pixels || t->getTexture().h != s || (s != 32 && s != 64 && s != 128) ||
+       (fmt != TF_RGB8 && fmt != TF_RGBA8))
+        return;
+    int page_index = -1;
+    for(size_t i = 0; i < g_atlas_pages.size(); ++i)
+        if(g_atlas_pages[i].tile == s && !g_atlas_pages[i].free_slots.empty())
+            page_index = (int)i;
+    if(page_index < 0) {
+        gosAtlasPage page;
+        page.tex = gos_render::device()->createTexture2D(kAtlasPageSize, kAtlasPageSize, TF_RGBA8, NULL);
+        if(!page.tex.isValid())
+            return;
+        page.tile = s;
+        const int slots = (kAtlasPageSize / s) * (kAtlasPageSize / s);
+        for(int i = slots - 1; i >= 0; --i)
+            page.free_slots.push_back(i);
+        g_atlas_pages.push_back(page);
+        page_index = (int)g_atlas_pages.size() - 1;
+    }
+    gosAtlasPage& page = g_atlas_pages[page_index];
+    const int slot = page.free_slots.back();
+    page.free_slots.pop_back();
+    int x, y;
+    atlasSlotOrigin(page, slot, &x, &y);
+    gos_render::device()->updateTextureRegion(page.tex, x, y, s, s, pixels, fmt);
+    t->atlas_page_ = page_index;
+    t->atlas_slot_ = slot;
+}
+
+void gos_AtlasUpdate(gosTexture* t, const void* rgba) {
+    if(t->atlas_page_ < 0)
+        return;
+    const gosAtlasPage& page = g_atlas_pages[t->atlas_page_];
+    int x, y;
+    atlasSlotOrigin(page, t->atlas_slot_, &x, &y);
+    gos_render::device()->updateTextureRegion(page.tex, x, y, page.tile, page.tile, rgba, TF_RGBA8);
+}
+
+void gos_AtlasRemove(gosTexture* t) {
+    if(t->atlas_page_ < 0)
+        return;
+    g_atlas_pages[t->atlas_page_].free_slots.push_back(t->atlas_slot_);
+    t->atlas_page_ = t->atlas_slot_ = -1;
+}
+
+static void gos_AtlasShutdown() {
+    for(gosAtlasPage& page : g_atlas_pages)
+        gos_render::device()->destroyTexture(&page.tex);
+    g_atlas_pages.clear();
+}
+
+// Where a draw with texture `t` and these vertices can sample the atlas
+// instead: u' = x0 + u * scale (same for v). False if the texture is not in
+// the atlas or a coordinate could read outside the tile.
+struct gosAtlasHit {
+    int page;
+    float x0, y0, scale;
+};
+static bool gos_AtlasLookup(const gosTexture* t, bool linear, const gos_VERTEX* v, int n, gosAtlasHit* hit) {
+    if(!t || t->atlas_page_ < 0 || n <= 0)
+        return false;
+    const gosAtlasPage& page = g_atlas_pages[t->atlas_page_];
+    const float s = (float)page.tile;
+    // nearest: texel floor(u * s) must be 0..s-1; linear: both texels of the
+    // bilinear footprint, i.e. u * s within [0.5, s - 0.5]
+    const float lo = linear ? 0.5f / s : 0.0f;
+    const float hi = linear ? 1.0f - 0.5f / s : 1.0f;
+    for(int i = 0; i < n; ++i) {
+        if(!(v[i].u >= lo && v[i].v >= lo))
+            return false;
+        if(linear ? !(v[i].u <= hi && v[i].v <= hi) : !(v[i].u < hi && v[i].v < hi))
+            return false;
+    }
+    int x, y;
+    atlasSlotOrigin(page, t->atlas_slot_, &x, &y);
+    hit->page = t->atlas_page_;
+    hit->x0 = (float)x / kAtlasPageSize;
+    hit->y0 = (float)y / kAtlasPageSize;
+    hit->scale = s / kAtlasPageSize;
+    return true;
+}
 
 struct gosTextAttribs {
     HGOSFONT3D FontHandle;
@@ -756,6 +881,8 @@ bool gosTexture::createHardwareTexture() {
         format_ = convertIfNecessary(img, format_);
 
         tex_ = gos_render::device()->createTexture2D(img.getWidth(), img.getHeight(), tf, img.getPixels());
+        if(tex_.isValid())
+            gos_AtlasAdd(this, img.getPixels(), tf);
         return tex_.isValid();
 
     } else if(pcompdata_ && size_ > 0) {
@@ -778,6 +905,8 @@ bool gosTexture::createHardwareTexture() {
         format_ = convertIfNecessary(img, format_);
 
         tex_ = gos_render::device()->createTexture2D(img.getWidth(), img.getHeight(), tf, img.getPixels());
+        if(tex_.isValid())
+            gos_AtlasAdd(this, img.getPixels(), tf);
         return tex_.isValid();
     } else {
         gosASSERT(tex_.w >0 && tex_.h > 0);
@@ -793,6 +922,8 @@ bool gosTexture::createHardwareTexture() {
         for(int i=0;i<tex_.w*tex_.h;++i)
             pdata[i] = 0xFF00FFFF;
         tex_ = gos_render::device()->createTexture2D(tex_.w, tex_.h, tf, shadow_.data());
+        if(tex_.isValid())
+            gos_AtlasAdd(this, shadow_.data(), tf);
         return tex_.isValid();
     }
 
@@ -954,6 +1085,8 @@ class gosRenderer {
             }
             gosASSERT(textureList_.size() > texture_id);
             gosASSERT(textureList_[texture_id] != 0);
+            if(texture_id >= textureList_.size())
+                return NULL;
             return textureList_[texture_id];
         }
 
@@ -1047,6 +1180,9 @@ class gosRenderer {
 		void drawIndexedTris(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* mvp);
 		void drawIndexedTris(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl);
         void drawText(const char* text);
+        // gos_RenderShape: a lit, static mesh with its own transforms
+        void drawShape(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* world,
+                       const float* wvp, int light_index);
 
         void beginFrame();
         void endFrame();
@@ -1084,13 +1220,32 @@ class gosRenderer {
         bool beforeDrawCall();
         void afterDrawCall();
 
-        enum class BatchKind { None, Tris, Lines, Points, IndexedTris };
+        enum class BatchKind { None, Tris, Lines, Points, IndexedTris, Shapes };
+        // gos_RenderShape batch: vertices transformed to world space, drawn
+        // with the view-projection matrix shared by the shapes
+        void drawShapeUnbatched(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* world,
+                                const float* wvp, int light_index);
+        void flushShapes();
+        std::vector<uint8_t> shape_vertices_;
+        std::vector<WORD> shape_indices_;
+        HGOSVERTEXDECLARATION shape_vdecl_ = NULL;
+        float shape_vp_[16];
+        int shape_light_ = 0;
+        vec4 shape_viewport_;
+        gos_render::BufferHandle shape_vb_ = 0, shape_ib_ = 0;
         // Makes room for a draw of `kind` with the current render states:
         // flushes the pending batch unless the draw can be appended to it.
-        gosMesh* beginBatch(BatchKind kind, int num_vertices, int num_indices);
+        // `v` (n vertices) are the vertices of the draw: when its texture is
+        // in the atlas and the coordinates allow it, the draw uses the atlas
+        // page and *remap is set to the coordinate transform to apply.
+        gosMesh* beginBatch(BatchKind kind, int num_vertices, int num_indices,
+                            const gos_VERTEX* v = NULL, int n = 0, const gosAtlasHit** remap = NULL);
         void mirrorCurStates();
         BatchKind batch_kind_ = BatchKind::None;
-        uint32_t batch_states_[gos_MaxState];
+        uint32_t batch_states_[gos_MaxState]; // texture: handle or atlas page key
+        uint32_t batch_texture_ = 0;          // texture handle of the first draw
+        gosAtlasHit batch_atlas_;
+        bool batch_uses_atlas_ = false;
 
         // render target size
         int width_;
@@ -1266,6 +1421,10 @@ void gosRenderer::init() {
 }
 
 void gosRenderer::destroy() {
+
+    gos_AtlasShutdown();
+    gos_render::device()->destroyBuffer(shape_vb_);
+    gos_render::device()->destroyBuffer(shape_ib_);
 
     gosMesh::destroy(quads_);
     gosMesh::destroy(tris_);
@@ -1508,10 +1667,6 @@ gosRenderMaterial* gosRenderer::selectLightedRenderMaterial(const RenderState& r
 
 void gos_FlushDrawBatch() { if(g_gos_renderer) g_gos_renderer->flushBatch(); }
 
-// -no-batching: every call is drawn on its own (as before batching)
-static bool g_draw_batching = true;
-void gos_SetDrawBatching(bool enable) { g_draw_batching = enable; }
-
 void gosRenderer::mirrorCurStates()
 {
     // what applyRenderStates() records, without touching the device:
@@ -1523,11 +1678,28 @@ void gosRenderer::mirrorCurStates()
         curStates_[states[i]] = renderStates_[states[i]];
 }
 
-gosMesh* gosRenderer::beginBatch(BatchKind kind, int num_vertices, int num_indices)
+gosMesh* gosRenderer::beginBatch(BatchKind kind, int num_vertices, int num_indices,
+                                 const gos_VERTEX* v, int n, const gosAtlasHit** remap)
 {
     gosMesh* mesh = kind == BatchKind::Tris ? tris_ : kind == BatchKind::Lines ? lines_
                   : kind == BatchKind::Points ? points_ : indexed_tris_;
-    const bool same = batch_kind_ == kind && 0 == memcmp(batch_states_, renderStates_, sizeof(batch_states_));
+
+    // States the batch is keyed on: the texture becomes the atlas page when
+    // the draw can sample it there
+    uint32_t key[gos_MaxState];
+    memcpy(key, renderStates_, sizeof(key));
+    gosAtlasHit hit;
+    bool atlas = false;
+    if(g_draw_batching && remap && renderStates_[gos_State_Texture] != INVALID_TEXTURE_ID) {
+        const bool linear = renderStates_[gos_State_Filter] != gos_FilterNone;
+        atlas = gos_AtlasLookup(getTexture(renderStates_[gos_State_Texture]), linear, v, n, &hit);
+        if(atlas)
+            key[gos_State_Texture] = 0x40000000u | (uint32_t)hit.page;
+    }
+    if(remap)
+        *remap = NULL;
+
+    const bool same = batch_kind_ == kind && 0 == memcmp(batch_states_, key, sizeof(batch_states_));
     const bool fits = mesh->getNumVertices() + num_vertices <= mesh->getVertexCapacity() &&
                       mesh->getNumIndices() + num_indices <= mesh->getIndexCapacity() &&
                       // 16-bit indices are rebased by the vertex count
@@ -1535,7 +1707,13 @@ gosMesh* gosRenderer::beginBatch(BatchKind kind, int num_vertices, int num_indic
     if(!same || !fits) {
         flushBatch();
         batch_kind_ = kind;
-        memcpy(batch_states_, renderStates_, sizeof(batch_states_));
+        memcpy(batch_states_, key, sizeof(batch_states_));
+        batch_texture_ = renderStates_[gos_State_Texture];
+        batch_uses_atlas_ = atlas;
+    }
+    if(atlas) {
+        batch_atlas_ = hit; // x0 / y0 differ per tile: returned per draw
+        *remap = &batch_atlas_;
     }
     mirrorCurStates();
     return mesh;
@@ -1547,12 +1725,20 @@ void gosRenderer::flushBatch()
         return;
     const BatchKind kind = batch_kind_;
     batch_kind_ = BatchKind::None;
+    if(kind == BatchKind::Shapes) {
+        flushShapes();
+        return;
+    }
 
     // draw with the states the batch was recorded with
     RenderState saved;
     memcpy(saved, renderStates_, sizeof(saved));
     memcpy(renderStates_, batch_states_, sizeof(renderStates_));
+    renderStates_[gos_State_Texture] = batch_texture_;
     applyRenderStates();
+    if(batch_uses_atlas_)
+        gos_render::device()->bindTexture(0, &g_atlas_pages[batch_atlas_.page].tex,
+                                          gos_render::samplerFromGosStates(renderStates_));
 
     gosRenderMaterial* mat = (kind == BatchKind::Tris || kind == BatchKind::IndexedTris)
         ? selectBasicRenderMaterial(curStates_) : basic_material_;
@@ -1569,6 +1755,13 @@ void gosRenderer::flushBatch()
     memcpy(renderStates_, saved, sizeof(renderStates_));
 }
 
+static void remapToAtlas(gos_VERTEX* v, int n, const gosAtlasHit* hit) {
+    for(int i = 0; i < n; ++i) {
+        v[i].u = hit->x0 + v[i].u * hit->scale;
+        v[i].v = hit->y0 + v[i].v * hit->scale;
+    }
+}
+
 void gosRenderer::drawQuads(gos_VERTEX* vertices, int count) {
     gosASSERT(vertices);
 
@@ -1576,8 +1769,10 @@ void gosRenderer::drawQuads(gos_VERTEX* vertices, int count) {
 
     // each quad becomes two triangles in the triangle batch
     const int num_quads = count / 4;
-    gosMesh* mesh = beginBatch(BatchKind::Tris, num_quads * 6, 0);
+    const gosAtlasHit* remap;
+    gosMesh* mesh = beginBatch(BatchKind::Tris, num_quads * 6, 0, vertices, count, &remap);
     gosASSERT(mesh->getNumVertices() + num_quads * 6 <= mesh->getVertexCapacity());
+    const int first = mesh->getNumVertices();
     for(int i=0; i<count;i+=4) {
         mesh->addVertices(vertices + 4*i + 0, 1);
         mesh->addVertices(vertices + 4*i + 1, 1);
@@ -1587,6 +1782,8 @@ void gosRenderer::drawQuads(gos_VERTEX* vertices, int count) {
         mesh->addVertices(vertices + 4*i + 2, 1);
         mesh->addVertices(vertices + 4*i + 3, 1);
     }
+    if(remap)
+        remapToAtlas(mesh->getMutableVertices() + first, num_quads * 6, remap);
     if(!g_draw_batching)
         flushBatch();
 
@@ -1628,9 +1825,13 @@ void gosRenderer::drawTris(gos_VERTEX* vertices, int count) {
 
     if(beforeDrawCall()) return;
 
-    gosMesh* mesh = beginBatch(BatchKind::Tris, count, 0);
+    const gosAtlasHit* remap;
+    gosMesh* mesh = beginBatch(BatchKind::Tris, count, 0, vertices, count, &remap);
     gosASSERT(mesh->getNumVertices() + count <= mesh->getVertexCapacity());
+    const int first = mesh->getNumVertices();
     mesh->addVertices(vertices, count);
+    if(remap)
+        remapToAtlas(mesh->getMutableVertices() + first, count, remap);
     if(!g_draw_batching)
         flushBatch();
 
@@ -1644,12 +1845,15 @@ void gosRenderer::drawIndexedTris(gos_VERTEX* vertices, int num_vertices, WORD* 
 
     if(beforeDrawCall()) return;
 
-    gosMesh* mesh = beginBatch(BatchKind::IndexedTris, num_vertices, num_indices);
+    const gosAtlasHit* remap;
+    gosMesh* mesh = beginBatch(BatchKind::IndexedTris, num_vertices, num_indices, vertices, num_vertices, &remap);
     gosASSERT(mesh->getNumVertices() + num_vertices <= mesh->getVertexCapacity());
     gosASSERT(mesh->getNumIndices() + num_indices <= mesh->getIndexCapacity());
     // indices refer to this call's vertices: rebase them
     const WORD base = (WORD)mesh->getNumVertices();
     mesh->addVertices(vertices, num_vertices);
+    if(remap)
+        remapToAtlas(mesh->getMutableVertices() + base, num_vertices, remap);
     if(base == 0) {
         mesh->addIndices(indices, num_indices);
     } else {
@@ -1665,6 +1869,190 @@ void gosRenderer::drawIndexedTris(gos_VERTEX* vertices, int num_vertices, WORD* 
         flushBatch();
 
     afterDrawCall();
+}
+
+// ------------------------------------------------------------- shapes
+// Row-major 4x4 helpers (GameOS uploads matrices row major)
+static void mat4Mul(const float* a, const float* b, float* out) {
+    for(int r = 0; r < 4; ++r)
+        for(int c = 0; c < 4; ++c)
+            out[r*4+c] = a[r*4+0]*b[0*4+c] + a[r*4+1]*b[1*4+c] + a[r*4+2]*b[2*4+c] + a[r*4+3]*b[3*4+c];
+}
+
+static bool mat4Inverse(const float* m, float* out) {
+    double inv[16];
+    inv[0] = m[5]*m[10]*m[15] - m[5]*m[11]*m[14] - m[9]*m[6]*m[15] + m[9]*m[7]*m[14] + m[13]*m[6]*m[11] - m[13]*m[7]*m[10];
+    inv[4] = -m[4]*m[10]*m[15] + m[4]*m[11]*m[14] + m[8]*m[6]*m[15] - m[8]*m[7]*m[14] - m[12]*m[6]*m[11] + m[12]*m[7]*m[10];
+    inv[8] = m[4]*m[9]*m[15] - m[4]*m[11]*m[13] - m[8]*m[5]*m[15] + m[8]*m[7]*m[13] + m[12]*m[5]*m[11] - m[12]*m[7]*m[9];
+    inv[12] = -m[4]*m[9]*m[14] + m[4]*m[10]*m[13] + m[8]*m[5]*m[14] - m[8]*m[6]*m[13] - m[12]*m[5]*m[10] + m[12]*m[6]*m[9];
+    inv[1] = -m[1]*m[10]*m[15] + m[1]*m[11]*m[14] + m[9]*m[2]*m[15] - m[9]*m[3]*m[14] - m[13]*m[2]*m[11] + m[13]*m[3]*m[10];
+    inv[5] = m[0]*m[10]*m[15] - m[0]*m[11]*m[14] - m[8]*m[2]*m[15] + m[8]*m[3]*m[14] + m[12]*m[2]*m[11] - m[12]*m[3]*m[10];
+    inv[9] = -m[0]*m[9]*m[15] + m[0]*m[11]*m[13] + m[8]*m[1]*m[15] - m[8]*m[3]*m[13] - m[12]*m[1]*m[11] + m[12]*m[3]*m[9];
+    inv[13] = m[0]*m[9]*m[14] - m[0]*m[10]*m[13] - m[8]*m[1]*m[14] + m[8]*m[2]*m[13] + m[12]*m[1]*m[10] - m[12]*m[2]*m[9];
+    inv[2] = m[1]*m[6]*m[15] - m[1]*m[7]*m[14] - m[5]*m[2]*m[15] + m[5]*m[3]*m[14] + m[13]*m[2]*m[7] - m[13]*m[3]*m[6];
+    inv[6] = -m[0]*m[6]*m[15] + m[0]*m[7]*m[14] + m[4]*m[2]*m[15] - m[4]*m[3]*m[14] - m[12]*m[2]*m[7] + m[12]*m[3]*m[6];
+    inv[10] = m[0]*m[5]*m[15] - m[0]*m[7]*m[13] - m[4]*m[1]*m[15] + m[4]*m[3]*m[13] + m[12]*m[1]*m[7] - m[12]*m[3]*m[5];
+    inv[14] = -m[0]*m[5]*m[14] + m[0]*m[6]*m[13] + m[4]*m[1]*m[14] - m[4]*m[2]*m[13] - m[12]*m[1]*m[6] + m[12]*m[2]*m[5];
+    inv[3] = -m[1]*m[6]*m[11] + m[1]*m[7]*m[10] + m[5]*m[2]*m[11] - m[5]*m[3]*m[10] - m[9]*m[2]*m[7] + m[9]*m[3]*m[6];
+    inv[7] = m[0]*m[6]*m[11] - m[0]*m[7]*m[10] - m[4]*m[2]*m[11] + m[4]*m[3]*m[10] + m[8]*m[2]*m[7] - m[8]*m[3]*m[6];
+    inv[11] = -m[0]*m[5]*m[11] + m[0]*m[7]*m[9] + m[4]*m[1]*m[11] - m[4]*m[3]*m[9] - m[8]*m[1]*m[7] + m[8]*m[3]*m[5];
+    inv[15] = m[0]*m[5]*m[10] - m[0]*m[6]*m[9] - m[4]*m[1]*m[10] + m[4]*m[2]*m[9] + m[8]*m[1]*m[6] - m[8]*m[2]*m[5];
+    const double det = m[0]*inv[0] + m[1]*inv[4] + m[2]*inv[8] + m[3]*inv[12];
+    if(det == 0.0)
+        return false;
+    for(int i = 0; i < 16; ++i)
+        out[i] = (float)(inv[i] / det);
+    return true;
+}
+
+// Every TG shape type creates its own declaration: compare the layouts
+static bool sameLayout(HGOSVERTEXDECLARATION a, HGOSVERTEXDECLARATION b) {
+    if(a == b)
+        return true;
+    if(!a || !b || a->numAttribs() != b->numAttribs())
+        return false;
+    for(int i = 0; i < a->numAttribs(); ++i) {
+        const gos_render::VertexAttrib& x = a->attribs()[i];
+        const gos_render::VertexAttrib& y = b->attribs()[i];
+        if(x.location != y.location || x.components != y.components || x.type != y.type ||
+           x.normalized != y.normalized || x.stride != y.stride || x.offset != y.offset)
+            return false;
+    }
+    return true;
+}
+
+// Offsets of the float3 position (location 0) and normal (location 1) in a
+// vertex declaration, or false if it has another layout
+static bool shapeLayout(HGOSVERTEXDECLARATION vdecl, int* pos_offset, int* normal_offset, int* stride) {
+    *pos_offset = *normal_offset = -1;
+    const gos_render::VertexAttrib* a = vdecl->attribs();
+    for(int i = 0; i < vdecl->numAttribs(); ++i) {
+        const bool float3 = a[i].type == gos_render::AttribType::Float && a[i].components == 3;
+        if(a[i].location == 0 && float3)
+            *pos_offset = a[i].offset;
+        if(a[i].location == 1 && float3)
+            *normal_offset = a[i].offset;
+        *stride = a[i].stride;
+    }
+    return *pos_offset >= 0 && *normal_offset >= 0;
+}
+
+void gosRenderer::drawShapeUnbatched(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* world,
+                                     const float* wvp, int light_index)
+{
+    applyRenderStates();
+    gosRenderMaterial* mat = getRenderMaterial(renderStates_[gos_State_Texture] == 0 ? "gos_vertex_lighted" : "gos_tex_vertex_lighted");
+    gosASSERT(mat);
+    mat->getShader()->setMat4("world_", world);
+    mat->getShader()->setMat4("wvp_", wvp);
+    const float ld[4] = { (float)light_index, 0.0f, 0.0f, 0.0f };
+    mat->getShader()->setFloat4("light_offset_", ld);
+    mat->setUniformBlock("LightsData", LIGHT_DATA_ATTACHMENT_SLOT);
+    mat->setUniformBlock("SceneData", SCENE_DATA_ATTACHMENT_SLOT);
+    gos_ApplyRenderMaterial(mat);
+    gosMesh::drawIndexed(ib, vb, vdecl);
+}
+
+void gosRenderer::drawShape(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* world,
+                            const float* wvp, int light_index)
+{
+    gosASSERT(ib && vb && vdecl && world && wvp);
+    if(beforeDrawCall()) return;
+
+    int pos_offset, normal_offset, stride = 0;
+    float inv_world[16], vp[16];
+    const bool mergeable = g_draw_batching && ib->element_size_ == 2 && !vb->cpu_.empty() && !ib->cpu_.empty() &&
+                           shapeLayout(vdecl, &pos_offset, &normal_offset, &stride) && stride > 0 &&
+                           mat4Inverse(world, inv_world);
+    if(!mergeable) {
+        flushBatch();
+        drawShapeUnbatched(ib, vb, vdecl, world, wvp, light_index);
+        afterDrawCall();
+        return;
+    }
+    // the camera part of the transform, shared by every shape of a frame
+    mat4Mul(wvp, inv_world, vp);
+
+    const int num_vertices = (int)(vb->cpu_.size() / stride);
+    bool same = batch_kind_ == BatchKind::Shapes && sameLayout(shape_vdecl_, vdecl) && shape_light_ == light_index &&
+                0 == memcmp(batch_states_, renderStates_, sizeof(batch_states_)) &&
+                0 == memcmp(&shape_viewport_, &render_viewport_, sizeof(vec4)) &&
+                shape_vertices_.size() / stride + num_vertices <= 0x10000;
+    for(int i = 0; same && i < 16; ++i)
+        same = fabsf(vp[i] - shape_vp_[i]) <= 1e-5f * (1.0f + fabsf(shape_vp_[i]));
+    if(!same) {
+        flushBatch();
+        batch_kind_ = BatchKind::Shapes;
+        memcpy(batch_states_, renderStates_, sizeof(batch_states_));
+        batch_texture_ = renderStates_[gos_State_Texture];
+        batch_uses_atlas_ = false;
+        shape_vdecl_ = vdecl;
+        shape_light_ = light_index;
+        shape_viewport_ = render_viewport_;
+        memcpy(shape_vp_, vp, sizeof(vp));
+    }
+    mirrorCurStates();
+
+    // vertices in world space: position (w = 1) and normal (w = 0)
+    const WORD base = (WORD)(shape_vertices_.size() / stride);
+    const size_t first = shape_vertices_.size();
+    shape_vertices_.insert(shape_vertices_.end(), vb->cpu_.begin(), vb->cpu_.begin() + (size_t)num_vertices * stride);
+    for(int v = 0; v < num_vertices; ++v) {
+        uint8_t* vert = shape_vertices_.data() + first + (size_t)v * stride;
+        float p[3], n[3];
+        memcpy(p, vert + pos_offset, sizeof(p));
+        memcpy(n, vert + normal_offset, sizeof(n));
+        float wp[3], wn[3];
+        for(int r = 0; r < 3; ++r) {
+            wp[r] = world[r*4+0]*p[0] + world[r*4+1]*p[1] + world[r*4+2]*p[2] + world[r*4+3];
+            wn[r] = world[r*4+0]*n[0] + world[r*4+1]*n[1] + world[r*4+2]*n[2];
+        }
+        memcpy(vert + pos_offset, wp, sizeof(wp));
+        memcpy(vert + normal_offset, wn, sizeof(wn));
+    }
+    const WORD* idx = (const WORD*)ib->cpu_.data();
+    const uint32_t count = ib->count_;
+    for(uint32_t i = 0; i < count; ++i)
+        shape_indices_.push_back((WORD)(idx[i] + base));
+
+    afterDrawCall();
+}
+
+void gosRenderer::flushShapes()
+{
+    RenderState saved;
+    memcpy(saved, renderStates_, sizeof(saved));
+    memcpy(renderStates_, batch_states_, sizeof(renderStates_));
+    const vec4 saved_viewport = render_viewport_;
+    render_viewport_ = shape_viewport_;
+
+    if(!shape_vb_)
+        shape_vb_ = gos_render::device()->createBuffer(gos_render::BufferKind::Vertex, gos_render::BufferUsage::Dynamic, NULL, 0);
+    if(!shape_ib_)
+        shape_ib_ = gos_render::device()->createBuffer(gos_render::BufferKind::Index, gos_render::BufferUsage::Dynamic, NULL, 0);
+    gos_render::device()->updateBuffer(shape_vb_, gos_render::BufferKind::Vertex, shape_vertices_.data(), shape_vertices_.size());
+    gos_render::device()->updateBuffer(shape_ib_, gos_render::BufferKind::Index, shape_indices_.data(),
+                                       shape_indices_.size() * sizeof(WORD));
+
+    applyRenderStates();
+    gosRenderMaterial* mat = getRenderMaterial(batch_texture_ == 0 ? "gos_vertex_lighted" : "gos_tex_vertex_lighted");
+    gosASSERT(mat);
+    static const float identity[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+    mat->getShader()->setMat4("world_", identity);
+    mat->getShader()->setMat4("wvp_", shape_vp_);
+    const float ld[4] = { (float)shape_light_, 0.0f, 0.0f, 0.0f };
+    mat->getShader()->setFloat4("light_offset_", ld);
+    mat->setUniformBlock("LightsData", LIGHT_DATA_ATTACHMENT_SLOT);
+    mat->setUniformBlock("SceneData", SCENE_DATA_ATTACHMENT_SLOT);
+    gos_ApplyRenderMaterial(mat);
+    gos_render::device()->drawIndexed(gos_render::Primitive::Triangles, shape_vb_, shape_ib_, 2,
+                                      shape_vdecl_->attribs(), shape_vdecl_->numAttribs(), (int)shape_indices_.size());
+    gos_render::device()->endShader();
+
+    shape_vertices_.clear();
+    shape_indices_.clear();
+    render_viewport_ = saved_viewport;
+    memcpy(renderStates_, saved, sizeof(renderStates_));
 }
 
 void gosRenderer::drawIndexedTris(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* mvp)
@@ -2279,6 +2667,13 @@ void __stdcall gos_RenderIndexedArray(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDE
     g_gos_renderer->drawIndexedTris(ib, vb, vdecl, mvp);
 }
 
+void __stdcall gos_RenderShape(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* world,
+                               const float* wvp, int light_index)
+{
+    gosASSERT(g_gos_renderer);
+    g_gos_renderer->drawShape(ib, vb, vdecl, world, wvp, light_index);
+}
+
 void __stdcall gos_RenderIndexedArray(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl)
 {
     gosASSERT(g_gos_renderer);
@@ -2545,6 +2940,8 @@ gosBuffer* __stdcall gos_CreateBuffer(gosBUFFER_TYPE type, gosBUFFER_USAGE usage
 	pbuffer->count_ = count;
 	pbuffer->type_ = type;
 	pbuffer->usage_ = usage;
+	if(buffer_data && type != gosBUFFER_TYPE::UNIFORM)
+		pbuffer->cpu_.assign((const uint8_t*)buffer_data, (const uint8_t*)buffer_data + (size_t)element_size * count);
 
     gosASSERT(g_gos_renderer);
 	g_gos_renderer->addBuffer(pbuffer);
@@ -2583,6 +2980,8 @@ void __stdcall gos_UpdateBuffer(HGOSBUFFER buffer, void* data, size_t offset, si
 	(void)offset; // whole buffer replaced, as before
 	g_gos_renderer->flushBatch(); // pending draws see the old contents
 	gos_render::device()->updateBuffer(buffer->buffer_, toBufferKind(buffer->type_), data, num_bytes);
+	if(buffer->type_ != gosBUFFER_TYPE::UNIFORM)
+		buffer->cpu_.assign((const uint8_t*)data, (const uint8_t*)data + num_bytes);
 }
 
 HGOSVERTEXDECLARATION __stdcall gos_CreateVertexDeclaration(gosVERTEX_FORMAT_RECORD* records, int count)

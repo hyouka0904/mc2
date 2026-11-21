@@ -110,6 +110,16 @@ private:
     glsl_program* program_;
 };
 
+static GLenum glTextureFormat(TexFormat f) {
+    switch (f) {
+    case TF_R8: case TF_R32F: return GL_RED;
+    case TF_RG8: case TF_RG32F: return GL_RG;
+    case TF_RGB8: case TF_RGB32F: return GL_RGB;
+    default: return GL_RGBA;
+    }
+}
+static GLenum glTextureChannelType(TexFormat f) { return f >= TF_R32F ? GL_FLOAT : GL_UNSIGNED_BYTE; }
+
 class GLDevice : public Device {
 public:
     bool init() override;
@@ -161,6 +171,14 @@ public:
     }
     void updateTexture(const Texture& t, const void* data, TexFormat fmt) override {
         ::updateTexture(t, const_cast<void*>(data), fmt);
+    }
+    void updateTextureRegion(const Texture& t, int x, int y, int w, int h, const void* data,
+                             TexFormat fmt) override {
+        glBindTexture(GL_TEXTURE_2D, t.id);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, glTextureFormat(fmt), glTextureChannelType(fmt), data);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
     bool readTexture(const Texture& t, uint8_t* out, TexFormat fmt) override {
         getTextureData(t, 0, out, fmt);

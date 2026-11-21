@@ -74,6 +74,9 @@ public:
     // Textures (RGBA8 / RGB8 data, tightly packed)
     virtual Texture createTexture2D(int w, int h, TexFormat fmt, const uint8_t* data) = 0;
     virtual void updateTexture(const Texture& t, const void* data, TexFormat data_fmt) = 0;
+    // Replaces a w x h rectangle at (x, y); `data` is tightly packed.
+    virtual void updateTextureRegion(const Texture& t, int x, int y, int w, int h, const void* data,
+                                     TexFormat data_fmt) = 0;
     virtual bool readTexture(const Texture& t, uint8_t* out, TexFormat out_fmt) = 0;
     virtual void destroyTexture(Texture* t) = 0;
     virtual void bindTexture(int unit, const Texture* t, const SamplerDesc& sampler) = 0;

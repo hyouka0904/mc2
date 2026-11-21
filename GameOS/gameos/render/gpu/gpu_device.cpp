@@ -161,7 +161,7 @@ struct Cmd {
     // texture upload
     SDL_GPUTexture* tex = nullptr;
     uint32_t staging_offset = 0;
-    int w = 0, h = 0;
+    int x = 0, y = 0, w = 0, h = 0;
     // draw
     SDL_GPUGraphicsPipeline* pipeline = nullptr;
     SDL_GPUBuffer* vb = nullptr; // nullptr = ring
@@ -359,6 +359,7 @@ public:
 
     Texture createTexture2D(int w, int h, TexFormat fmt, const uint8_t* data) override;
     void updateTexture(const Texture& t, const void* data, TexFormat fmt) override;
+    void updateTextureRegion(const Texture& t, int x, int y, int w, int h, const void* data, TexFormat fmt) override;
     bool readTexture(const Texture& t, uint8_t* out, TexFormat fmt) override;
     void destroyTexture(Texture* t) override;
     void bindTexture(int unit, const Texture* t, const SamplerDesc& s) override;
@@ -974,6 +975,26 @@ void GpuDevice::updateTexture(const Texture& t, const void* data, TexFormat data
     cmds_.push_back(c);
 }
 
+void GpuDevice::updateTextureRegion(const Texture& t, int x, int y, int w, int h, const void* data, TexFormat data_fmt)
+{
+    auto it = textures_.find(t.id);
+    if (it == textures_.end() || !data || w <= 0 || h <= 0)
+        return;
+    const GpuTexture& gt = it->second;
+    const size_t n = (size_t)w * h;
+    std::vector<uint8_t> px(n * getTexFormatPixelSize(gt.storage));
+    convertPixels(data, data_fmt == TF_COUNT ? gt.fmt : data_fmt, px.data(), gt.storage, n);
+    Cmd c;
+    c.type = CmdType::TexUpload;
+    c.tex = gt.tex;
+    c.x = x;
+    c.y = y;
+    c.w = w;
+    c.h = h;
+    c.staging_offset = appendStaging(tex_staging_, px.data(), px.size(), 16);
+    cmds_.push_back(c);
+}
+
 bool GpuDevice::readTexture(const Texture& t, uint8_t* out, TexFormat out_fmt)
 {
     auto it = textures_.find(t.id);
@@ -1212,6 +1233,8 @@ bool GpuDevice::flush(bool present, int dl_w, int dl_h, std::vector<uint8_t>* do
             SDL_GPUTextureRegion dst;
             SDL_zero(dst);
             dst.texture = c.tex;
+            dst.x = c.x;
+            dst.y = c.y;
             dst.w = c.w;
             dst.h = c.h;
             dst.d = 1;
