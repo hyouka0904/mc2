@@ -66,7 +66,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libsdl2-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 libglew2.2 \
-            libgl1-mesa-dri xvfb x11-utils imagemagick ffmpeg
+            libopengl0 libgl1 libglx0 libglx-mesa0 libgl1-mesa-dri \
+            xvfb x11-utils imagemagick ffmpeg
           chmod +x build/mc2 build/out/data_tools/* build/out/text_tool/text_tool
 
       - name: Build game data
