@@ -552,7 +552,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 4 著色器 | 完成（DXIL 待 CI 安裝 dxc） | Vulkan 風格 GLSL（`PerDraw` / `LightsData` / `SceneData` 三個 uniform block、明確的 set / binding / location）；建置時編成 SPIR-V（通過 `spirv-val`）、MSL、HLSL；OpenGL 後端改用 uniform block 後 18 張截圖逐像素相同；熱重載改為 `-shader-reload` 開發選項 |
 | 5 SDL3 GPU 後端 | 完成 | `render/gpu/`（Vulkan via SDL3 GPU）、`-renderer gl\|gpu`、記錄重播式的即時模式模擬、管線快取、每幀上傳環狀緩衝區；兩個後端共用的繪製合併讓 mc2_01 第 600 幀 draw call 從 242 降到 156；CI 對兩個後端各跑冒煙測試與 18 張截圖比對（GPU 後端開啟 Vulkan 驗證層，零訊息）；兩後端差異最多 0.25%，門檻維持 0.5% |
 | 6 移除 OpenGL / GLEW | 進行中（依決策保留 OpenGL 一個版本週期） | 預設改為 SDL3 GPU，無法啟動時自動退回 OpenGL；OpenGL 後端移到獨立的 `gameos_gl` 函式庫，資料工具（含 `aseconv`）與測試不再連結 libGL / GLEW（CI 以 `ldd` 檢查）；移除 Viewer；修正 OpenGL 結束時重複 `glDetachShader` 的錯誤。待備援期結束後刪除 `render/gl/` 與 GLEW |
-| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併）並把 3D 模型繪製遷移過去；繪製合併與小貼圖圖集；mc2_01 第 600 幀 draw call 242 → 72、平均幀時間 26.7 → 12.5 ms（GL）；截圖比對不變 |
+| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併）並把 3D 模型繪製遷移過去；多貼圖模型在載入時依貼圖分段，每段以自己的貼圖繪製（原本整個模型都用第一張貼圖）；繪製合併與小貼圖圖集；mc2_01 第 600 幀 draw call 242 → 72、平均幀時間 26.7 → 12.5 ms（GL）；截圖比對不變 |
 | 8 平台層精簡 | 未開始 | |
 
 ### 決策紀錄
@@ -573,11 +573,9 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 ### 其他尚未完成的項目
 
 - **網路對戰**未實作。
-- **多貼圖模型的 GPU 繪製**：`mclib/tgl.cpp` 的硬體繪製路徑以整個模型的第一張貼圖繪製，
-  若模型使用多張貼圖會不正確；需要在載入時依貼圖分段並支援繪製索引範圍（計畫階段 7）。
 - **光照完全移到著色器**：目前部分光照仍在 CPU 計算（`mclib/msl.cpp`、`shaders/gos_tex_vertex_lighted.vert`）。
 - **記憶體堆積追蹤**：`gos_Malloc` 尚未依 heap 記錄配置，因此 heap 銷毀時不會釋放其記憶體（`GameOS/gameos/gameos.cpp`）。
-- 減少 draw call 數量（目前一般任務畫面約 240 次 / 幀）、GameOS 繪圖 API 的型別安全。
+- GameOS 其餘繪圖 API 的型別安全（3D 模型已改用 `gos_RenderShape`）。
 - 都卜勒等 3D 音效。
 - 編譯警告仍多（舊程式碼約數百則）。
 - 尚未在 Windows、實體 GPU、長時間遊玩下重新驗證（CI 只在 Linux + Mesa 軟體繪圖上執行）。
