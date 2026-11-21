@@ -91,9 +91,22 @@ void __cdecl InternalFunctionSpew( const char* Group, const char* fmt, ... )
     va_end(ap);
 }
 
+// Declared in gameos.hpp; set by callers that pass gos_ErrorFileLine.
+char* gosErrorFile = NULL;
+DWORD gosErrorLine = 0;
+
 int __stdcall ErrorHandler( int Flags, const char* Text )
 {
-    // TODO: additionally check flags to decide if enter debugger or not
-    fputs(Text, stderr);
-    return enter_debugger;
+    const bool message_only = (Flags & gos_ErrorMessage) != 0;
+    const char* kind = message_only ? "REPORT" :
+                       (Flags & gos_ErrorAssert) ? "ASSERT" :
+                       (Flags & gos_ErrorVerify) ? "VERIFY" : "ERROR";
+    if ((Flags & gos_ErrorFileLine) && gosErrorFile)
+        fprintf(stderr, "%s: %s (%s:%u)\n", kind, Text ? Text : "", gosErrorFile, (unsigned)gosErrorLine);
+    else
+        fprintf(stderr, "%s: %s\n", kind, Text ? Text : "");
+
+    // gos_ErrorMessage means "display without a stop", so never break into
+    // the debugger for it; everything else follows the global setting.
+    return message_only ? 0 : enter_debugger;
 }

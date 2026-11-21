@@ -66,16 +66,9 @@ int gen_rsp(const char* prefix_path, std::queue<const char*>& wildcards, const c
 			{
 				if ((findResult.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
 				{
-                    // +1 for \n
-					char* filename = new char[strlen(findResult.cFileName) + strlen(wildcard_dir) + 1 + 1];
-					sprintf(filename, "%s%s\n", wildcard_dir, findResult.cFileName);
-					SPEW(("\t", "%s\n", filename));
+					SPEW(("\t", "%s%s\n", wildcard_dir, findResult.cFileName));
 					num_files2pack++;
-
-					fwrite(filename, strlen(filename), 1, fh);
-
-                    // TODO: reuse buffer for filenames
-                    delete[] filename;
+					fprintf(fh, "%s%s\n", wildcard_dir, findResult.cFileName);
 				}
 			} while (FindNextFile(searchHandle, &findResult) != 0);
 

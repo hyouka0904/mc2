@@ -5,6 +5,8 @@
 #include <time.h>
 #include <stdlib.h> // rand
 #include "utils/timing.h"
+#include "utils/kv_registry.h"
+#include <string>
 
 #ifndef PLATFORM_WINDOWS
 #include <sys/statvfs.h> // statvfs
@@ -31,7 +33,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 void __stdcall AddDebuggerMenuItem(char const*, bool (__stdcall *)(), void (__stdcall *)(), bool (__stdcall *)(), DWORD (__stdcall *)(char const*, DWORD))
 {
-    // TODO: maybe use dconsole for this
+    // The Windows debugger menu has no equivalent here; intentionally a no-op.
 }
 
 void __stdcall AddStatistic( const char* Name, const char* TypeName, gosType Type, void* Value, DWORD Flags )
@@ -418,87 +420,50 @@ DWORD __stdcall gos_EnableSetting( gosSetting Setting, DWORD Value )
 ////////////////////////////////////////////////////////////////////////////////
 // registry read/write
 static const char* g_user_reg_file = ".registry";
-static const char* g_user_base_config_dir = ".config";
 static const char* g_user_config_dir = ".mechcommander2";
 
-// TODO: use inifile.h functionality for this
+// The registry is emulated by a small key/value file in the user data
+// directory (see utils/kv_registry.h for the format).
+static bool get_registry_path(std::string& path)
+{
+    char user_dir[1024];
+    if(!gos_GetUserDataDirectory(user_dir, sizeof(user_dir)))
+        return false;
+    path = std::string(user_dir) + "/" + g_user_reg_file;
+    return true;
+}
+
 void __stdcall gos_LoadDataFromRegistry( const char* keyName, void* pData, DWORD* szData, bool HKLM/*=false*/)
 {
-    // this code can be useful to get registry file location
-    
-    const char* home_dir = getenv("HOME");
-    if(home_dir == NULL)
-    {
-        SPEW(("gos_LoadDataFromRegistry", "home directory is not set\n"));
+    gosASSERT(keyName && pData && szData);
+    std::string path;
+    if(!get_registry_path(path)) {
         *szData = 0;
         return;
     }
-
-    const int cfg_dir_size = 1024;
-    char cfg_dir[cfg_dir_size] = {0};
-
-    const char* config_dir = getenv("XDG_CONFIG_HOME");
-    if(config_dir == NULL) {
-        sprintf(cfg_dir, "%s/%s", home_dir, g_user_base_config_dir);
-    } else {
-        strncpy(cfg_dir, config_dir, 1023);
-        cfg_dir[cfg_dir_size-1] = '\0';
-    }
-
-    struct stat st;
-    if(-1 == stat(cfg_dir, &st)) {
-        SPEW(("stat: %s\n", strerror(errno)));
-        *szData = 0;
-        return;
-    }
-    if(!S_ISDIR(st.st_mode)) {
-        SPEW(("REG", "gos_LoadDataFromRegistry: %s is not directory\n", cfg_dir));
-        *szData = 0;
-        return;
-    }
-
-    // 1 + 1 =  for \0 and /
-    char* mc2_conf_dir = new char[strlen(cfg_dir) + strlen(g_user_config_dir) + 1 + 1];
-    sprintf(mc2_conf_dir, "%s/%s", cfg_dir, g_user_config_dir);
-
-    // if directory does not exist create it
-#ifndef PLATFORM_WINDOWS
-    int permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-#endif
-	if(-1 == stat(mc2_conf_dir, &st)) {
-#ifdef PLATFORM_WINDOWS
-        if(-1 == _mkdir(mc2_conf_dir)) {
-#else
-        if(-1 == mkdir(mc2_conf_dir, permissions)) {
-#endif
-            SPEW(("stat: %s\n", strerror(errno)));
-            *szData = 0;
-            delete[] mc2_conf_dir;
-            return;
-        }
-    }
-
-    char* reg_file = new char[strlen(mc2_conf_dir) + 1 + strlen(g_user_reg_file) + 1];
-    sprintf(reg_file, "%s/%s", mc2_conf_dir, g_user_reg_file);
-
-    // check if reg file exists
-    if(-1 == stat(reg_file, &st)) {
-        *szData = 0;
-        return;
-    } else {
-        *szData = 0;
-        // open file and read value
-    }
+    uint32_t size = *szData;
+    kv_registry::load(kv_registry::readFile(path), keyName, pData, &size);
+    *szData = size;
 }
 
 void __stdcall gos_SaveDataToRegistry( const char* keyName,  void* pData,  DWORD szData )
 {
-    // TODO:
+    gosASSERT(keyName && (pData || szData == 0));
+    std::string path;
+    if(!kv_registry::isValidKey(keyName) || !get_registry_path(path)) {
+        SPEW(("REG", "gos_SaveDataToRegistry: cannot store key %s\n", keyName));
+        return;
+    }
+    kv_registry::Store store = kv_registry::readFile(path);
+    const uint8_t* bytes = (const uint8_t*)pData;
+    store[keyName] = kv_registry::Value(bytes, bytes + szData);
+    if(!kv_registry::writeFile(path, store))
+        SPEW(("REG", "gos_SaveDataToRegistry: failed to write %s\n", path.c_str()));
 }
 
 void __stdcall gos_SaveStringToRegistry( const char* keyName,  char* pData,  DWORD szData )
 {
-    // TODO;
+    gos_SaveDataToRegistry(keyName, pData, szData);
 }
 
 bool __stdcall gos_GetUserDataDirectory(char* user_dir, const int len)

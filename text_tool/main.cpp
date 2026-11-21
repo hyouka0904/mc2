@@ -1,5 +1,7 @@
+// Offline font baking tool: rasterizes a TTF font into a glyph atlas (.bmp)
+// plus a metrics file (.glyph) consumed by the game's font renderer.
+// Uses only SDL_ttf software rendering, so it needs no display or GPU.
 #include "gameos.hpp"
-#include "gos_render.h"
 #include "gos_font.h"
 #include <stdio.h>
 
@@ -9,9 +11,6 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include "utils/camera.h"
-#include "utils/shader_builder.h"
-#include "utils/gl_utils.h"
 
 static const uint32_t NUM_GLYPHS = 255 - 32;
 static const uint32_t START_GLYPH = 32;
@@ -86,32 +85,6 @@ int main(int argc, char** argv)
     glyphFile = new char[strlen(outFile) + strlen(glyph_ext) + 1];
     sprintf(textureFile, "%s%s", outFile, tex_ext);
     sprintf(glyphFile, "%s%s", outFile, glyph_ext);
-
-    graphics::set_verbose(false);
-
-    graphics::RenderWindowHandle win = graphics::create_window("text_tool", 512, 512);
-    if(!win)
-        return 1;
-
-    graphics::RenderContextHandle ctx = graphics::init_render_context(win);
-    if(!ctx)
-        return 1;
-
-    GLenum err = glewInit();
-    if (GLEW_OK != err)
-    {
-        SPEW(("GLEW", "Error: %s\n", glewGetErrorString(err)));
-        return 1;
-    }
-
-    SPEW(("GRAPHICS", "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION)));
-    if (!GLEW_ARB_vertex_program || !GLEW_ARB_vertex_program)
-    {
-        SPEW(("GRAPHICS", "No shader program support\n"));
-        return 1;
-    }
-
-    graphics::make_current_context(ctx);
 
     // do stuff
 
@@ -252,8 +225,6 @@ int main(int argc, char** argv)
 
     TTF_Quit();
 
-    graphics::destroy_render_context(ctx);
-    graphics::destroy_window(win);
 
     return 0;
 }

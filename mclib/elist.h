@@ -618,8 +618,8 @@ RETURN VALUE:
 ***************************************************************************************************/
 ELIST_TPL_DEF bool EList<ELIST_TPL_ARG>::Clear()
 {
-	DestroyList();
-	return(true);	// <<HACK>> BR - need to do checking
+	DestroyList();	// cannot fail
+	return(true);
 }
 	
 /**************************************************************************************************
@@ -654,7 +654,7 @@ ELIST_TPL_DEF inline bool EList<ELIST_TPL_ARG>::Prepend(T_ARG New_Element)
 		m_Count++;
 		return(true);
 	}
-	return(false);	// <<HACK>> BR
+	return(false);	// allocation failed
 }
 	
 /**************************************************************************************************
@@ -1070,7 +1070,10 @@ ELIST_TPL_DEF bool EList<ELIST_TPL_ARG>::Append(const EList<ELIST_TPL_ARG>& rLis
 	const ENode*	pNode = rList.m_pHead;
 	for(unsigned long i = 0; i < rList.m_Count; i++)
 	{
-		Append(pNode->m_Data);		// <<TODO>> BR - This needs to be optimized
+		// O(1) per element thanks to the tail pointer; copying is inherently
+		// O(n), so the only thing to add is reporting allocation failure.
+		if(!Append(pNode->m_Data))
+			return(false);
 		pNode = pNode->m_pNext;
 	}
 	return(true);
@@ -1094,7 +1097,8 @@ ELIST_TPL_DEF bool EList<ELIST_TPL_ARG>::Prepend(const EList<ELIST_TPL_ARG>& rLi
 	const ENode*	pNode = rList.m_pTail;
 	for(unsigned long i = 0; i < rList.m_Count; i++)
 	{
-		Prepend(pNode->m_Data);		// <<TODO>> BR - This needs to be optimized
+		if(!Prepend(pNode->m_Data))
+			return(false);
 		pNode = pNode->m_pPrev;
 	}
 	return(true);

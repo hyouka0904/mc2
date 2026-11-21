@@ -146,7 +146,9 @@ static void draw_screen( void )
 
     CHECK_GL_ERROR;
 
-    // TODO: reset all states to sane defaults!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Render states deliberately persist across frames (GameOS semantics the
+    // game code relies on). Only the depth write mask is forced, because
+    // glClear() honours it and the depth buffer must be cleared every frame.
     glDepthMask(GL_TRUE);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
@@ -268,6 +270,10 @@ int main(int argc, char** argv)
         SPEW(("GLEW", "Error: %s\n", glewGetErrorString(err)));
         return 1;
     }
+    // glewInit() probes extensions with glGetString(GL_EXTENSIONS), which
+    // raises GL_INVALID_ENUM on core profile contexts. Drain that error so it
+    // is not reported later by an unrelated CHECK_GL_ERROR.
+    while (glGetError() != GL_NO_ERROR) {}
 
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

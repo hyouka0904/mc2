@@ -821,7 +821,7 @@ bool glsl_program::setFloat4(const std::string& name, const float v[4])
     return false;
 }
 
-// TODO: need to change interface so that float* instead of float[4] is passed
+// Note: a `const float v[4]` parameter is already `const float*` in C++.
 bool glsl_program::setFloat4(const char* name, const float v[4])
 {
 	return setFloat4(std::string(name), v);

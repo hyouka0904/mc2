@@ -111,14 +111,11 @@ int pack(const char* pak_file, const char* rsp_file, bool b_compress) {
 		rsp_path_prefix = rsp_file_dir;
 	}
 
-    const size_t CHUNK_SIZE = 4 * 1024;
-    char* chunk = new char[CHUNK_SIZE];
 
 	const size_t record_size = 1024;
 	char* record = new char[record_size];
 
-    size_t packet_buffer_size = CHUNK_SIZE;
-    uint8_t* packet_buffer = new uint8_t[packet_buffer_size];
+    std::vector<uint8_t> file_data; // reused for every packed file
 
 	FILE* rsp_fh = fopen(rsp_file, "r");
 
@@ -184,35 +181,14 @@ int pack(const char* pak_file, const char* rsp_file, bool b_compress) {
 
             SPEW(("DBG", "File: %s\n", fpath));
 
-			FILE* fh = fopen(fpath, "rb");
-			if (!fh) {
-				STOP(("Cannot open file: %s\n", fpath));
+			if (!read_whole_file(fpath, file_data)) {
+				STOP(("Cannot read file: %s\n", fpath));
 			}
 			else {
-
-				// TODO: move to common section
-				fseek(fh, 0, SEEK_END);
-				size_t len = ftell(fh);
-				if (packet_buffer_size < len) {
-					delete[] packet_buffer;
-					packet_buffer_size = len;
-					packet_buffer = new uint8_t[packet_buffer_size];
-				}
-				fseek(fh, 0, SEEK_SET);
-
-				size_t num_read = 0;
-				while (num_read != len) {
-					size_t bytes2read = min(CHUNK_SIZE, len - num_read);
-					size_t num_cur_read = fread(chunk, bytes2read, 1, fh);
-					assert(num_cur_read == 1);
-					memcpy(packet_buffer + num_read, chunk, num_cur_read * bytes2read);
-
-					num_read += num_cur_read * bytes2read;
-				}
-				assert(len == num_read);
-				fclose(fh);
-
-				pakFile->writePacket(packet++, packet_buffer, len, storage_type);
+				// writePacket() wants a valid pointer even for an empty file
+				static uint8_t empty_file = 0;
+				MemoryPtr data = file_data.empty() ? &empty_file : file_data.data();
+				pakFile->writePacket(packet++, data, (unsigned int)file_data.size(), storage_type);
 			}
 		} else {
             
@@ -222,13 +198,12 @@ int pack(const char* pak_file, const char* rsp_file, bool b_compress) {
 			pakFile->writePacket(packet++, nullptr, 0, STORAGE_TYPE_NUL);
 		}
 
+        delete[] fpath;
         i++;
 	}
 
     pakFile->close();
 
-    delete[] chunk;
-    delete[] packet_buffer;
 	delete[] record;
 
     delete pakFile;

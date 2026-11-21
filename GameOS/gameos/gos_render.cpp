@@ -276,8 +276,11 @@ RenderContextHandle init_render_context(RenderWindowHandle render_window)
         printf("Vendor     : %s\n", glGetString(GL_VENDOR));
         printf("Renderer   : %s\n", glGetString(GL_RENDERER));
         printf("Version    : %s\n", glGetString(GL_VERSION));
-        const GLubyte* exts = glGetString(GL_EXTENSIONS);
-        printf("Extensions : %s\n", exts);
+        // glGetString(GL_EXTENSIONS) is invalid in a core profile context
+        // (returns NULL and raises GL_INVALID_ENUM); query the count instead.
+        GLint num_exts = 0;
+        glGetIntegerv(GL_NUM_EXTENSIONS, &num_exts);
+        printf("Extensions : %d\n", num_exts);
         printf("\n");
 
         int value;

@@ -141,7 +141,6 @@ void
 	gosFX::WriteGFXVersion(Stuff::MemoryStream *erf_stream)
 {
 	Check_Object(erf_stream);
-    // sebi TODO: int strtoint(char[4]); aka MAKE_FOURCC
-	//*erf_stream << 'GFX#' << static_cast<int>(CurrentGFXVersion);
+	// gosFX_fourccGFX is the portable spelling of the multi-char literal 'GFX#'
 	*erf_stream << gosFX_fourccGFX << static_cast<int>(CurrentGFXVersion);
 }

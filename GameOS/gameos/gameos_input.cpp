@@ -305,37 +305,42 @@ DWORD __stdcall gos_GetKey()
         if(!(kc & SDLK_SCANCODE_MASK) && isascii(kc)) {
             c = (unsigned char)kc;
 
-            // this is all hardcodede crap, mayeb will fix it later
-
-			// FIXME: it is incorrect to do so because caps lock is not held constantly but either turned on or off
-            //const bool caps_pressed = !!ki->last_state_[SDL_SCANCODE_CAPSLOCK];
-
+            // Translate to the character the key produces with the current
+            // modifiers (US layout, which is what the game's fonts support).
+            // Caps Lock is a toggle, so its state comes from SDL's modifier
+            // state rather than from whether the key is currently held.
+            const bool caps_on = (SDL_GetModState() & KMOD_CAPS) != 0;
             const bool shift_pressed = !!(ki->last_state_[SDL_SCANCODE_LSHIFT] || ki->last_state_[SDL_SCANCODE_RSHIFT]);
-            const bool register_mod = /*caps_pressed ^ */shift_pressed; 
-            if(c >= SDLK_a && c<=SDLK_z && register_mod)
+            if(c >= SDLK_a && c<=SDLK_z)
             {
-                c-=32;
+                if(caps_on != shift_pressed)
+                    c-=32;
             }
-            else if(register_mod)
+            else if(shift_pressed)
             {
                 switch(c)
                 {
-                    case SDLK_0:        c = SDLK_RIGHTPAREN; break;
-                    case SDLK_1:        c = SDLK_EXCLAIM; break;
-                    case SDLK_2:        c = SDLK_AT; break;
-                    case SDLK_3:        c = SDLK_HASH; break;
-                    case SDLK_4:        c = SDLK_DOLLAR; break;
-                    case SDLK_5:        c = 37; break; // %
-                    case SDLK_6:        c = SDLK_COLON; break;
-                    case SDLK_7:        c = SDLK_AMPERSAND; break;
-                    case SDLK_8:        c = SDLK_ASTERISK; break;
-                    case SDLK_9:        c = SDLK_LEFTPAREN; break;
-                    case SDLK_EQUALS:   c = SDLK_PLUS; break;
-                    case SDLK_MINUS:    c = SDLK_UNDERSCORE; break;
-                    case SDLK_COMMA:    c = SDLK_LESS; break;
-                    case SDLK_PERIOD:   c = SDLK_GREATER; break;
-                    case SDLK_SLASH:    c = SDLK_QUESTION; break;
-                    case SDLK_BACKSLASH:c = '|'; break;
+                    case SDLK_0:            c = ')'; break;
+                    case SDLK_1:            c = '!'; break;
+                    case SDLK_2:            c = '@'; break;
+                    case SDLK_3:            c = '#'; break;
+                    case SDLK_4:            c = '$'; break;
+                    case SDLK_5:            c = '%'; break;
+                    case SDLK_6:            c = '^'; break;
+                    case SDLK_7:            c = '&'; break;
+                    case SDLK_8:            c = '*'; break;
+                    case SDLK_9:            c = '('; break;
+                    case SDLK_EQUALS:       c = '+'; break;
+                    case SDLK_MINUS:        c = '_'; break;
+                    case SDLK_COMMA:        c = '<'; break;
+                    case SDLK_PERIOD:       c = '>'; break;
+                    case SDLK_SLASH:        c = '?'; break;
+                    case SDLK_BACKSLASH:    c = '|'; break;
+                    case SDLK_SEMICOLON:    c = ':'; break;
+                    case SDLK_QUOTE:        c = '"'; break;
+                    case SDLK_LEFTBRACKET:  c = '{'; break;
+                    case SDLK_RIGHTBRACKET: c = '}'; break;
+                    case SDLK_BACKQUOTE:    c = '~'; break;
                     default: break;
                 }
             }
@@ -346,9 +351,8 @@ DWORD __stdcall gos_GetKey()
         return (ki<<8) | c;
     }
 
-    if(Environment.ButtonsAsKeys) {
-        // TODO: check buttons
-    }
+    // Environment.ButtonsAsKeys (joystick buttons reported as keys) is not
+    // supported: the game never enables it and has no joystick bindings.
 
     return 0;
 }

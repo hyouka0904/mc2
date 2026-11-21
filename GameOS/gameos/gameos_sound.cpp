@@ -65,7 +65,8 @@ class SoundEngine {
         }
 
         gosAudio* getAudio(DWORD audio_id) {
-            // TODO: return default audio
+            // Callers treat NULL as "no sound" and skip playback, which is the
+            // correct fallback for an unloaded resource.
             if(audio_id == INVALID_AUDIO_ID) {
                 return NULL;
             }
@@ -137,18 +138,17 @@ bool SoundEngine::init(int frequency, bool b_fmt_16_bit, bool b_fmt_signed, bool
     }
 
 
-    {
-        int audio_rate;
-        Uint16 audio_format;
-        int audio_channels;
-        int audio_buffers = chunksize_;
-
-        Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);             
+    // Mix_QuerySpec() leaves its outputs untouched when no device is open,
+    // so only report the spec if opening actually succeeded.
+    int audio_rate = 0;
+    Uint16 audio_format = 0;
+    int audio_channels = 0;
+    if(rv != -1 && Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels)) {
         printf("Opened audio at %d Hz %d bit %s (%s), %d bytes audio buffer\n", audio_rate,
-                (audio_format&0xFF),                                                
+                (audio_format&0xFF),
                 (audio_channels > 2) ? "surround" : (audio_channels > 1) ? "stereo" : "mono",
-                (audio_format&0x1000) ? "Big-Endian" : "Little-Endian",                                
-                audio_buffers);  
+                (audio_format&0x1000) ? "Big-Endian" : "Little-Endian",
+                chunksize_);
     }
 
     int num_allocated_chanels = Mix_AllocateChannels(NUM_CHANNELS);
@@ -469,20 +469,14 @@ void __stdcall gosAudio_SetChannelSlider( int Channel, enum gosAudio_Properties 
         }
         case gosAudio_Panning:
         {
-            ci->fPanning = value1; // -1 ... +1
-            // TODO: looks like panning sets level of volume in channels (like max. posssible)
-            // so if we set Panning(0,0) and then changes volume, we will not hear anyting!
-            // probably we need to uodate panning each time we set volume...  
-            // like check dwProperties if panning property allocated and then do our dirty stuff
-            /*
-            uint8_t cur_volume = (uint8_t)(2*ci->fVolume * MAX_VOLUME);
-            float t = (0.5f * ci->fPanning + 0.5f);
-            t = t < 0.0f ? 0.0f : t;
-            t = t > 1.0f ? 1.0f : t;
-            uint8_t right = (uint8_t)(t*cur_volume);
-            Mix_SetPanning(Channel, cur_volume - right, right);
-            printf("Mix_SetPanning(%d, %d, %d)\n", Channel, cur_volume-right, right);
-            */
+            ci->fPanning = value1 < -1.0f ? -1.0f : (value1 > 1.0f ? 1.0f : value1); // -1 ... +1
+            // Mix_SetPanning() applies a per-side attenuation on top of
+            // Mix_Volume(), so volume must not be folded in here: centre is
+            // full level on both sides and panning only ever attenuates the
+            // opposite side. (255, 255) also unregisters the panning effect.
+            const float left  = ci->fPanning > 0.0f ? 1.0f - ci->fPanning : 1.0f;
+            const float right = ci->fPanning < 0.0f ? 1.0f + ci->fPanning : 1.0f;
+            Mix_SetPanning(Channel, (Uint8)(left * 255.0f + 0.5f), (Uint8)(right * 255.0f + 0.5f));
             break;
         }
         case gosAudio_Frequency:

@@ -437,14 +437,15 @@ bool CSpecificEnemyUnitObjectiveCondition::Read( FitIniFile* missionFile )
 			long i;
 			for (i = 0; i < numMovers; i+= 1) {
 				pMover = ObjectManager->getMover(i);
-				bool close_x = areCloseEnough(pMover->getPosition().x, positionX);
-				bool close_y = areCloseEnough(pMover->getPosition().y, positionY);
-				// FIXME: sebi: one of the missions has bad data and so this condition never worked which led to assert(false)
-				// I could ont change it in data, so had to disable this check in the code ;-(
-				if (pMover && /*(pMover->getTeamId() != Alignment()) &&*/ close_x && close_y) {
+				if (!pMover)
+					continue;
+				// The original code also required pMover->getTeamId() != Alignment(),
+				// but one shipped mission's data puts the target on the wrong team,
+				// which made this lookup always fail. Position alone identifies it.
+				if (areCloseEnough(pMover->getPosition().x, positionX) &&
+					areCloseEnough(pMover->getPosition().y, positionY)) {
 					break;
 				}
-				printf("i=%d\n", i);
 			}
 			if (!(i < numMovers)) { assert(false); return false; }
 		}

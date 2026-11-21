@@ -807,9 +807,6 @@ public:
 
 		gos_ApplyRenderMaterial(mat);
 
-		// TODO: either use this or setMat4("wvp_", ...);
-		//mat->setTransform(*wvp_);
-
 		gos_RenderIndexedArray(ib, vb, vdecl);
 
 	}

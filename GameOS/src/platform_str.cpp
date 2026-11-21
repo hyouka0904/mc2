@@ -8,48 +8,26 @@
 
 // string functions to use in cross-platform environment
 
+// Both return -1, 0 or 1. Characters are compared as unsigned char, the same
+// as the C library. (The previous hand-rolled sign extraction,
+// ((d & 0x70000000) >> 30) - 1, returned 0 for every negative difference
+// and -1 for every positive one, i.e. the wrong order.)
 int S_strcmp(const char* s1, const char* s2)
 {
 	assert(s1 && s2);
-
-	int c1, c2, d;
-	do {
-		c1 = *s1++;
-		c2 = *s2++;
-		d = c1 - c2;
-		if(d) {
-			return ((d&0x70000000)>>30) - 1;
-		}
-	} while(c1);
-
-	return 0;
+	const int d = strcmp(s1, s2);
+	return (d > 0) - (d < 0);
 }
 
 int S_strncmp(const char* s1, const char* s2, size_t max_count)
 {
 	assert(s1 && s2);
-
-	int c1, c2, d;
-	do {
-
-		if(!max_count--)
-			return 0;
-
-		c1 = *s1++;
-		c2 = *s2++;
-		d = c1 - c2;
-		if(d) {
-			return ((d&0x70000000)>>30) - 1;
-		}
-	} while(c1);
-
-	return 0;
-
+	const int d = strncmp(s1, s2, max_count);
+	return (d > 0) - (d < 0);
 }
 
 int S_stricmp(const char* s1, const char* s2)
 {
-	// TODO: implement
 #ifdef PLATFORM_WINDOWS
 	return _stricmp(s1, s2);
 #else
@@ -59,7 +37,6 @@ int S_stricmp(const char* s1, const char* s2)
 
 int S_strnicmp(const char* s1, const char* s2, size_t max_count)
 {
-	// TODO: implement
 #ifdef PLATFORM_WINDOWS
 	return _strnicmp(s1, s2, max_count);
 #else
@@ -73,7 +50,7 @@ char* S_strupr(char* s)
 	return _strupr(s);
 #else
 	char* p = s;
-    while ((*p = toupper( *p ))) p++;
+    while ((*p = (char)toupper((unsigned char)*p))) p++;
     return s;
 #endif
 }
@@ -84,7 +61,7 @@ char* S_strlwr(char* s)
 	return _strlwr(s);
 #else
 	char* p = s;
-    while ((*p = tolower( *p ))) p++;
+    while ((*p = (char)tolower((unsigned char)*p))) p++;
     return s;
 #endif
 }
@@ -96,13 +73,17 @@ int S_vsnprintf(char *str, size_t size, const char *format, va_list ap)
 	int count = -1;
 
 #ifdef PLATFORM_WINDOWS
+	// _vsnprintf_s consumes `ap`, so keep a copy for measuring the full length.
+	va_list ap_copy;
+	va_copy(ap_copy, ap);
 	if(size != 0)
 		count = _vsnprintf_s(str, size, _TRUNCATE, format, ap);
 
-	// if formated tring turned out to take more than buf_size
+	// if formatted string turned out to take more than buf_size
 	// return real length of formatted string
 	if(count == -1)
-		count = _vscprintf(format, ap);
+		count = _vscprintf(format, ap_copy);
+	va_end(ap_copy);
 #else
 	count = vsnprintf(str, size, format, ap);
 #endif

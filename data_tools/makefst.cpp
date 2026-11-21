@@ -13,12 +13,14 @@ long maxFastFiles = 0;
 
 void usage(char** argv) {
     printf("%s [-d] [-c] <-f pak_file> [-p path] [-m mount_path]\n", argv[0]);
-    printf("\\t-d - unpack\n");
-    printf("\\t-c - compress (when packing)\n");
-    printf("\\t-m - path under which files will be \"stored\" in fst\n");
+    printf("\t-d - unpack\n");
+    printf("\t-c - compress (when packing)\n");
+    printf("\t-m - path under which files will be \"stored\" in fst\n");
 }
 
-// TODO: add possibility to read non compressed fastfiles (currently not present in ffile.cpp, but we have readRAW, maybe use it internally)
+// Note: every entry in a fastfile is zlib-compressed by design (see
+// FastFile::readFast), and the format has no per-entry "stored raw" flag, so
+// there is no uncompressed fastfile variant to support here.
 
 int unpack(const char* fst_file, const char* out_path)
 {

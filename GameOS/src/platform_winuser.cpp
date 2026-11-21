@@ -7,53 +7,63 @@
 #include"platform_windows.h"
 #include"platform_str.h"
 
-#define _Inout_
+// There is no native message box on this platform, so messages are written
+// to stderr and the box is answered automatically.
+//
+// The answer must never be "retry": the game's missing-file prompts loop on
+// MessageBox until the user cancels, and with nobody to insert a CD that loop
+// would never end. So any box that offers a cancel/no button is answered with
+// it, and plain OK boxes are answered with OK.
+static int auto_answer_message_box(UINT type)
+{
+    switch (type & MB_TYPEMASK) {
+        case MB_OKCANCEL:
+        case MB_RETRYCANCEL:
+        case MB_YESNOCANCEL:
+            return IDCANCEL;
+        case MB_YESNO:
+            return IDNO;
+        default:
+            return IDOK;
+    }
+}
 
 int GetSystemMetrics(int)
 {
-    // TODO: implememt
+    // Only queried for SM_SWAPBUTTON; SDL already reports mouse buttons with
+    // the OS-level swap applied, so "not swapped" is the correct answer here.
     return 0;
 }
 
-SHORT GetAsyncKeyState(int vk_key)
+SHORT GetAsyncKeyState(int)
 {
-    // TODO: implememt
+    // Unused: input is polled through gos_GetKeyStatus()/gos_GetMouseInfo().
     return 0;
 }
 
-
-/*
-LPTSTR WINAPI CharLower(
-          _Inout_ LPTSTR lpsz
-        )
+int MessageBoxA(HWND, LPCSTR message, LPCSTR caption, UINT type)
 {
-    return strlwr(lpsz);
-}
-*/
-
-int MessageBoxA(HWND,LPCSTR header, LPCSTR message, UINT )
-{
-    printf("MSGBOX: %s : %s\n", header, message);
-    return 0;
+    fprintf(stderr, "MSGBOX: %s : %s\n", caption ? caption : "", message ? message : "");
+    return auto_answer_message_box(type);
 }
 
-int MessageBoxW(HWND,LPCWSTR header, LPCWSTR message, UINT)
+int MessageBoxW(HWND, LPCWSTR message, LPCWSTR caption, UINT type)
 {
-    printf("MSGBOX: %S : %S\n", header, message);
-    return 0;
+    fprintf(stderr, "MSGBOX: %S : %S\n", caption ? caption : L"", message ? message : L"");
+    return auto_answer_message_box(type);
 }
 
 LPSTR CharLowerA(LPSTR s)
 {
     char* p = s;
-    while ((*p = tolower( *p ))) p++;
+    while ((*p = (char)tolower((unsigned char)*p))) p++;
     return s;
 }
 
 LPSTR CharUpperA(LPSTR s)
 {
     char* p = s;
-    while ((*p = toupper( *p ))) p++;
+    while ((*p = (char)toupper((unsigned char)*p))) p++;
     return s;
 }
 

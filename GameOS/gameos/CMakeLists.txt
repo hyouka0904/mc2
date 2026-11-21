@@ -25,6 +25,7 @@ set(SOURCES ${SOURCES}
     utils/timing.cpp
     utils/string_utils.cpp
     utils/file_utils.cpp
+    utils/kv_registry.cpp
     )
 
 set(MAIN_SRC gameosmain.cpp)

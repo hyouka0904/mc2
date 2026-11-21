@@ -108,7 +108,6 @@ extern bool useWaterInterestTexture;
 extern bool useShadows;
 
 extern bool aborted;
-bool gotBombData = false;
 
 TimerManagerPtr timerManager = NULL;
 
@@ -288,7 +287,6 @@ extern bool WindowsNT;
 
 extern EString *g_textureCache_FilenameOfLastLoadedTexture;
 
-bool checkedBomb = false;
 
 //***************************************************************************
 // DEBUGGING WINDOWS
@@ -970,13 +968,11 @@ void __stdcall InitializeGameEngine()
 		//gos_LoadDataFromRegistry("CDPath", CDInstallPath, &maxPathLength);
 		//if (!maxPathLength)
 		//	strcpy(CDInstallPath,"..\\");
-		// to find necessary files
-#ifdef PLATFORM_WINDOWS
-		// for my windows layout
+		// The "CD" is the game directory itself on every platform. The CD
+		// check in File::open() relies on finding tgl.fst here to tell a
+		// legally missing file apart from a missing CD; pointing it anywhere
+		// else turns every optional file into a "CD not inserted" prompt.
 		strcpy(CDInstallPath,"./");
-#else
-		strcpy(CDInstallPath,"../FinalBuild/");
-#endif        
 
 		//--------------------------------------------------------------
 		// Start the SystemHeap and globalHeapList
@@ -1703,27 +1699,6 @@ void __stdcall InitializeGameEngine()
 			}
 		}
 	
-		//Time BOMB goes here.
-		// Set Date and write Binary data to registry under key
-		// GraphicsData!!
-		SYSTEMTIME bombDate;
-		DWORD dataSize = sizeof(SYSTEMTIME);
-		gos_LoadDataFromRegistry("GraphicsDataInit2", &bombDate, &dataSize);
-		if (dataSize == 0)
-		{
-			bombDate.wYear = 2001;
-			bombDate.wMonth = 6;
-			bombDate.wDayOfWeek = 5;
-			bombDate.wDay = 15;
-			bombDate.wHour = 0;
-			bombDate.wMinute = 0;
-			bombDate.wSecond = 0;
-			bombDate.wMilliseconds = 0;
-		
-			dataSize = sizeof(SYSTEMTIME);
-			gos_SaveDataToRegistry("GraphicsDataInit2", &bombDate, dataSize);
-		}
-
 		gameStarted = true;
 	}
 	else
@@ -2188,51 +2163,7 @@ void __stdcall DoGameLogic()
 			globalHeapList->update();
 	#endif
 	
-		//-----------------------------------------------------
-		// Check the TimeBomb to see if we should go away
-		/*
-		if (!checkedBomb)
-		{
-			SYSTEMTIME checkTime;
-			SYSTEMTIME bombTime;
-			DWORD dataSize = sizeof(SYSTEMTIME);
-			GetSystemTime(&checkTime);
-		
-			if (!gotBombData)
-			{
-				gos_LoadDataFromRegistry("GraphicsDataInit2", &bombTime, &dataSize);
-				gotBombData = true;
-			}
-		
-			if (dataSize == 0)
-			{
-				STOP(("NO Graphics Data Initializer - Please Login with administrator privileges"));	//In Case they try to whack the registry entry while running!
-			}
-		
-			if ((checkTime.wYear >= bombTime.wYear) &&
-				(checkTime.wMonth >= bombTime.wMonth) &&
-				(checkTime.wDay >= bombTime.wDay))
-			{
-				//If bomb goes off, set date to IMPOSSIBLE to achieve time!!
-				// If they whack the entry after this, it doesn't matter!  The normal bomb will go off and then set this anyway.
-				// If they whack the entry, then reset their system clock, then run the game, it will work.  Not much more I can do!
-				// I could delete files but it won't matter, they have the CD!
-				//
-				// MUST change version numbers on fastfiles after Code Complete and after EACH Beta we release!!
-				bombTime.wYear = 1950;
-				bombTime.wMonth = 0;
-				bombTime.wDay = 0;
-		
-				gos_SaveDataToRegistry("GraphicsDataInit2",  &bombTime, sizeof(SYSTEMTIME));
-		
-				STOP(("Time Bomb has exploded!"));
-		
-				quitGame = true;
-			}
 
-			checkedBomb = true;
-		}
-		*/
 	
 		//---------------------------------------------------------------
 		// Somewhere in all of the updates, we have asked to be excused!
@@ -2425,13 +2356,18 @@ void ParseCommandLine(const char *command_line)
 	int i;
 	int n_args = 0;
 	int index = 0;
-	char *argv[30];
+	const int MAX_ARGS = 64;
+	char *argv[MAX_ARGS];
 	
 	char tempCommandLine[4096];
 	memset(tempCommandLine,0,4096);
 	strncpy(tempCommandLine,command_line,4095);
 
-	while (tempCommandLine[index] != '\0')  // until we null out
+	// skip leading spaces so they do not produce an empty first argument
+	while (tempCommandLine[index] == ' ')
+		index++;
+
+	while (tempCommandLine[index] != '\0' && n_args < MAX_ARGS)  // until we null out
 	{
 		argv[n_args] = tempCommandLine + index;
 		n_args++;

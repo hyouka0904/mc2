@@ -17,8 +17,6 @@ layout (binding = 1, std140) uniform mesh_data
 
 uniform vec4 light_offset_;
 
-uniform mat4 mvp_; // TODO: remove, use wvp_ instead
-
 uniform mat4 world_;
 uniform mat4 view_;
 uniform mat4 wvp_;

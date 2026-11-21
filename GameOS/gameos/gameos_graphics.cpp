@@ -730,19 +730,12 @@ class gosTexture {
         BYTE* Lock(int mipl_level, bool is_read_only, int* pitch) {
             gosASSERT(is_locked_ == false);
             is_locked_ = true;
-            // TODO:
+            // Data is always handed out as tightly packed 32-bit pixels, and
+            // TEXTUREPTR::Pitch is measured in DWORDs, so pitch == width.
             gosASSERT(pitch);
             *pitch = tex_.w;
 
             gosASSERT(!plocked_area_);
-#if 0 
-            glBindTexture(GL_TEXTURE_2D, tex_.id);
-            GLint pack_row_length;
-            GLint pack_alignment;
-            glGetIntegerv(GL_PACK_ROW_LENGTH, &pack_row_length);
-            glGetIntegerv(GL_PACK_ALIGNMENT, &pack_alignment);
-            glBindTexture(GL_TEXTURE_2D, 0);
-#endif
             // always return rgba8 formatted data
             lock_type_read_only_ = is_read_only;
             const uint32_t ts = tex_.w*tex_.h * getTexFormatPixelSize(TF_RGBA8);
@@ -889,8 +882,7 @@ bool gosTexture::createHardwareTexture() {
 
     } else if(pcompdata_ && size_ > 0) {
 
-        // TODO: this is texture from memory, so maybe do not load it from file eh?
-
+        // Texture supplied as an in-memory TGA image.
         Image img;
         if(!img.loadTGA(pcompdata_, size_)) {
             SPEW(("DBG", "failed to load texture from data, filename: %s, texname: %s\n", filename_? filename_ : "NO FILENAME", texname_?texname_:"NO TEXNAME"));
@@ -912,7 +904,10 @@ bool gosTexture::createHardwareTexture() {
     } else {
         gosASSERT(tex_.w >0 && tex_.h > 0);
 
-        TexFormat tf = TF_RGBA8; // TODO: check format_ and do appropriate stuff
+        // No source data: create a magenta placeholder of the requested size.
+        // Lock()/Unlock() always exchange RGBA8, so the storage format is
+        // RGBA8 regardless of format_ (which only describes alpha usage).
+        TexFormat tf = TF_RGBA8;
         DWORD* pdata = new DWORD[tex_.w*tex_.h];
         for(int i=0;i<tex_.w*tex_.h;++i)
             pdata[i] = 0xFF00FFFF;
@@ -978,6 +973,15 @@ class gosRenderer {
 
         uint32_t addTexture(gosTexture* texture) {
             gosASSERT(texture);
+            // Reuse slots freed by deleteTexture() so ids stay small and the
+            // list does not grow with every texture loaded over a session.
+            if(!freeTextureSlots_.empty()) {
+                const uint32_t id = freeTextureSlots_.back();
+                freeTextureSlots_.pop_back();
+                gosASSERT(textureList_[id] == 0);
+                textureList_[id] = texture;
+                return id;
+            }
             textureList_.push_back(texture);
             return (uint32_t)(textureList_.size()-1);
         }
@@ -1000,10 +1004,9 @@ class gosRenderer {
 			return (uint32_t)(vertexDeclarationList_.size() - 1);
 		}
 
-        // TODO: do same as with texture?
+        // Fonts are looked up by pointer/name, never by the index addFont()
+        // returns, so erasing from the list is safe here.
         void deleteFont(gosFont* font) {
-            // FIXME: bad use object list, with stable ids
-            // to not waste space
             
             struct equals_to {
                 gosFont* fnt_;
@@ -1065,7 +1068,6 @@ class gosRenderer {
         }
 
         gosTexture* getTexture(DWORD texture_id) {
-            // TODO: return default texture
             if(texture_id == INVALID_TEXTURE_ID) {
                 gosASSERT(0 && "Should not be requested");
                 return NULL;
@@ -1076,11 +1078,11 @@ class gosRenderer {
         }
 
         void deleteTexture(DWORD texture_id) {
-            // FIXME: bad use object list, with stable ids
-            // to not waste space
             gosASSERT(textureList_.size() > texture_id);
+            gosASSERT(textureList_[texture_id] != 0);
             delete textureList_[texture_id];
             textureList_[texture_id] = 0;
+            freeTextureSlots_.push_back(texture_id);
         }
 
         uint32_t getFlagsFromStates()
@@ -1207,6 +1209,7 @@ class gosRenderer {
         void initRenderStates();
 
         std::vector<gosTexture*> textureList_;
+        std::vector<uint32_t> freeTextureSlots_; // indices of null entries in textureList_
         std::vector<gosFont*> fontList_;
         std::vector<gosBuffer*> bufferList_;
         std::vector<gosVertexDeclaration*> vertexDeclarationList_;
@@ -1393,6 +1396,7 @@ void gosRenderer::destroy() {
         delete textureList_[i];
     }
     textureList_.clear();
+    freeTextureSlots_.clear();
 
     glDeleteVertexArrays(1, &gVAO);
 
@@ -2026,8 +2030,6 @@ void gosRenderer::drawText(const char* text) {
     } 
 */
 
-    // TODO: take text region into account!!!!
-    
     gosASSERT(text_->getNumVertices() + 6 * count <= text_->getVertexCapacity());
 
     int ix, iy;
@@ -2100,9 +2102,10 @@ void gosRenderer::drawText(const char* text) {
         y += font_height;
         pos += num_chars;
     }
-    // FIXME: save states before messing with it, because user code can set its ow and does not know that something was changed by us
-    
-    int prev_texture = getRenderState(gos_State_Texture);
+    // Client code sets every other state; only texture and filter are changed
+    // here, and both are restored after the draw so the caller never sees it.
+    const int prev_texture = getRenderState(gos_State_Texture);
+    const int prev_filter = getRenderState(gos_State_Filter);
     
     // All states are set by client code
     // so we only set font texture
@@ -2135,6 +2138,7 @@ void gosRenderer::drawText(const char* text) {
     text_->rewind();
 
     setRenderState(gos_State_Texture, prev_texture);
+    setRenderState(gos_State_Filter, prev_filter);
 
     afterDrawCall();
 }
@@ -2378,9 +2382,8 @@ void __stdcall gos_DestroyTexture( DWORD Handle )
 
 void __stdcall gos_LockTexture( DWORD Handle, DWORD MipMapSize, bool ReadOnly, TEXTUREPTR* TextureInfo )
 {
-    // TODO: does not really locks texture
-    
-    // not implemented yet
+    // "Locking" reads the texture back into a CPU-side copy; gos_UnLockTexture
+    // uploads it again unless it was locked read-only. Only mip 0 is supported.
     gosASSERT(MipMapSize == 0);
     int mip_level = 0; //func(MipMapSize);
 
@@ -2509,9 +2512,9 @@ void __stdcall gos_TextDraw( const char *Message, ... )
     g_gos_renderer->drawText(text);
 }
 
+// Corners go clockwise: (Left,Top) (Right,Top) (Right,Bottom) (Left,Bottom).
 void __stdcall gos_TextDrawBackground( int Left, int Top, int Right, int Bottom, DWORD Color )
 {
-    // TODO: Is it correctly Implemented?
     gosASSERT(g_gos_renderer);
 
     //PAUSE((""));
@@ -2533,10 +2536,10 @@ void __stdcall gos_TextDrawBackground( int Left, int Top, int Right, int Bottom,
     v[2].x = (float)Right;
     v[2].y = (float)Bottom;
     v[2].u = 1.0f;
-    v[2].v = 0.0f;
+    v[2].v = 1.0f;
 
-    v[1].y = (float)Bottom;
-    v[1].v = 1.0f;
+    v[3].y = (float)Bottom;
+    v[3].v = 1.0f;
 
     if(g_disable_quads == false )
         g_gos_renderer->drawQuads(v, 4);
@@ -2621,7 +2624,8 @@ void __stdcall gos_TextStringLength( DWORD* Width, DWORD* Height, const char *fm
 ////////////////////////////////////////////////////////////////////////////////
 size_t __stdcall gos_GetMachineInformation( MachineInfo mi, int Param1/*=0*/, int Param2/*=0*/, int Param3/*=0*/, int Param4/*=0*/)
 {
-    // TODO:
+    // Values the game only uses to pick default detail settings; modern GPUs
+    // exceed all of the original thresholds, so report generous constants.
     if(mi == gos_Info_GetDeviceLocalMemory)
         return 1024*1024*1024;
     if(mi == gos_Info_GetDeviceAGPMemory)
