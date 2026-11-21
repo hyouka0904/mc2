@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libsdl2-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            libglew-dev libgl-dev zlib1g-dev fontconfig fonts-dejavu-core
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Unit and tool tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: mc2-linux-build
+          retention-days: 3
+          path: |
+            build/mc2
+            build/out/res/libmc2res_64.so
+            build/out/data_tools/aseconv
+            build/out/data_tools/makefst
+            build/out/data_tools/makersp
+            build/out/data_tools/pak
+            build/out/text_tool/text_tool
+
+  smoke-test:
+    # Builds the game data and plays the first campaign mission headless
+    # (Xvfb + Mesa software rendering).
+    needs: build-and-test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout game data
+        uses: actions/checkout@v4
+        with:
+          repository: alariq/mc2srcdata
+          path: mc2srcdata
+          lfs: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: mc2-linux-build
+          path: build
+
+      - name: Install runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libsdl2-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 libglew2.2 \
+            libgl1-mesa-dri xvfb x11-utils imagemagick ffmpeg
+          chmod +x build/mc2 build/out/data_tools/* build/out/text_tool/text_tool
+
+      - name: Build game data
+        env:
+          # fall back to placeholder clips if LFS bandwidth is exhausted
+          MC2_PLACEHOLDER_MOVIES: "1"
+        run: scripts/prepare_game_dir.sh build mc2srcdata game
+
+      - name: Smoke test (mission mc2_01)
+        env:
+          MC2_SMOKE_OUT: smoke
+        run: scripts/smoke_test.sh game mc2_01 60
+
+      - name: Upload screenshot and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-result
+          path: smoke/

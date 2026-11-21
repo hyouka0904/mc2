@@ -18,7 +18,7 @@
 
 
 void Image::clear(){
-	delete pixels;
+	delete[] pixels;
 	pixels = NULL;
 	width = height = 0;
 	format = FORMAT_NONE;
@@ -107,6 +107,8 @@ static FORMAT getFormatFromBpp(const unsigned int bpp) {
 Image::Image(void)
 {
 	pixels = 0;
+	width = height = 0;
+	format = FORMAT_NONE;
 }
 
 Image::~Image(void)
@@ -231,6 +233,8 @@ bool Image::loadTGA(const unsigned char* mem, size_t len)
 
 bool Image::loadTGA(const TGAHeader* header, unsigned char* readPixels)
 {
+	delete[] pixels; // the image may be reused for another load
+	pixels = NULL;
 	width  = header->width;
 	height = header->height;
 
@@ -299,9 +303,12 @@ bool Image::loadTGA(const TGAHeader* header, unsigned char* readPixels)
 }
 
 
-static void mergeBytes(unsigned char *dest, unsigned char *src, int pixelSize)
+static void mergeBytes(unsigned char *dest, const unsigned char *src, int pixelSize)
 {
-	if (pixelSize == 4) {
+	if (pixelSize == 1) {
+		*dest = *src;
+	}
+	else if (pixelSize == 4) {
 		*dest++ = src[2];
 		*dest++ = src[1];
 		*dest++ = src[0];
@@ -313,7 +320,7 @@ static void mergeBytes(unsigned char *dest, unsigned char *src, int pixelSize)
 		*dest++ = src[0];
 	}
 	else if (pixelSize == 2) {
-		unsigned short tempPixel = *((unsigned short *)src);
+		const unsigned short tempPixel = (unsigned short)(src[0] | (src[1] << 8));
 		dest[0] = ((tempPixel >> 10) & 0x1F) << 3;
 		dest[1] = ((tempPixel >> 5) & 0x1F) << 3;
 		dest[2] = ((tempPixel) & 0x1F) << 3;
@@ -324,58 +331,69 @@ static void mergeBytes(unsigned char *dest, unsigned char *src, int pixelSize)
 	}
 }
 
+// Decodes an RLE-compressed (type 10) TGA. The result has the same layout as
+// the uncompressed path in loadTGA(): top row first, channels swizzled from
+// BGR(A) to RGB(A), 16-bit pixels expanded to RGBA8.
+//
+// Each packet starts with a header byte: the low 7 bits hold (count - 1); if
+// the high bit is set the next pixel is repeated `count` times (run-length
+// packet), otherwise `count` raw pixels follow.
 bool Image::loadCompressedTGA(const TGAHeader* header, const unsigned char* mem, size_t len) {
 
-	width  = header->width;
-	height = header->height;
+	const int srcPixelSize = header->bpp / 8;
+	if (srcPixelSize < 1 || srcPixelSize > 4)
+		return false;
 
-	format = getFormatFromBpp(header->bpp);
+	const FORMAT fmt = getFormatFromBpp(header->bpp);
+	const int dstPixelSize = getBytesPerPixel(fmt);
+	const size_t numPixels = (size_t)header->width * header->height;
 
-	const int pixelSize = header->bpp / 8;
-	unsigned char p[5];
-	int num_read_pixels = 0;
-	int offset = 0;
-	const size_t num_pixels = width * height;
+	unsigned char* decoded = new unsigned char[numPixels * dstPixelSize];
+	size_t pixel = 0;
+	size_t offset = 0;
 
-	unsigned char* pixels = new unsigned char[width * height * pixelSize];
+	while (pixel < numPixels) {
+		if (offset >= len)
+			break;
+		const unsigned char packet = mem[offset++];
+		const size_t count = (size_t)(packet & 0x7f) + 1;
+		const bool isRun = (packet & 0x80) != 0;
 
-	while (num_read_pixels < num_pixels) {
+		// Never write past the image, even if the data claims more pixels.
+		if (count > numPixels - pixel)
+			break;
 
-		if (len < pixelSize + 1)
-			return false;
-
-		memcpy(p, mem + offset, pixelSize + 1);
-
-		len -= pixelSize + 1;
-		offset += pixelSize + 1;
-
-		mergeBytes(&(pixels[num_read_pixels]), &(p[1]), pixelSize);
-		num_read_pixels++;
-
-		unsigned int  j = p[0] & 0x7f;
-		bool is_rle = p[0] & 0x80;
-		if (is_rle) {
-			for (unsigned int i = 0; i < j; i++) {
-				mergeBytes(&(pixels[num_read_pixels]), &(p[1]), pixelSize);
-				num_read_pixels++;
-			}
+		if (isRun) {
+			if (len - offset < (size_t)srcPixelSize)
+				break;
+			for (size_t i = 0; i < count; i++)
+				mergeBytes(decoded + (pixel + i) * dstPixelSize, mem + offset, srcPixelSize);
+			offset += srcPixelSize;
 		}
 		else {
-			for (unsigned int i = 0; i < j; i++) {
-
-				if (len < pixelSize)
-					return false;
-				memcpy(p, mem + offset, pixelSize);
-				len -= pixelSize;
-				offset += pixelSize;
-
-				mergeBytes(&(pixels[num_read_pixels]), p, pixelSize);
-				num_read_pixels++;
-			}
+			if (len - offset < count * srcPixelSize)
+				break;
+			for (size_t i = 0; i < count; i++)
+				mergeBytes(decoded + (pixel + i) * dstPixelSize, mem + offset + i * srcPixelSize, srcPixelSize);
+			offset += count * srcPixelSize;
 		}
+		pixel += count;
 	}
 
-	if (header->attrib & 0x20) flip();
+	if (pixel != numPixels) {
+		delete[] decoded;
+		return false;
+	}
+
+	delete[] pixels;
+	pixels = decoded;
+	width  = header->width;
+	height = header->height;
+	format = fmt;
+
+	// Pixels are now in file order; bottom-up files (the default, attribute
+	// bit 5 clear) need flipping to match the uncompressed path.
+	if (!(header->attrib & 0x20)) flip();
 
 	return true;
 }

@@ -16,9 +16,9 @@ long maxFastFiles = 0;
 
 void usage(char** argv) {
     printf("%s [-d] [-c] <-f pak_file> [-r rsp_file] [-p path]\n", argv[0]);
-    printf("\\t-d - unpack\n");
-    printf("\\t-c - compress (when packing)\n");
-    printf("\\t-r - rsp file with file list\n");
+    printf("\t-d - unpack\n");
+    printf("\t-c - compress (when packing)\n");
+    printf("\t-r - rsp file with file list\n");
 }
 
 
