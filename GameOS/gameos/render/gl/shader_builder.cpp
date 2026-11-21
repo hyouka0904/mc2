@@ -693,13 +693,7 @@ glsl_program::~glsl_program()
 {
     if(shp_)
     {
-		glsl_shader* pipeline[] = { vsh_, hsh_, dsh_, gsh_, fsh_ };
-		for(uint32_t i=0; i< sizeof(pipeline)/sizeof(pipeline[0]); ++i)
-		{
-			if(!pipeline[i]) continue;
-
-			glDetachShader(shp_, pipeline[i]->shader_);
-		}
+        // the shaders were detached right after linking
         glDeleteProgram(shp_);
 	}
     if (per_draw_ubo_)

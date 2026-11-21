@@ -5,7 +5,7 @@ set -u
 repo=${1:?usage: check_render_isolation.sh <repo_dir>}
 cd "$repo" || exit 2
 bad=$(grep -rnE '^[^/]*\bgl[A-Z][A-Za-z0-9]*\(|#include *[<"](GL/|render/gl/)' \
-        GameOS code mclib gui Viewer --include='*.cpp' --include='*.h' --include='*.hpp' \
+        GameOS code mclib gui --include='*.cpp' --include='*.h' --include='*.hpp' \
       | grep -v '^GameOS/gameos/render/gl/' \
       | grep -vE ':[0-9]+:\s*//' \
       | grep -v 'glToD3DProjectionMatrix')  # math helper, not an OpenGL call

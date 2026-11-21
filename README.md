@@ -69,7 +69,6 @@
 | `res/` | 字串資源動態函式庫 `libmc2res_64.so`，內容來自 `test_scripts/res_conv/strings.res.cpp`。 |
 | `data_tools/` | 資料建置工具：`aseconv`（ASE 模型轉 TGL）、`makefst`（打包 / 解包 `.fst`）、`makersp`（產生檔案清單）、`pak`（打包 / 解包 `.pak`）。 |
 | `text_tool/` | 字型烘焙工具：把 TTF 字型轉成遊戲使用的字型圖集（`.bmp`）與字元資訊（`.glyph`）。不需要顯示器。 |
-| `Viewer/` | 模型檢視器（開發用）。 |
 | `GameOS/gameos/mods/` | Mod 系統（`mod_system.h`：版本、manifest、Modpack、載入順序、檔案覆蓋層；`gos_mods.h`：遊戲端掛勾）。 |
 | `tools/mc2mod/` | Mod 製作工具 `mc2mod`（建立、檢查、列出、解析載入順序）。 |
 | `examples/mods/`、`examples/modpacks/` | 範例 Mod 與 Modpack（也用於自動測試）。 |
@@ -140,7 +139,6 @@ cmake --build build -j"$(nproc)"
 | `build/out/res/libmc2res_64.so` | 字串資源（放進遊戲目錄時需改名為 `libmc2res.so`） |
 | `build/out/data_tools/{aseconv,makefst,makersp,pak}` | 資料建置工具 |
 | `build/out/text_tool/text_tool` | 字型烘焙工具 |
-| `build/out/Viewer/viewer` | 模型檢視器 |
 
 ---
 
@@ -426,7 +424,7 @@ SDL3 GPU 後端在沒有 GPU 的環境使用 Mesa 的軟體 Vulkan（lavapipe）
 | `-mods <dir>` / `-modpack <file>` | 啟用 Mod / Modpack（見 [Mod / Modding / Modpack](#mod--modding--modpack)） |
 | `-windowed` | 忽略遊戲的全螢幕設定，一律以視窗執行（全螢幕行為取決於視窗管理員，會讓截圖因環境而異） |
 | `-shader-reload` | 開發用：著色器原始碼變更時在遊戲中重新編譯（每半秒檢查一次，預設關閉） |
-| `-renderer gl\|gpu` | 繪圖後端：`gl`＝OpenGL（預設），`gpu`＝SDL3 GPU（Linux 上為 Vulkan）。環境變數 `MC2_GPU_DEBUG=1` 開啟 Vulkan 驗證層，`SDL_GPU_DRIVER` 可指定驅動 |
+| `-renderer gl\|gpu` | 繪圖後端：`gpu`＝SDL3 GPU（預設，Linux 上為 Vulkan），`gl`＝OpenGL。截圖比對腳本一律明確指定。環境變數 `MC2_GPU_DEBUG=1` 開啟 Vulkan 驗證層，`SDL_GPU_DRIVER` 可指定驅動 |
 | `-no-batching` | 關閉繪製合併，每個 `gos_Draw*` 呼叫各畫一次（比較效能或排查問題用） |
 
 測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 18 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
@@ -490,8 +488,10 @@ cmake.exe -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=c:/path_to_your_
 
 | 後端 | 參數 | 說明 |
 |---|---|---|
-| OpenGL | `-renderer gl`（預設） | OpenGL 4 Core Profile，執行時編譯 `shaders/` |
-| SDL3 GPU | `-renderer gpu` | Linux 上為 Vulkan，Windows 上為 D3D12，macOS 上為 Metal；讀取建置時編好的 `shaders/compiled/` |
+| SDL3 GPU | 預設，或 `-renderer gpu` | Linux 上為 Vulkan，Windows 上為 D3D12，macOS 上為 Metal；讀取建置時編好的 `shaders/compiled/` |
+| OpenGL | `-renderer gl`；或 SDL3 GPU 無法啟動時自動改用 | OpenGL 4 Core Profile，執行時編譯 `shaders/`；位於獨立的 `gameos_gl` 函式庫，只有遊戲本體連結它 |
+
+未指定 `-renderer` 時先試 SDL3 GPU，失敗（例如沒有 Vulkan 驅動或缺少 `shaders/compiled/`）就重建視窗改用 OpenGL；明確指定時不會自動切換。OpenGL 後端保留一個版本週期作為備援，之後再移除（見下方「決策紀錄」）。
 
 GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，重複使用同一個緩衝區），SDL3 GPU 則要求上傳在繪圖通道外進行、狀態烘焙進管線物件。因此 SDL3 GPU 後端（`render/gpu/gpu_device.cpp`）會先記錄整個幀：
 
@@ -545,9 +545,24 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 3 繪圖後端抽象 | 完成 | `render/` 介面、OpenGL 只在 `render/gl/`、移除固定管線程式碼（純 Core Profile）、管線鍵與快取、可鎖定貼圖的 CPU 影子副本、`-perf-csv` |
 | 4 著色器 | 完成（DXIL 待 CI 安裝 dxc） | Vulkan 風格 GLSL（`PerDraw` / `LightsData` / `SceneData` 三個 uniform block、明確的 set / binding / location）；建置時編成 SPIR-V（通過 `spirv-val`）、MSL、HLSL；OpenGL 後端改用 uniform block 後 18 張截圖逐像素相同；熱重載改為 `-shader-reload` 開發選項 |
 | 5 SDL3 GPU 後端 | 完成 | `render/gpu/`（Vulkan via SDL3 GPU）、`-renderer gl\|gpu`、記錄重播式的即時模式模擬、管線快取、每幀上傳環狀緩衝區；兩個後端共用的繪製合併讓 mc2_01 第 600 幀 draw call 從 242 降到 156；CI 對兩個後端各跑冒煙測試與 18 張截圖比對（GPU 後端開啟 Vulkan 驗證層，零訊息）；兩後端差異最多 0.25%，門檻維持 0.5% |
-| 6 移除 OpenGL / GLEW | 未開始 | 依賴階段 5 |
+| 6 移除 OpenGL / GLEW | 進行中（依決策保留 OpenGL 一個版本週期） | 預設改為 SDL3 GPU，無法啟動時自動退回 OpenGL；OpenGL 後端移到獨立的 `gameos_gl` 函式庫，資料工具（含 `aseconv`）與測試不再連結 libGL / GLEW（CI 以 `ldd` 檢查）；移除 Viewer；修正 OpenGL 結束時重複 `glDetachShader` 的錯誤。待備援期結束後刪除 `render/gl/` 與 GLEW |
 | 7 新繪圖 API | 未開始 | |
 | 8 平台層精簡 | 未開始 | |
+
+### 決策紀錄
+
+| 問題 | 決定 |
+|---|---|
+| 音效遷移方式 | 直接改用 SDL3_mixer（不經過 SDL2_mixer 過渡期） |
+| 著色器來源語言 | 保留 GLSL，改為 Vulkan 風格後編成 SPIR-V / MSL / HLSL（方案 A） |
+| SDL3 取得方式 | 先找系統安裝的版本，找不到就自動下載並編譯固定版本（`MC2_SDL3_SOURCE=AUTO\|SYSTEM\|FETCH`） |
+| 最低支援平台 | Ubuntu 24.04、Windows 10、macOS 13 |
+| OpenGL 備援 | SDL3 GPU 成為預設後，OpenGL 後端保留一個版本週期再移除 |
+| Viewer（模型檢視器） | 不再需要，已移除 |
+| 階段 7 的停止條件 | mc2_01 每幀 draw call 降到 100 以下 |
+| DXIL 輸出 | 暫緩：需要在 CI 下載 Microsoft 的 dxc 預編譯執行檔，待另行決定 |
+| 新檔案的授權標頭 | 尚未決定 |
+| 網路對戰 | 尚未決定是否列入範圍 |
 
 ### 其他尚未完成的項目
 

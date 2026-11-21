@@ -230,7 +230,7 @@ TEST(run_options_shader_reload_flag)
 TEST(run_options_renderer_flag)
 {
     Options o;
-    CHECK(o.renderer == "gl");
+    CHECK(o.renderer.empty());
     CHECK(parseArgs({"-renderer", "gpu"}, o));
     CHECK(o.renderer == "gpu");
     Options bad;

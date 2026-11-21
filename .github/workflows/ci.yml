@@ -39,10 +39,13 @@ jobs:
       - name: Unit and tool tests
         run: ctest --test-dir build --output-on-failure
 
-      - name: No SDL2 / shared SDL3 left in the binaries
+      - name: No SDL2 / shared SDL3 left in the binaries; OpenGL only in the game
         run: |
           for b in build/mc2 build/out/text_tool/text_tool; do
             if ldd "$b" | grep -i sdl; then echo "unexpected SDL shared library in $b"; exit 1; fi
+          done
+          for b in build/out/data_tools/*; do
+            if ldd "$b" | grep -iE 'libGL|libOpenGL|libGLEW'; then echo "unexpected OpenGL library in $b"; exit 1; fi
           done
 
       - name: Upload binaries
@@ -98,9 +101,10 @@ jobs:
           MC2_PLACEHOLDER_MOVIES: "1"
         run: scripts/prepare_game_dir.sh build mc2srcdata game
 
-      - name: Smoke test (mission mc2_01)
+      - name: Smoke test (mission mc2_01, OpenGL)
         env:
           MC2_SMOKE_OUT: smoke
+          MC2_SMOKE_ARGS: -renderer gl
         run: scripts/smoke_test.sh game mc2_01 60
 
       - name: Smoke test (mission mc2_01, SDL3 GPU)

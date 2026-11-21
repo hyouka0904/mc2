@@ -356,6 +356,7 @@ void GLDevice::bindTexture(int unit, const Texture* t, const SamplerDesc& s)
 
 } // namespace
 
-Device* createGLDevice() { return new GLDevice(); }
+static Device* createGLDevice() { return new GLDevice(); }
+void registerGLBackend() { registerDeviceFactory(Backend::GL, &createGLDevice); }
 
 } // namespace gos_render

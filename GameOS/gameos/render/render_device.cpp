@@ -6,8 +6,17 @@ namespace gos_render {
 
 namespace {
 Device* g_device = nullptr;
-Backend g_backend = Backend::GL;
+Backend g_backend = Backend::GPU;
+DeviceFactory g_factories[2] = {nullptr, &createGpuDevice}; // GL, GPU
 } // namespace
+
+void registerDeviceFactory(Backend b, DeviceFactory f) { g_factories[(int)b] = f; }
+
+Device* createDevice(Backend b)
+{
+    DeviceFactory f = g_factories[(int)b];
+    return f ? f() : nullptr;
+}
 
 Device* device() { return g_device; }
 void setDevice(Device* d) { g_device = d; }

@@ -184,7 +184,7 @@ endif()
 
 
 add_executable(mc2 ${SOURCES} ${MAIN_SRC})
-target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main windows ZLIB::ZLIB MC2::SDL GLEW::GLEW MC2::Mixer ${ADDITIONAL_LIBS} OpenGL::GL)
+target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main gameos_gl windows ZLIB::ZLIB MC2::SDL MC2::Mixer ${ADDITIONAL_LIBS})
 
 # Shaders for the non-OpenGL backends (SPIR-V, MSL, HLSL, DXIL when dxc is
 # installed) are compiled into ${CMAKE_BINARY_DIR}/shaders_out at build time.
@@ -212,7 +212,6 @@ add_subdirectory("./res" "./out/res")
 add_subdirectory("./data_tools" "./out/data_tools")
 add_subdirectory("./text_tool" "./out/text_tool")
 add_subdirectory("./tools/mc2mod" "./out/tools/mc2mod")
-add_subdirectory("./Viewer" "./out/Viewer")
 
 option(MC2_BUILD_TESTS "Build the automated tests (run with ctest)" ON)
 if(MC2_BUILD_TESTS)

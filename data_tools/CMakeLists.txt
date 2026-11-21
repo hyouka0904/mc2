@@ -12,7 +12,7 @@ add_executable(pak ${PAK_SOURCES})
 target_link_libraries(pak mclib stuff gameos windows ZLIB::ZLIB MC2::SDL ${ADDITIONAL_LIBS})
 
 add_executable(aseconv ${ASECONV_SOURCES})
-target_link_libraries(aseconv mclib gosfx mlr stuff gameos windows ZLIB::ZLIB MC2::SDL GLEW::GLEW MC2::Mixer ${ADDITIONAL_LIBS} OpenGL::GL)
+target_link_libraries(aseconv mclib gosfx mlr stuff gameos windows ZLIB::ZLIB MC2::SDL MC2::Mixer ${ADDITIONAL_LIBS})
 
 add_executable(makersp ${MAKERSP_SOURCES})
 target_link_libraries(makersp mclib stuff gameos windows ZLIB::ZLIB MC2::SDL ${ADDITIONAL_LIBS})

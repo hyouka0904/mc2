@@ -114,9 +114,16 @@ void setBackend(Backend b);
 const char* backendName(Backend b); // "gl", "gpu"
 bool parseBackend(const char* name, Backend* out);
 
-// Factories (render/gl/gl_device.cpp, render/gpu/gpu_device.cpp)
-Device* createGLDevice();
-Device* createGpuDevice();
+// Creates the device of a backend; nullptr if that backend is not linked
+// in. The SDL3 GPU backend is part of the gameos library; the OpenGL one is
+// in gameos_gl and registers itself through registerGLBackend(), which the
+// game's main() calls (the data tools never link OpenGL).
+typedef Device* (*DeviceFactory)();
+void registerDeviceFactory(Backend b, DeviceFactory f);
+Device* createDevice(Backend b);
+void registerGLBackend(); // render/gl/gl_device.cpp
+
+Device* createGpuDevice(); // render/gpu/gpu_device.cpp
 
 } // namespace gos_render
 

@@ -169,9 +169,13 @@ int main(int argc, char** argv)
     gos_SetForceWindowed(run_opts.windowed);
     gos_SetShaderHotReload(run_opts.shader_reload);
     gos_SetDrawBatching(run_opts.batching);
+    // SDL3 GPU unless -renderer says otherwise; OpenGL is the fallback
+    gos_render::registerGLBackend();
+    const bool explicit_renderer = !run_opts.renderer.empty();
     {
-        gos_render::Backend b = gos_render::Backend::GL;
-        gos_render::parseBackend(run_opts.renderer.c_str(), &b);
+        gos_render::Backend b = gos_render::Backend::GPU;
+        if (explicit_renderer)
+            gos_render::parseBackend(run_opts.renderer.c_str(), &b);
         gos_render::setBackend(b);
     }
 
@@ -246,8 +250,22 @@ int main(int argc, char** argv)
 
     graphics::make_current_context(ctx);
 
-    if (!gos_CreateRenderer(ctx, win, w, h))
-        return 1;
+    if (!gos_CreateRenderer(ctx, win, w, h)) {
+        if (explicit_renderer || gos_render::backend() != gos_render::Backend::GPU)
+            return 1;
+        // e.g. no Vulkan driver: the window must be recreated for OpenGL
+        fprintf(stderr, "SDL3 GPU renderer unavailable: falling back to OpenGL\n");
+        graphics::destroy_render_context(ctx);
+        graphics::destroy_window(win);
+        gos_render::setBackend(gos_render::Backend::GL);
+        win = graphics::create_window("mc2", w, h);
+        ctx = win ? graphics::init_render_context(win) : NULL;
+        if (!ctx)
+            return 1;
+        graphics::make_current_context(ctx);
+        if (!gos_CreateRenderer(ctx, win, w, h))
+            return 1;
+    }
     if(!gos_CreateAudio())
     {   // not an error
         SPEW(("AUDIO", "Failed to create audio\n"));

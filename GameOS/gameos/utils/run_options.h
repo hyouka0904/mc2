@@ -18,8 +18,9 @@
 //   -mods <dir>              load the enabled mods from <dir> (default: ./mods
 //                            if it exists)
 //   -modpack <modpack.ini>   load exactly the mods a modpack lists
-//   -renderer gl|gpu         graphics backend: OpenGL (default) or SDL3 GPU
-//                            (Vulkan / D3D12 / Metal)
+//   -renderer gl|gpu         graphics backend: SDL3 GPU (Vulkan / D3D12 /
+//                            Metal) or OpenGL. Without it the game uses SDL3
+//                            GPU and falls back to OpenGL if that cannot start
 //   -no-batching             draw every gos_Draw* call on its own instead of
 //                            merging consecutive calls with the same state
 //   -shader-reload           development: recompile shaders whose source files
@@ -45,7 +46,7 @@ struct Options {
     bool windowed = false;
     bool shader_reload = false;
     bool batching = true;
-    std::string renderer = "gl";    // "gl" or "gpu"
+    std::string renderer;           // "gl", "gpu" or empty (gpu, else gl)
     std::string perf_csv;           // empty = none
     std::string mods_dir;           // empty = ./mods if present
     std::string modpack;            // empty = none

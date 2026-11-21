@@ -1970,10 +1970,13 @@ void gosRenderer::flush()
 bool gos_CreateRenderer(graphics::RenderContextHandle ctx_h, graphics::RenderWindowHandle win_h, int w, int h) {
 
     const bool gpu = gos_render::backend() == gos_render::Backend::GPU;
-    gos_render::Device* dev = gpu ? gos_render::createGpuDevice() : gos_render::createGLDevice();
+    gos_render::Device* dev = gos_render::createDevice(gos_render::backend());
+    if(!dev) {
+        fprintf(stderr, "error: this program was built without the %s renderer\n", gpu ? "SDL3 GPU" : "OpenGL");
+        return false;
+    }
     if(!dev->init()) {
-        fprintf(stderr, "error: the %s renderer cannot start%s\n", gpu ? "SDL3 GPU" : "OpenGL",
-                gpu ? " (try -renderer gl)" : "");
+        fprintf(stderr, "error: the %s renderer cannot start\n", gpu ? "SDL3 GPU" : "OpenGL");
         delete dev;
         return false;
     }

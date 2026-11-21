@@ -60,7 +60,7 @@ mc2_add_unit_test(unit_pqueue
 mc2_add_unit_test(unit_stuff
     SOURCES unit/test_stuff_selftests.cpp
     INCLUDES ${COMMON_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/mclib
-    LIBS stuff gameos windows MC2::SDL MC2::Mixer GLEW::GLEW OpenGL::GL ZLIB::ZLIB ${ADDITIONAL_LIBS})
+    LIBS stuff gameos windows MC2::SDL MC2::Mixer ZLIB::ZLIB ${ADDITIONAL_LIBS})
 
 # Data tool round trips (shell based, Linux/macOS only).
 if(NOT WIN32)
@@ -77,7 +77,7 @@ endif()
 mc2_add_unit_test(unit_sound
     SOURCES unit/test_sound.cpp
     INCLUDES ${COMMON_INCLUDE_DIRS}
-    LIBS gameos windows MC2::SDL MC2::Mixer GLEW::GLEW OpenGL::GL ZLIB::ZLIB ${ADDITIONAL_LIBS})
+    LIBS gameos windows MC2::SDL MC2::Mixer ZLIB::ZLIB ${ADDITIONAL_LIBS})
 set_tests_properties(unit_sound PROPERTIES ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
 mc2_add_unit_test(unit_render_state
