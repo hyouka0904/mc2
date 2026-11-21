@@ -4,6 +4,7 @@
 #  unit_kv_registry   registry emulation (GameOS/gameos/utils/kv_registry)
 #  unit_image_tga     TGA texture decoding (GameOS/gameos/utils/Image)
 #  unit_stuff         original Stuff library self-tests (mclib/stuff)
+#  unit_pqueue        A* open list (mclib/pqueue)
 #  tool_*             round trips through the data-pack tools
 #
 # The end-to-end game smoke test needs built game data and a display server,
@@ -36,6 +37,10 @@ mc2_add_unit_test(unit_image_tga
     SOURCES unit/test_image_tga.cpp ${MC2_GAMEOS_DIR}/utils/Image.cpp
     INCLUDES ${MC2_GAMEOS_DIR} ${CMAKE_SOURCE_DIR}/GameOS/include
     LIBS windows)
+
+mc2_add_unit_test(unit_pqueue
+    SOURCES unit/test_pqueue.cpp ${CMAKE_SOURCE_DIR}/mclib/pqueue.cpp
+    INCLUDES ${CMAKE_SOURCE_DIR}/mclib)
 
 mc2_add_unit_test(unit_stuff
     SOURCES unit/test_stuff_selftests.cpp

@@ -5,13 +5,18 @@ project(mc2)
 
 include(CMakeToolsHelpers OPTIONAL)
 
-# Set a default build type for single-configuration
-# CMake generators if no build type is set.
-#IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-#   SET(CMAKE_BUILD_TYPE RelWithDebInfo)
-#ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+# Default to an optimized build with debug info for single-configuration
+# generators; without this a plain "cmake .." produced an unoptimized (-O0)
+# game.
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-message("CMAKE library architecture: ${CMAKE_LIBRARY_ARCHITECTURE}")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 
 if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 	message(STATUS "Target is 64 bits")
@@ -28,10 +33,15 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
 #set(SDL2_DIR "${CMAKE_PREFIX_PATH}/cmake")
 
 if(NOT MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -ggdb")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs -Wno-error=array-bounds -Wno-switch -Wwrite-strings -Wno-unknown-warning-option -Wunused-variable -fpermissive") # -fsanitize=address -fno-omit-frame-pointer")
+    # -Wno-unused-local-typedefs: "typedef was ignored on this declaration"
+    # -Wno-error=array-bounds: newer GCCs flag legacy code that older ones did not
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs -Wno-error=array-bounds -Wno-switch -Wwrite-strings -Wno-unknown-warning-option -Wunused-variable")
+    option(MC2_ENABLE_ASAN "Build with AddressSanitizer" OFF)
+    if(MC2_ENABLE_ASAN)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+    endif()
 endif()
-# -Wno-unused-local-typedefs - to disable "typedef was ignored on this declaration"
 
 if(MSVC)
 	add_definitions(-DPLATFORM_WINDOWS)
@@ -59,14 +69,6 @@ find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(ZLIB REQUIRED)
 
-message("Found SDL2 package ${SDL_LIBS}" )
-message("SDL2 prefix: ${SDL2_PREFIX}")
-message("OPENGL library found in ${OPENGL}")
-message("GLEW library found in ${GLEW}")
-message("Zlib library found in ${ZLIB}")
-
-message("OpenGL library linking: ${OPENGL_gl_LIBRARY}")
-message("OpenGL library include: ${OPENGL_INCLUDE_DIR}")
 
 
 get_filename_component(COM_PATH1 "./GameOS/include" ABSOLUTE)
@@ -180,7 +182,6 @@ include_directories(${COMMON_INCLUDE_DIRS} "./mclib" "./gui" "./code" "./netlib"
 
 if(NOT WIN32)
 	set(ADDITIONAL_LIBS dl)
-	message("Not win32 system")
 else()
 	# winmm for timeGetTime, maybe switch to GetTickCount to remove this dependency
 	set(ADDITIONAL_LIBS winmm)
