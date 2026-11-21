@@ -236,13 +236,13 @@ bool FloatIntBitStreamTest(int total_sections_to_write)
 			source_array_of_bools[i] = false;
 		}
 
-		float_bit_depth[i] = Random::GetLessThan(32) + 1;
-		int_bit_depth[i] = Random::GetLessThan(32) + 1;
+		float_bit_depth[i] = Random::GetLessThan(31) + 1; // Scaled_*_To_Bits require bits < 32
+		int_bit_depth[i] = Random::GetLessThan(31) + 1;
 		
 		Test_Assumption(float_bit_depth[i] > 0);
 		Test_Assumption(int_bit_depth[i] > 0);
-		Test_Assumption(float_bit_depth[i] <= 32);
-		Test_Assumption(int_bit_depth[i] <= 32);
+		Test_Assumption(float_bit_depth[i] < 32);
+		Test_Assumption(int_bit_depth[i] < 32);
 
 
 		total_bits += float_bit_depth[i];

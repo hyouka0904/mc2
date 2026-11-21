@@ -8,6 +8,11 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Debug enables gosASSERT / Verify checks that release builds skip
+        build_type: [RelWithDebInfo, Debug]
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +24,7 @@ jobs:
             libglew-dev libgl-dev zlib1g-dev fontconfig fonts-dejavu-core
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
       - name: Build
         run: cmake --build build -j"$(nproc)"
@@ -28,6 +33,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
       - name: Upload binaries
+        if: matrix.build_type == 'RelWithDebInfo'
         uses: actions/upload-artifact@v4
         with:
           name: mc2-linux-build
