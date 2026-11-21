@@ -1593,11 +1593,13 @@ void gosRenderer::beginFrame()
 
 void gosRenderer::endFrame()
 {
-    // check for file changes every half second
+    // Check shader files for changes (hot reload) every half second.
     static uint64_t last_check_time = timing::get_wall_time_ms();
-    if(timing::get_wall_time_ms() - last_check_time > 500)
+    const uint64_t now = timing::get_wall_time_ms();
+    if(now - last_check_time > 500)
     {
-        for(int i=0; i< materialList_.size(); ++i)
+        last_check_time = now; // previously never updated: stat()ed every frame
+        for(size_t i=0; i< materialList_.size(); ++i)
         {
             materialList_[i]->checkReload();
         }

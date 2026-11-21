@@ -172,32 +172,15 @@ void UserInput::update (void)
 	leftDoubleClick = rightDoubleClick = middleDoubleClick = false;
 
 	
-	DWORD LEFT_MOUSE_CODE = VK_LBUTTON;
-	DWORD RIGHT_MOUSE_CODE = VK_RBUTTON;
-	if ( GetSystemMetrics(SM_SWAPBUTTON) )
-	{
-		RIGHT_MOUSE_CODE = VK_LBUTTON;
-		LEFT_MOUSE_CODE = VK_RBUTTON;
-	}
-
 	//-----------------
-	// Poll the mouse.
+	// Poll the mouse. Button bits: 1 = left, 2 = middle, 4 = right; SDL
+	// already applies the OS-level left/right swap setting.
 	DWORD buttonStates;
 	gos_GetMouseInfo(&mouseXPosition,&mouseYPosition,(int *)&mouseXDelta,(int *)&mouseYDelta,(int *)&mouseWheelDelta,&buttonStates);
 
-    // sebi: actually use gos
-	leftMouseButtonState = buttonStates & 1 ?           MC2_MOUSE_DOWN : MC2_MOUSE_UP;
-	middleMouseButtonState = (buttonStates & 2) >> 1 ?  MC2_MOUSE_DOWN : MC2_MOUSE_UP;
-	rightMouseButtonState = (buttonStates & 4) >> 2 ?   MC2_MOUSE_DOWN : MC2_MOUSE_UP;;
-
-    /*
-	SHORT code = GetAsyncKeyState(LEFT_MOUSE_CODE);
-	SHORT rCode = GetAsyncKeyState( RIGHT_MOUSE_CODE );
-	SHORT mCode = GetAsyncKeyState( VK_MBUTTON );
-	leftMouseButtonState = code ? MC2_MOUSE_DOWN : MC2_MOUSE_UP;
-	rightMouseButtonState = rCode ? MC2_MOUSE_DOWN : MC2_MOUSE_UP;
-	middleMouseButtonState = mCode ? MC2_MOUSE_DOWN : MC2_MOUSE_UP;
-    */
+	leftMouseButtonState   = (buttonStates & 1) ? MC2_MOUSE_DOWN : MC2_MOUSE_UP;
+	middleMouseButtonState = (buttonStates & 2) ? MC2_MOUSE_DOWN : MC2_MOUSE_UP;
+	rightMouseButtonState  = (buttonStates & 4) ? MC2_MOUSE_DOWN : MC2_MOUSE_UP;
 
 	//---------------------------------------------------------
 	// Adjust MouseWheelDelta to get old Broken Win2K values.
