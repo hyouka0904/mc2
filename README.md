@@ -185,7 +185,17 @@ cd game && ./mc2
 
 - **第一次執行**時遊戲會檢測硬體、寫入 `options.cfg` 後自動結束（原版設計），請再執行一次。
 - 直接進入指定任務（跳過選單）：`./mc2 -mission mc2_01`
-- 設定檔與存檔放在 `~/.mechcommander2/`（若有設定 `XDG_CONFIG_HOME` 則放在該目錄下）。
+- 設定檔與存檔放在系統的應用程式資料目錄（`SDL_GetPrefPath`）：
+  Linux 為 `~/.local/share/MechCommander2/`（或 `$XDG_DATA_HOME/MechCommander2/`），
+  macOS 為 `~/Library/Application Support/MechCommander2/`，Windows 為 `%APPDATA%\MechCommander2\`。
+  設定環境變數 `MC2_USER_DIR` 可改用其他目錄（測試時用來從空目錄開始）。
+- **舊存檔遷移**：舊版放在 `~/.mechcommander2/`（或 `$XDG_CONFIG_HOME/.mechcommander2/`、Windows 的
+  `%USERPROFILE%\.mechcommander2\`）。新目錄是空的時候，遊戲會把舊目錄的內容複製過去，並在舊目錄留下
+  `MOVED.txt` 說明新位置；舊檔案不會刪除。新目錄已有資料時不會再複製。
+- 遊戲需要在遊戲目錄（含 `data/` 的目錄）中執行。從檔案管理員（Finder、檔案總管）直接開啟時，
+  遊戲會到執行檔旁邊、或 macOS `.app` 套件旁邊尋找 `data/` 並切換過去。
+- 錯誤訊息會以對話框顯示並等待選擇；以 `-fixedstep`、輸入腳本執行，或設定 `MC2_NO_DIALOGS=1` 時，
+  只寫到標準錯誤輸出並自動回答（測試腳本都會設定）。
 
 ---
 
