@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Icon and version information of mc2.exe
+#include <winver.h>
+#include "mc2_version_rc.h"
+
+1 ICON MC2_ICON
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION MC2_VERSION_RC
+PRODUCTVERSION MC2_VERSION_RC
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "FileDescription", "MechCommander 2 (unofficial port)"
+            VALUE "FileVersion", MC2_VERSION_STR
+            VALUE "ProductName", "MechCommander 2 (unofficial port)"
+            VALUE "ProductVersion", MC2_VERSION_STR
+            VALUE "OriginalFilename", "mc2.exe"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

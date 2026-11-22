@@ -1,0 +1,15 @@
+Third-party components in this package
+======================================
+
+MechCommander 2 game code and art      Shared Source Limited Permissive License
+                                       (EULA.txt). The art may only be used and
+                                       distributed non-commercially.
+Code written for this port             GNU GPL v3 (GPL-3.0.txt)
+SDL3, SDL3_mixer, SDL3_ttf             zlib license (sdl3*.txt, when bundled)
+pl_mpeg (MPEG-1 movie decoder)         MIT (pl_mpeg.txt)
+FreeType                               FreeType License (FTL)
+GLEW (Windows/Linux, OpenGL backend)   Modified BSD / MIT
+zlib                                   zlib license
+
+This is an unofficial, non-commercial port. It is not affiliated with or
+endorsed by Microsoft. MechCommander is a trademark of its respective owner.

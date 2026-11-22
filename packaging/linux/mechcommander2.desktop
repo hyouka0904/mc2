@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=MechCommander 2
+Comment=Real-time tactics game (unofficial port)
+Exec=mc2
+Icon=mechcommander2
+Categories=Game;StrategyGame;
+Terminal=false

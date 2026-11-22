@@ -86,11 +86,34 @@ CPrefs::CPrefs() {
 #endif
 }
 
-int CPrefs::load( const char* pFileName ) {
+char gOptionsCfgPath[1024] = "options.cfg";
+char gOrgPrefsCfgPath[1024] = "orgprefs.cfg";
+
+void initUserPrefsPaths()
+{
+	static bool done = false;
+	if (done)
+		return;
+	done = true;
+	char dir[1024];
+	if (!gos_GetUserDataDirectory(dir, sizeof(dir)))
+		return; // keep the game directory
+	S_snprintf(gOptionsCfgPath, sizeof(gOptionsCfgPath), "%s" PATH_SEPARATOR "options.cfg", dir);
+	S_snprintf(gOrgPrefsCfgPath, sizeof(gOrgPrefsCfgPath), "%s" PATH_SEPARATOR "orgprefs.cfg", dir);
+	// Older versions kept them in the game directory: take them along once
+	struct _stat st;
+	if (_stat(gOptionsCfgPath, &st) == -1 && _stat("options.cfg", &st) != -1)
+	{
+		CopyFile("options.cfg", gOptionsCfgPath, true);
+		if (_stat("orgprefs.cfg", &st) != -1)
+			CopyFile("orgprefs.cfg", gOrgPrefsCfgPath, true);
+	}
+}
+
+int CPrefs::load( const char* pPath ) {
 	long result = 0;
 
-	FullPathFileName prefsPathname;
-	prefsPathname.init("./",pFileName,".cfg");
+	const char* prefsPathname = pPath ? pPath : gOptionsCfgPath;
 	FitIniFilePtr prefsFile = new FitIniFile;
 
 #ifdef _DEBUG
@@ -282,10 +305,10 @@ int CPrefs::load( const char* pFileName ) {
 }
 
 int CPrefs::save() {
-	char backupPath[256];
-	char originalPath[256];
+	char backupPath[1024 + 8];
+	char originalPath[1024];
 	
-	strcpy( originalPath, "options.cfg" );
+	strcpy( originalPath, gOptionsCfgPath );
 	strcpy( backupPath, originalPath );
 	strcat( backupPath,".old" );
 	_chmod(originalPath, _S_IWRITE);

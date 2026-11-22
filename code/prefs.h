@@ -10,10 +10,20 @@
 #endif
 
 
+// The player's settings (options.cfg) and the settings to reset to
+// (orgprefs.cfg) live in the user data directory next to the saved games, so
+// a read-only game directory (Program Files, AppImage, .app) works. Set by
+// initUserPrefsPaths(), which also moves the files of older versions out of
+// the game directory.
+extern char gOptionsCfgPath[1024];
+extern char gOrgPrefsCfgPath[1024];
+void initUserPrefsPaths();
+
 class CPrefs {
 public:
 	CPrefs();
-	int load( const char* pFileName = "options");
+	// pPath: a .cfg file; NULL = gOptionsCfgPath
+	int load( const char* pPath = NULL );
 	int save();
 	int applyPrefs(bool bApplyResolution = 1);
 

@@ -45,13 +45,10 @@ for _ in $(seq 50); do xdpyinfo -display "$display" >/dev/null 2>&1 && break; sl
 
 export DISPLAY=$display SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
 
-# The very first launch runs a hardware check and exits by design; do it
-# once up front so the timed run below starts the actual game.
-if [ ! -f options.cfg ]; then
-    echo "First launch: running the one-time hardware check"
-    timeout 120 ./mc2 > "$out_dir/first_run.log" 2>&1 || true
-    [ -f options.cfg ] || { echo "FAIL: first run did not create options.cfg"; tail -20 "$out_dir/first_run.log"; exit 1; }
-fi
+# A fresh user data directory: the game must start straight away and write
+# its settings there (not into the game directory)
+export MC2_USER_DIR="$out_dir/userdir"
+rm -rf "$MC2_USER_DIR"
 
 echo "Running mission $mission for ${seconds}s on $display"
 # shellcheck disable=SC2086 # word splitting of the extra arguments is intended
@@ -76,6 +73,9 @@ if kill -0 "$game_pid" 2>/dev/null; then
 fi
 
 failed=0
+if [ ! -f "$MC2_USER_DIR/options.cfg" ]; then
+    echo "FAIL: the game did not write options.cfg into the user data directory"; failed=1
+fi
 if grep -q '^MSGBOX:' "$log"; then
     echo "FAIL: game showed a message box:"; grep '^MSGBOX:' "$log" | head -5; failed=1
 fi

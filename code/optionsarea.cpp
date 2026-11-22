@@ -183,7 +183,7 @@ void OptionsXScreen::init(FitIniFile* file)
 	pKeys->init(xOffset, yOffset);
 
 	//Needs to be 8.3 or it won't go on the CD!!
-	originalSettings.load( "OrgPrefs" );
+	originalSettings.load( gOrgPrefsCfgPath );
 
 	prefs.load();
 

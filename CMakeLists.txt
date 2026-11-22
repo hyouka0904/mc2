@@ -86,6 +86,36 @@ get_filename_component(COM_PATH2 "./GameOS/gameos" ABSOLUTE)
 
 set(COMMON_INCLUDE_DIRS  ${COM_PATH1} ${COM_PATH2})
 
+# Version shown in the window title and by -version: -DMC2_VERSION=... (the
+# release workflow passes the tag), else `git describe`, else 0.0.0-dev.
+set(MC2_VERSION "" CACHE STRING "Version string (default: git describe)")
+set(MC2_VERSION_STRING "${MC2_VERSION}")
+if(NOT MC2_VERSION_STRING)
+    find_package(Git QUIET)
+    if(GIT_FOUND)
+        execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE MC2_VERSION_STRING OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET)
+    endif()
+endif()
+if(NOT MC2_VERSION_STRING)
+    set(MC2_VERSION_STRING "0.0.0-dev")
+endif()
+string(REGEX REPLACE "^v" "" MC2_VERSION_STRING "${MC2_VERSION_STRING}")
+# x.y.z for places that need a number (macOS bundle version)
+if(MC2_VERSION_STRING MATCHES "^([0-9]+)\\.([0-9]+)(\\.([0-9]+))?")
+    set(MC2_VERSION_NUMERIC "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}")
+    if(CMAKE_MATCH_4)
+        string(APPEND MC2_VERSION_NUMERIC ".${CMAKE_MATCH_4}")
+    endif()
+else()
+    set(MC2_VERSION_NUMERIC "0.0.0")
+endif()
+message(STATUS "Version: ${MC2_VERSION_STRING}")
+configure_file(${CMAKE_SOURCE_DIR}/cmake/mc2_version.h.in ${CMAKE_BINARY_DIR}/generated/mc2_version.h)
+include_directories(${CMAKE_BINARY_DIR}/generated)
+
 add_subdirectory("./mclib/" "./out/mclib")
 add_subdirectory("./mclib/mlr" "./out/mclib/mlr")
 add_subdirectory("./mclib/gosfx" "./out/mclib/gosfx")
@@ -198,7 +228,25 @@ else()
 endif()
 
 
+# Windows: icon and version resource; a GUI program (no console window),
+# still with main() as the entry point
+if(WIN32)
+    string(REPLACE "." "," MC2_VERSION_RC "${MC2_VERSION_NUMERIC},0")
+    file(WRITE ${CMAKE_BINARY_DIR}/generated/mc2_version_rc.h
+        "#define MC2_VERSION_RC ${MC2_VERSION_RC}\n#define MC2_VERSION_STR \"${MC2_VERSION_STRING}\"\n#define MC2_ICON \"${CMAKE_SOURCE_DIR}/packaging/icon.ico\"\n")
+    list(APPEND MAIN_SRC ${CMAKE_SOURCE_DIR}/packaging/windows/mc2.rc)
+endif()
+
 add_executable(mc2 ${SOURCES} ${MAIN_SRC})
+if(MSVC)
+    target_link_options(mc2 PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
+    # The Visual C++ runtime DLLs, listed for scripts/package.py (they are
+    # shipped next to mc2.exe, so players need no separate installer)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+    include(InstallRequiredSystemLibraries)
+    string(REPLACE ";" "\n" MC2_RUNTIME_LIBS "${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}")
+    file(WRITE ${CMAKE_BINARY_DIR}/runtime_libs.txt "${MC2_RUNTIME_LIBS}\n")
+endif()
 target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main windows ZLIB::ZLIB MC2::SDL MC2::Mixer ${ADDITIONAL_LIBS})
 if(MC2_ENABLE_OPENGL)
     target_link_libraries(mc2 gameos_gl)
@@ -213,8 +261,8 @@ if(APPLE)
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/macos/Info.plist.in
         MACOSX_BUNDLE_BUNDLE_NAME "MechCommander 2"
         MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.mc2.mechcommander2"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
-        MACOSX_BUNDLE_BUNDLE_VERSION "1")
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${MC2_VERSION_NUMERIC}"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${MC2_VERSION_NUMERIC}")
     add_dependencies(mc2 mc2res_64)
     add_custom_command(TARGET mc2 POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_BUNDLE_CONTENT_DIR:mc2>/Resources

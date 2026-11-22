@@ -22,7 +22,10 @@
 //   -modpack <modpack.ini>   load exactly the mods a modpack lists
 //   -datapath <dir>          game directory (the one that holds data/); the
 //                            default is the current directory, else the
-//                            executable's directory (or the folder of mc2.app)
+//                            executable's directory, ../share/mechcommander2
+//                            next to it (Linux packages), mc2.app/Contents/
+//                            Resources or the folder of mc2.app
+//   -version                 print the version and exit
 //   -renderer gl|gpu         graphics backend: SDL3 GPU (Vulkan / D3D12 /
 //                            Metal) or OpenGL. Without it the game uses SDL3
 //                            GPU and falls back to OpenGL if that cannot start
@@ -60,6 +63,7 @@ struct Options {
     std::string mods_dir;           // empty = ./mods if present
     std::string modpack;            // empty = none
     std::string data_path;          // empty = search (see -datapath)
+    bool print_version = false;     // -version
 
     bool should_capture(uint32_t frame) const;
 };

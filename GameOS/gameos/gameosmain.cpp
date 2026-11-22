@@ -38,6 +38,7 @@ extern void gos_SetGPUShapes(bool enable);
 
 #include "gameos_sound.h"
 #include "mods/gos_mods.h"
+#include "mc2_version.h"
 
 static bool g_exit = false;
 #if 0
@@ -217,8 +218,9 @@ static int sdl_message_box(const char* caption, const char* message, UINT type)
 
 // The game opens its data relative to the current directory. When it is
 // started from a file manager (Finder, Explorer) the current directory is
-// somewhere else, so look for the game data next to the executable, in the
-// .app bundle's resources, or next to the .app bundle.
+// somewhere else, so look for the game data next to the executable, in
+// ../share/mechcommander2 (Linux packages: bin/mc2 + share/mechcommander2/),
+// in the .app bundle's resources, or next to the .app bundle.
 static void find_game_directory(const std::string& data_path)
 {
     namespace fs = std::filesystem;
@@ -239,7 +241,7 @@ static void find_game_directory(const std::string& data_path)
     fs::path dir = fs::path(base);
     if (dir.filename().empty())
         dir = dir.parent_path(); // trailing separator
-    std::vector<fs::path> candidates = {dir};
+    std::vector<fs::path> candidates = {dir, dir.parent_path() / "share" / "mechcommander2"};
     // .app bundle: <folder>/MC2.app/Contents/Resources
     if (dir.filename() == "Resources" && dir.parent_path().filename() == "Contents")
         candidates.push_back(dir.parent_path().parent_path().parent_path());
@@ -253,9 +255,16 @@ static void find_game_directory(const std::string& data_path)
     }
 }
 
+#ifdef _WIN32
+void gos_AttachParentConsole(); // win_console.cpp
+#endif
+
 #ifndef DISABLE_GAMEOS_MAIN
 int main(int argc, char** argv)
 {
+#ifdef _WIN32
+    gos_AttachParentConsole();
+#endif
     gos_run_options::Options run_opts;
     {
         std::string error;
@@ -264,6 +273,11 @@ int main(int argc, char** argv)
             return 2;
         }
     }
+    if (run_opts.print_version) {
+        printf("MechCommander 2 %s\n", MC2_VERSION);
+        return 0;
+    }
+    fprintf(stderr, "MechCommander 2 %s\n", MC2_VERSION);
     find_game_directory(run_opts.data_path);
     // Before the game initialises: it seeds and reads the clock during startup
     platform_clock::set_fixed_step(run_opts.fixed_step_us);
@@ -352,7 +366,7 @@ int main(int argc, char** argv)
     int w = Environment.screenWidth;
     int h = Environment.screenHeight;
 
-    graphics::RenderWindowHandle win = graphics::create_window("mc2", w, h);
+    graphics::RenderWindowHandle win = graphics::create_window("MechCommander 2 " MC2_VERSION, w, h);
     if(!win)
         return 1;
 
@@ -370,7 +384,7 @@ int main(int argc, char** argv)
         graphics::destroy_render_context(ctx);
         graphics::destroy_window(win);
         gos_render::setBackend(gos_render::Backend::GL);
-        win = graphics::create_window("mc2", w, h);
+        win = graphics::create_window("MechCommander 2 " MC2_VERSION, w, h);
         ctx = win ? graphics::init_render_context(win) : NULL;
         if (!ctx)
             return 1;

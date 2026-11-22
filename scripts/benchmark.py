@@ -31,7 +31,7 @@ import tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "scripts"))
-from run_screenshot_tests import FIXED_ARGS, start_xvfb  # noqa: E402
+from run_screenshot_tests import FIXED_ARGS, prepare_user_dir, start_xvfb  # noqa: E402
 
 SKIP_FRAMES = 100
 
@@ -39,7 +39,7 @@ SKIP_FRAMES = 100
 def run_once(game_dir, display, mission, frames, renderer, tmp, exe="mc2"):
     csv_path = os.path.join(tmp, "perf_%s.csv" % mission)
     env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", MC2_NO_DIALOGS="1",
-               MC2_NO_MOVIES="1")
+               MC2_NO_MOVIES="1", MC2_USER_DIR=prepare_user_dir(game_dir, os.path.join(tmp, "userdir")))
     cmd = [os.path.join(game_dir, exe)] + FIXED_ARGS + [
         "-mission", mission, "-exit-after", str(frames), "-perf-csv", csv_path]
     if renderer:

@@ -83,6 +83,19 @@ TEST(run_options_datapath)
     CHECK(!parseArgs({"-datapath"}, bad));
 }
 
+TEST(run_options_version)
+{
+    Options o;
+    CHECK(parseArgs({"-version"}, o));
+    CHECK(o.print_version);
+    Options o2;
+    CHECK(parseArgs({"--version"}, o2));
+    CHECK(o2.print_version);
+    Options none;
+    CHECK(parseArgs({"-mission", "mc2_01"}, none));
+    CHECK(!none.print_version);
+}
+
 TEST(capture_file_name_is_zero_padded)
 {
     CHECK(gos_run_options::capture_file_name(300) == "capture_000300.png");

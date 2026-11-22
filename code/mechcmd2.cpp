@@ -922,29 +922,21 @@ void __stdcall InitializeGameEngine()
 	}
 #endif
 
-	//Then, we should check to see if the options.cfg exists.  if NOT, 
-	// Bring up a sniffer warning dialog, sniff, bring up sniffer end dialog and end.
-	if (!fileExists("options.cfg"))
+	initUserPrefsPaths();
+	// First launch (no options.cfg yet). The original game ran a one-time
+	// hardware check (the "sniffer", still available with -sniffer) that
+	// picked a settings preset and then quit, so the player had to start the
+	// game again. Every current machine is above the top preset: start with
+	// it and go on.
+	if (!fileExists(gOptionsCfgPath) && !SnifferMode)
 	{
-		//Must also check for a RIVA TNT card with driver 4.10.1.0131
-		// If this card is in the machine with this driver, do NOT allow sniffer to run.
-		// Just copy minprefs.cfg to options.cfg and move on.
-		if ((gos_GetMachineInformation(gos_Info_GetDeviceVendorID,0) == 0x10de) &&
-			(gos_GetMachineInformation(gos_Info_GetDeviceDeviceID,0) == 0x0020) &&
-			(gos_GetMachineInformation(gos_Info_GetDeviceDriverVersionHi,0) == 0x0004000a) &&
-			(gos_GetMachineInformation(gos_Info_GetDeviceDriverVersionLo,0) == 0x00010083))
-		{
-			CopyFile("minprefs.cfg","orgprefs.cfg",true);
-			CopyFile("minprefs.cfg","options.cfg",true);
-		}
-		else
-		{
-			//NEW Plan.  Regardless, copy the minprefs to options.  That way, sniffer can only screw up once!!
-			// After the first run, it will no longer run and the game will continue with minprefs.
-			SnifferMode = true;
-			CopyFile("minprefs.cfg","orgprefs.cfg",true);
-			CopyFile("minprefs.cfg","options.cfg",true);
-		}
+		CopyFile("hiprefs.cfg",gOrgPrefsCfgPath,true);
+		CopyFile("hiprefs.cfg",gOptionsCfgPath,true);
+	}
+	else if (SnifferMode)
+	{
+		CopyFile("minprefs.cfg",gOrgPrefsCfgPath,true);
+		CopyFile("minprefs.cfg",gOptionsCfgPath,true);
 	}
 
 	//Seed the random Number generator.
@@ -1000,10 +992,10 @@ void __stdcall InitializeGameEngine()
 		// OR re-install!!
 		//
 		// ALWAYS use minPrefs.cfg here!
-		if (!fileExists("orgprefs.cfg"))
+		if (!fileExists(gOrgPrefsCfgPath))
 		{
-			CopyFile("minprefs.cfg","orgprefs.cfg",true);
-			CopyFile("minprefs.cfg","options.cfg",true);
+			CopyFile("minprefs.cfg",gOrgPrefsCfgPath,true);
+			CopyFile("minprefs.cfg",gOptionsCfgPath,true);
 		}
 
 		//--------------------------------------------------------------
@@ -1256,7 +1248,7 @@ void __stdcall InitializeGameEngine()
 	
 		gosASSERT (prefsOpenResult == NO_ERR);
 		
-		prefsOpenResult = optsFile->open("options.cfg");
+		prefsOpenResult = optsFile->open(gOptionsCfgPath);
 		
 		gosASSERT (prefsOpenResult == NO_ERR);
 		
@@ -2225,43 +2217,43 @@ void __stdcall DoGameLogic()
 
 					if ((trisPerSecond[0] > 1000000.0f) && (ProcessorSpeed > 595.0f))
 					{
-						CopyFile("hiPrefs.cfg","orgprefs.cfg",false);
-						CopyFile("hiPrefs.cfg","options.cfg",false);
+						CopyFile("hiPrefs.cfg",gOrgPrefsCfgPath,false);
+						CopyFile("hiPrefs.cfg",gOptionsCfgPath,false);
 					}
 					else if ((trisPerSecond[0] > 1000000.0f) && (ProcessorSpeed <= 595.0f))
 					{
-						CopyFile("h2Prefs.cfg","orgprefs.cfg",false);
-						CopyFile("h2Prefs.cfg","options.cfg",false);
+						CopyFile("h2Prefs.cfg",gOrgPrefsCfgPath,false);
+						CopyFile("h2Prefs.cfg",gOptionsCfgPath,false);
 					}
 					else if ((trisPerSecond[0] > 10000.0f) && (ProcessorSpeed > 595.0f))
 					{
-						CopyFile("midPrefs.cfg","orgprefs.cfg",false);
-						CopyFile("midPrefs.cfg","options.cfg",false);
+						CopyFile("midPrefs.cfg",gOrgPrefsCfgPath,false);
+						CopyFile("midPrefs.cfg",gOptionsCfgPath,false);
 					}
 					else if ((trisPerSecond[1] > 1000000.0f) && (ProcessorSpeed > 595.0f))
 					{
-						CopyFile("hiPrefs1.cfg","orgprefs.cfg",false);
-						CopyFile("hiPrefs1.cfg","options.cfg",false);
+						CopyFile("hiPrefs1.cfg",gOrgPrefsCfgPath,false);
+						CopyFile("hiPrefs1.cfg",gOptionsCfgPath,false);
 					}
 					else if ((trisPerSecond[1] > 1000000.0f) && (ProcessorSpeed <= 595.0f))
 					{
-						CopyFile("h2Prefs1.cfg","orgprefs.cfg",false);
-						CopyFile("h2Prefs1.cfg","options.cfg",false);
+						CopyFile("h2Prefs1.cfg",gOrgPrefsCfgPath,false);
+						CopyFile("h2Prefs1.cfg",gOptionsCfgPath,false);
 					}
 					else if ((trisPerSecond[1] > 10000.0f) && (ProcessorSpeed > 595.0f))
 					{
-						CopyFile("midPrefs1.cfg","orgprefs.cfg",false);
-						CopyFile("midPrefs1.cfg","options.cfg",false);
+						CopyFile("midPrefs1.cfg",gOrgPrefsCfgPath,false);
+						CopyFile("midPrefs1.cfg",gOptionsCfgPath,false);
 					}
 					else if (trisPerSecond[1] > 0.0f)
 					{
-						CopyFile("minPrefs1.cfg","orgprefs.cfg",false);
-						CopyFile("minPrefs1.cfg","options.cfg",false);
+						CopyFile("minPrefs1.cfg",gOrgPrefsCfgPath,false);
+						CopyFile("minPrefs1.cfg",gOptionsCfgPath,false);
 					}
 					else
 					{
-						CopyFile("minPrefs.cfg","orgprefs.cfg",false);
-						CopyFile("minPrefs.cfg","options.cfg",false);
+						CopyFile("minPrefs.cfg",gOrgPrefsCfgPath,false);
+						CopyFile("minPrefs.cfg",gOptionsCfgPath,false);
 					}
 
 					DoneSniffing = true;
@@ -2645,13 +2637,14 @@ void __stdcall GetGameOSEnvironment(const char* CommandLine )
 	char pData[1024];
 	DWORD szData = 1023;
 
+	initUserPrefsPaths();
 	result=RegOpenKey(HKEY_CURRENT_USER,GAME_REG_KEY,&hKey);
 	if( ERROR_SUCCESS==result )
 	{
 		result=RegQueryValueEx(hKey,"FIRSTRUN",NULL,NULL,(PBYTE)pData,&szData);
 		if ((result == ERROR_SUCCESS) && pData[0])
 		{
-			if (fileExists("options.cfg") && !SnifferMode)
+			if (fileExists(gOptionsCfgPath) && !SnifferMode)
 #ifndef LAB_ONLY
 				Environment.fullScreen				= 1;
 #endif

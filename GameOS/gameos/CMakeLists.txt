@@ -35,6 +35,9 @@ set(SOURCES ${SOURCES}
     )
 
 set(MAIN_SRC gameosmain.cpp)
+if(WIN32)
+    list(APPEND MAIN_SRC win_console.cpp)
+endif()
 
 
 include_directories("../include"  ".")

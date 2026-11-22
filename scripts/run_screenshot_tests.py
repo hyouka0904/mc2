@@ -41,6 +41,17 @@ import compare_screenshots  # noqa: E402
 FIXED_ARGS = ["-fixedstep", "33", "-seed", "1", "-windowed"]
 
 
+def prepare_user_dir(game_dir, user_dir):
+    """A fresh user data directory (MC2_USER_DIR) with the low settings
+    preset, which the golden images were made with; a first launch without
+    options.cfg would start with the high preset."""
+    shutil.rmtree(user_dir, ignore_errors=True)
+    os.makedirs(user_dir)
+    for name in ("options.cfg", "orgprefs.cfg"):
+        shutil.copy(os.path.join(game_dir, "minprefs.cfg"), os.path.join(user_dir, name))
+    return user_dir
+
+
 def read_manifest(path):
     rows = []
     with open(path) as f:
@@ -107,7 +118,8 @@ def main():
 
     xvfb, display = start_xvfb(args.screen)
     env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", LIBGL_ALWAYS_SOFTWARE="1",
-               MC2_NO_DIALOGS="1", MC2_NO_MOVIES="1")  # frames independent of the movie files
+               MC2_NO_DIALOGS="1", MC2_NO_MOVIES="1",  # frames independent of the movie files
+               MC2_USER_DIR=prepare_user_dir(game_dir, os.path.join(out_dir, "userdir")))
     if args.gpu_validation:
         env["MC2_GPU_DEBUG"] = "1"
     fixed_args = FIXED_ARGS + ["-renderer", args.renderer]
@@ -115,11 +127,6 @@ def main():
         fixed_args.append("-gpu-shapes")
     failed = False
     try:
-        if not os.path.exists(os.path.join(game_dir, "options.cfg")):
-            print("First launch: running the one-time hardware check")
-            subprocess.call(["./mc2"], cwd=game_dir, env=env, timeout=120,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
         for run_index, (game_args, shots) in enumerate(runs.items()):
             frames = ",".join(str(f) for _, f in shots)
             label = " ".join(game_args) or "(no arguments)"
