@@ -242,9 +242,11 @@ jobs:
           test -f "$app/Contents/Resources/shaders/compiled/shaders.txt"
           test -f "$app/Contents/Resources/AppIcon.icns"
           test -f "$app/Contents/Resources/libmc2res.dylib"
-          out=$("$app/Contents/MacOS/mc2" -version)
-          echo "$out"
-          [[ "$out" == *"${VERSION#v}"* ]]
+          status=0
+          "$app/Contents/MacOS/mc2" -version > version.out 2> version.err || status=$?
+          echo "-version: exit $status, stdout: $(cat version.out), stderr: $(cat version.err)"
+          [ "$status" = 0 ]
+          grep -qF "${VERSION#v}" version.out
           plutil -p "$app/Contents/Info.plist" | grep -E "CFBundleShortVersionString|CFBundleIconFile"
           hdiutil detach "$mnt"
 
