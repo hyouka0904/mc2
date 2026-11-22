@@ -231,11 +231,15 @@ long HeapManager::commitHeap (unsigned long commitSize)
 #else
 		// only correct for 64bit?
         // currentEbp = esp;
+#if defined(__x86_64__)
         asm("mov %%rsp, %0;"
             : "=r"(currentEbp)
             :
             :
         );
+#else
+        currentEbp = (decltype(currentEbp))__builtin_frame_address(0);
+#endif
 #endif
 		prevEbp = *((unsigned long *)currentEbp);
 		retAddr = *((unsigned long *)(currentEbp+4));

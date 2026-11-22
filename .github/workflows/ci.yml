@@ -205,7 +205,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          cmake --build build --config RelWithDebInfo --parallel -- /p:ContinueOnError=ErrorAndContinue 2>&1 | tee build.log
+          cmake --build build --config RelWithDebInfo --parallel -- -p:ContinueOnError=ErrorAndContinue 2>&1 | tee build.log
           status=${PIPESTATUS[0]}
           echo "::group::Errors"; grep -E "error (C|LNK)[0-9]+|fatal error" build.log | grep -v "_deps" | sort -u; echo "::endgroup::"
           if grep -qE "error (C|LNK)[0-9]+|fatal error" build.log; then exit 1; fi
