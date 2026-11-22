@@ -909,7 +909,8 @@ class MCMSG_PlayerOrder {
 
 		unsigned char	type;
 		char			commanderID;
-		unsigned char	flags;
+		unsigned char	flags;			// 1 = queued (waypoint), 2 = lay mines
+		unsigned char	moverIndex;		// net roster index of the ordered mover
 		float			location[2];
 		unsigned int	tacOrderChunk[2];
 
@@ -923,6 +924,7 @@ class MCMSG_PlayerOrder {
 			type = MCMSG_PLAYER_ORDER;
 			commanderID = -1;
 			flags = 0;
+			moverIndex = 0;
 			location[0] = 0.0;
 			location[1] = 0.0;
 			tacOrderChunk[0] = 0;
@@ -939,6 +941,10 @@ class MCMSG_HoldPosition {
 		unsigned char	type;
 		char			commanderID;
 		unsigned short	flags;
+		unsigned char	numMovers;
+		unsigned char	fireFromCurrentPos;
+		unsigned char	moverIndex[MAX_LOCAL_MOVERS];
+		char			attackRange[MAX_LOCAL_MOVERS];
 
 	public:
 
@@ -950,6 +956,8 @@ class MCMSG_HoldPosition {
 			type = MCMSG_HOLD_POSITION;
 			commanderID = -1;
 			flags = 0;
+			numMovers = 0;
+			fireFromCurrentPos = 0;
 		}
 };
 
@@ -1304,6 +1312,21 @@ typedef enum {
 class GosNetSession;
 class GosNetScanner;
 
+// One world change (mine, fire, artillery, capture, ...) sent by the host.
+#pragma pack(1)
+typedef struct _NetWorldEvent {
+	unsigned char	type;			// WORLDCHUNK_*
+	unsigned char	pad;
+	short			a;				// tile row / commander / code ...
+	short			b;
+	int				c;				// part id / param ...
+	int				d;
+	float			x;
+	float			y;
+} NetWorldEvent;
+#pragma pack()
+
+#define	MAX_NET_WORLD_EVENTS		512
 class MultiPlayer {
 
 	public:
@@ -1323,8 +1346,14 @@ class MultiPlayer {
 		bool				missionSetupReceived;
 		bool				pumping;
 		long				pausesUsed[MAX_MC_PLAYERS];
-
-
+		long				lastMessageSize;
+		NetWorldEvent		worldEvents[MAX_NET_WORLD_EVENTS];
+		long				numWorldEvents;
+		unsigned int		lastMoveChunkSent[MAX_MULTIPLAYER_MOVERS];
+		unsigned int		lastStatusChunkSent[MAX_MULTIPLAYER_MOVERS];
+		long				lastTurretTargetSent[MAX_MULTIPLAYER_TURRETS];
+		double				lastFullUpdateTime;
+		double				nextMissionStatusCheck;
 		bool				onLAN;
 		bool				hostLeft;
 		VersionStatus		versionStatus;
@@ -1736,6 +1765,8 @@ class MultiPlayer {
 		bool allMissionFullySetup (void);
 		void addLocalChat (long commanderID, const char* text, bool hideName, bool teamOnly);
 		void recalcTeamColors (void);
+		void logState (void);
+		void clearRosters (void);
 
 		bool calcMissionStatus (void);
 

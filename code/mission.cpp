@@ -3114,6 +3114,11 @@ void Mission::initTGLForMission()
 //----------------------------------------------------------------------------------
 void Mission::destroy (bool initLogistics)
 {
+	// The movers and turrets are about to go away: forget them in the
+	// multiplayer rosters so no network update touches freed objects.
+	if (MPlayer)
+		MPlayer->clearRosters();
+
 	//---------------------------------------------------------------
 	// Shutdown the Mission Interface
 	if (missionInterface)

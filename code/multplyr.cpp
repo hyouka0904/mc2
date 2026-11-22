@@ -490,6 +490,7 @@ long MultiPlayer::update (void) {
 		syncLobbyState();
 		if (isServer() && (mode == MULTIPLAYER_MODE_MISSION))
 			updateServer();
+		logState();
 		if (net)
 			net->flush();
 	}
@@ -1797,6 +1798,7 @@ void MultiPlayer::processNetMessage (NETPLAYER sender, const unsigned char* data
 	buffer[size] = 0;
 	void* m = buffer;
 	unsigned char type = buffer[0];
+	lastMessageSize = size;
 	NETLOG(2, "recv type %d size %d from %u", type, size, sender);
 
 	// Before the host accepted us only the join reply matters; on the host,
