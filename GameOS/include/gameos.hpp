@@ -41,15 +41,14 @@
 #include<string.h> // memcmp
 #include "platform_windows.h"
 
-static __inline__ unsigned long long rdtsc(void)
+// Not the x86 instruction (no such thing on ARM): a monotonic nanosecond
+// counter, used only for timestamps in the event log.
+#include <chrono>
+static inline unsigned long long rdtsc(void)
 {
-    unsigned long x;
-    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
-    return x;
+    return (unsigned long long)std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
 }
-// or just use clock_gettime(CLOCK_MONOTONIC_RAW);
-// or 
-//clock_gettime(CLOCK_PROCESS_CPUTIME_ID)
 #else
 #include <memory.h> // memcmp
 #include <inttypes.h>

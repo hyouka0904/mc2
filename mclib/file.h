@@ -18,6 +18,7 @@
 // Include files
 
 #ifndef DSTD_H
+#include <time.h> // time_t
 #include"dstd.h"
 #endif
 

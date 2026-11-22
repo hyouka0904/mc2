@@ -148,7 +148,8 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMC2_SHADER_REQUIRE=msl
 
       - name: Build
-        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+        # -k: report every compile error in one run
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)" -- -k
 
       - name: Unit and tool tests
         run: ctest --test-dir build --output-on-failure
@@ -190,12 +191,13 @@ jobs:
       - name: Configure
         shell: pwsh
         run: >
-          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+          cmake -S . -B build -A x64
           "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
           -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
 
       - name: Build
-        run: cmake --build build --config RelWithDebInfo --parallel
+        # ContinueOnError: report every compile error in one run
+        run: cmake --build build --config RelWithDebInfo --parallel -- /p:ContinueOnError=true
 
       - name: Unit and tool tests
         run: ctest --test-dir build -C RelWithDebInfo --output-on-failure
