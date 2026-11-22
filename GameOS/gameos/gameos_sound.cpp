@@ -4,6 +4,11 @@
 // decoded to memory. When no audio device can be opened (headless machines,
 // SDL_AUDIODRIVER=dummy without a device) the mixer is created without a
 // device so the API keeps working and can be pulled with MIX_Generate().
+//
+// With a device the mixer runs at the device's own rate (usually 48 kHz), so
+// the 44.1 kHz music and effects are resampled once instead of being cut
+// down to 22.05 kHz first. Tracks are mixed with headroom and limited at the
+// end (gosLimiter), see gameos_sound.h.
 
 #include "gameos.hpp"
 #include "gameos_sound.h"
@@ -61,6 +66,7 @@ public:
                 apply(i);
     }
     void set3D(int i) { is3d_[i] = true; }
+    void setMasterVolume(float v) { MIX_SetMixerGain(mixer_, v * kGosMixHeadroom); }
     bool is3D(int i) const { return is3d_[i]; }
     MIX_Track* track(int i) { return (i >= 0 && i < NUM_CHANNELS) ? tracks_[i] : nullptr; }
 
@@ -73,6 +79,11 @@ private:
     bool is3d_[NUM_CHANNELS] = {};
     std::vector<gosAudio*> audio_list_;
     std::vector<gosPCMStream*> pcm_list_;
+    gosLimiter limiter_; // used on the audio thread only
+
+    static void SDLCALL postMix(void* userdata, MIX_Mixer*, const SDL_AudioSpec* spec, float* pcm, int samples) {
+        static_cast<SoundEngine*>(userdata)->limiter_.process(pcm, samples, spec->channels, 1.0f / kGosMixHeadroom);
+    }
 };
 
 bool SoundEngine::init(int frequency, bool stereo, bool open_device)
@@ -91,8 +102,18 @@ bool SoundEngine::init(int frequency, bool stereo, bool open_device)
     spec.channels = stereo ? 2 : 1;
     spec.freq = frequency;
 
-    if (open_device)
+    if (open_device) {
+        // A game does not need low latency; a larger device buffer survives
+        // a busy main thread without gaps (about 43 ms at 48 kHz).
+        if (!SDL_GetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES))
+            SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "2048");
+        SDL_AudioSpec dev;
+        if (SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &dev, nullptr) && dev.freq > 0) {
+            spec.format = SDL_AUDIO_F32;
+            spec.freq = dev.freq;
+        }
         mixer_ = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec);
+    }
     has_device_ = mixer_ != nullptr;
     if (!mixer_) {
         if (open_device)
@@ -105,9 +126,13 @@ bool SoundEngine::init(int frequency, bool stereo, bool open_device)
     }
 
     SDL_AudioSpec got;
-    if (MIX_GetMixerFormat(mixer_, &got))
+    if (MIX_GetMixerFormat(mixer_, &got)) {
         SPEW(("AUDIO", "Mixer at %d Hz, %d channel(s)%s\n", got.freq, got.channels,
               has_device_ ? "" : " (no device)"));
+        limiter_.setRate(got.freq);
+    }
+    setMasterVolume(1.0f);
+    MIX_SetPostMixCallback(mixer_, postMix, this);
 
     for (int i = 0; i < NUM_CHANNELS; ++i) {
         tracks_[i] = MIX_CreateTrack(mixer_);
@@ -277,6 +302,32 @@ SoundEngine* engine()
 } // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
+void gosLimiter::setRate(int frequency)
+{
+    release = frequency > 0 ? 1.0f - std::exp(-1.0f / (kReleaseSeconds * (float)frequency)) : 1.0f;
+}
+
+void gosLimiter::process(float* pcm, int samples, int channels, float makeup)
+{
+    if (channels < 1)
+        return;
+    for (int i = 0; i + channels <= samples; i += channels) {
+        float peak = 0.0f;
+        for (int c = 0; c < channels; ++c)
+            peak = std::max(peak, std::fabs(pcm[i + c]));
+        peak *= makeup;
+        const float target = peak > kCeiling ? kCeiling / peak : 1.0f;
+        if (target < gain)
+            gain = target; // attack at once: the output never passes the ceiling
+        else
+            gain += (target - gain) * release;
+        const float g = makeup * gain;
+        for (int c = 0; c < channels; ++c)
+            pcm[i + c] *= g;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 bool gos_CreateAudio(bool open_device)
 {
     if (!g_sound_engine) {
@@ -420,7 +471,7 @@ void __stdcall gosAudio_SetChannelSlider(int Channel, enum gosAudio_Properties p
             break;
         case gosAudio_Volume:
             ci->fVolume = saturate(value1);
-            MIX_SetMixerGain(engine()->mixer(), ci->fVolume);
+            engine()->setMasterVolume(ci->fVolume);
             break;
         case gosAudio_Panning:
             ci->fPanning = value1 < -1.0f ? -1.0f : (value1 > 1.0f ? 1.0f : value1);

@@ -37,4 +37,20 @@ struct gosSpatial {
 };
 gosSpatial gos_Spatialize(const struct _gosAudio_ChannelInfo& listener, const struct _gosAudio_ChannelInfo& source);
 
+// Output limiter. SDL3_mixer adds tracks with a hard clamp at full scale,
+// which crackles when several loud sounds play at once. The tracks are
+// therefore mixed at kGosMixHeadroom and the limiter applies the make-up
+// gain 1 / kGosMixHeadroom: levels below kCeiling pass unchanged, louder
+// peaks are turned down at once and the gain recovers over kReleaseSeconds.
+const float kGosMixHeadroom = 0.5f;
+struct gosLimiter {
+    static constexpr float kCeiling = 0.95f;
+    static constexpr float kReleaseSeconds = 0.15f;
+    float gain = 1.0f;    // current gain reduction (1 = none)
+    float release = 1.0f; // per-frame recovery coefficient
+    void setRate(int frequency);
+    // pcm: interleaved float frames, samples = frames * channels
+    void process(float* pcm, int samples, int channels, float makeup);
+};
+
 #endif

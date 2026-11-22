@@ -12,6 +12,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3_mixer/SDL_mixer.h>
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -370,4 +371,62 @@ TEST(pcm_stream_rejects_bad_formats)
     HGOSPCMSTREAM none = nullptr;
     gosAudio_QueuePCM(none, nullptr, 10); // ignored
     gosAudio_DestroyPCMStream(&none);
+}
+
+TEST(limiter_passes_quiet_audio_unchanged)
+{
+    gosLimiter lim;
+    lim.setRate(kRate);
+    std::vector<float> pcm(2000);
+    for (size_t i = 0; i < pcm.size(); ++i)
+        pcm[i] = (i & 1) ? 0.2f : -0.3f;
+    lim.process(pcm.data(), (int)pcm.size(), 2, 2.0f);
+    for (size_t i = 0; i < pcm.size(); ++i)
+        CHECK_NEAR(pcm[i], (i & 1) ? 0.4f : -0.6f, 1e-6);
+    CHECK_NEAR(lim.gain, 1.0f, 1e-6);
+}
+
+TEST(limiter_keeps_loud_audio_below_the_ceiling_and_recovers)
+{
+    gosLimiter lim;
+    lim.setRate(kRate);
+    std::vector<float> loud(kRate / 10 * 2, 0.9f); // 1.8 after make-up
+    for (size_t i = 1; i < loud.size(); i += 4)
+        loud[i] = -0.9f;
+    lim.process(loud.data(), (int)loud.size(), 2, 2.0f);
+    float peak = 0;
+    for (float v : loud)
+        peak = std::max(peak, std::fabs(v));
+    CHECK(peak <= gosLimiter::kCeiling + 1e-6f);
+    CHECK(peak > gosLimiter::kCeiling - 0.01f); // turned down, not muted
+    CHECK(lim.gain < 0.6f);
+
+    // one second of quiet audio: the gain comes back to 1
+    std::vector<float> quiet(kRate * 2, 0.1f);
+    lim.process(quiet.data(), (int)quiet.size(), 2, 2.0f);
+    CHECK(lim.gain > 0.99f);
+    CHECK_NEAR(quiet.back(), 0.2f * lim.gain, 1e-6);
+}
+
+TEST(loud_sounds_together_do_not_clip)
+{
+    AudioFixture f;
+    REQUIRE(f.ok);
+    HGOSAUDIO tone = makeTone(500); // +-20000, 0.61 of full scale
+    for (int ch = 0; ch < 3; ++ch) {  // 1.83 of full scale together
+        gosAudio_AssignResourceToChannel(ch, tone);
+        gosAudio_SetChannelPlayMode(ch, gosAudio_Loop);
+    }
+    std::vector<int16_t> buf((size_t)kRate / 5 * 2);
+    const int got = MIX_Generate(gos_GetAudioMixer(), buf.data(), (int)(buf.size() * sizeof(int16_t)));
+    REQUIRE(got > 0);
+    int peak = 0, clipped = 0;
+    for (int i = 0; i < got / 2; ++i) {
+        peak = std::max(peak, std::abs((int)buf[i]));
+        clipped += std::abs((int)buf[i]) >= 32767;
+    }
+    CHECK_EQ(clipped, 0);
+    CHECK(peak <= (int)(gosLimiter::kCeiling * 32768) + 1);
+    CHECK(peak > 28000);
+    gosAudio_DestroyResource(&tone);
 }
