@@ -1,6 +1,7 @@
 # Automated tests. Run with:  ctest --output-on-failure
 #
 #  unit_platform      string helpers and Win32 shims (GameOS/src)
+#  unit_user_dir      user data directory and migration from ~/.mechcommander2
 #  unit_kv_registry   registry emulation (GameOS/gameos/utils/kv_registry)
 #  unit_image_tga     TGA texture decoding (GameOS/gameos/utils/Image)
 #  unit_sound         GameOS sound API on SDL3_mixer (no audio device needed)
@@ -37,6 +38,10 @@ mc2_add_unit_test(unit_platform
     SOURCES unit/test_platform.cpp
     INCLUDES ${CMAKE_SOURCE_DIR}/GameOS/include
     LIBS windows)
+
+mc2_add_unit_test(unit_user_dir
+    SOURCES unit/test_user_dir.cpp ${MC2_GAMEOS_DIR}/utils/user_dir.cpp
+    INCLUDES ${MC2_GAMEOS_DIR})
 
 mc2_add_unit_test(unit_kv_registry
     SOURCES unit/test_kv_registry.cpp ${MC2_GAMEOS_DIR}/utils/kv_registry.cpp

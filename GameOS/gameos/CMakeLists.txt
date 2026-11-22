@@ -23,6 +23,7 @@ set(SOURCES ${SOURCES}
     utils/string_utils.cpp
     utils/file_utils.cpp
     utils/kv_registry.cpp
+    utils/user_dir.cpp
 
     render/render_device.cpp
     render/render_state.cpp

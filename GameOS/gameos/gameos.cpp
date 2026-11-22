@@ -6,30 +6,17 @@
 #include <stdlib.h> // rand
 #include "utils/timing.h"
 #include "utils/kv_registry.h"
+#include "utils/user_dir.h"
+#include <SDL3/SDL.h>
+#include <filesystem>
+#include <system_error>
 #include "platform_clock.h"
 #include <string>
 #include <mutex>
 #include <vector>
 
-#ifndef PLATFORM_WINDOWS
-#include <sys/statvfs.h> // statvfs
-#else
-#include <Shlobj.h> // SHGetFolderPath
-#include <Objbase.h> // CoTaskMemFree
-#endif
-
-
 #include <stdlib.h> // getenv
-
-// fstat
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifndef PLATFORM_WINDOWS
-#include <unistd.h>
-#else
-#include<direct.h>
-#define S_ISDIR(x) ((_S_IFDIR & (x))!=0)
-#endif
+#include <string.h>
 
 #include "strres.h"
 
@@ -492,19 +479,13 @@ void __stdcall gos_AbortTermination()
 ////////////////////////////////////////////////////////////////////////////////
 __int64 __stdcall gos_GetDriveFreeSpace( char* Path )
 {
-#ifndef PLATFORM_WINDOWS
-    struct statvfs s;
-    if(-1 == statvfs(Path, &s)) {
-        SPEW(("statvfs: %s\n", strerror(errno)));
+    std::error_code ec;
+    const std::filesystem::space_info info = std::filesystem::space(Path && *Path ? Path : ".", ec);
+    if (ec) {
+        SPEW(("gos_GetDriveFreeSpace", "%s: %s\n", Path ? Path : "", ec.message().c_str()));
         return 0;
     }
-
-    return s.f_bsize * s.f_bfree;
-#else
-	ULARGE_INTEGER freeBytesAvailable;
-	GetDiskFreeSpaceEx(NULL, &freeBytesAvailable, NULL, NULL);
-	return freeBytesAvailable.QuadPart;
-#endif
+    return (__int64)info.available;
 }
 
 DWORD __stdcall gos_EnableSetting( gosSetting Setting, DWORD Value )
@@ -515,7 +496,6 @@ DWORD __stdcall gos_EnableSetting( gosSetting Setting, DWORD Value )
 ////////////////////////////////////////////////////////////////////////////////
 // registry read/write
 static const char* g_user_reg_file = ".registry";
-static const char* g_user_config_dir = ".mechcommander2";
 
 // The registry is emulated by a small key/value file in the user data
 // directory (see utils/kv_registry.h for the format).
@@ -561,73 +541,43 @@ void __stdcall gos_SaveStringToRegistry( const char* keyName,  char* pData,  DWO
     gos_SaveDataToRegistry(keyName, pData, szData);
 }
 
+// Saved games and settings: SDL_GetPrefPath, or $MC2_USER_DIR if set (tests
+// use it to start from an empty directory). See utils/user_dir.h.
 bool __stdcall gos_GetUserDataDirectory(char* user_dir, const int len)
 {
-	const int cfg_dir_size = 1024;
-    char cfg_dir[cfg_dir_size] = {0};
-    struct stat st;
+    static std::mutex m;
+    static std::string cached;
+    std::lock_guard<std::mutex> lock(m);
+    if (cached.empty()) {
+        std::string dir;
+        std::vector<std::string> legacy;
+        if (const char* env = SDL_getenv("MC2_USER_DIR")) {
+            dir = env;
+        } else {
+            char* pref = SDL_GetPrefPath("", "MechCommander2");
+            if (!pref) {
+                SPEW(("gos_GetUserDataDirectory", "SDL_GetPrefPath failed: %s\n", SDL_GetError()));
+                return false;
+            }
+            dir = pref;
+            SDL_free(pref);
+            legacy = user_dir::legacy_dirs_from_env();
+        }
+        while (dir.size() > 1 && (dir.back() == '/' || dir.back() == '\\'))
+            dir.pop_back();
 
-#ifdef PLATFORM_WINDOWS
-	PWSTR homeDir = 0;
-	SHGetKnownFolderPath(FOLDERID_Profile, 0, NULL, &homeDir);
-	wcstombs(cfg_dir, homeDir, cfg_dir_size-1);
-	cfg_dir[cfg_dir_size-1] = '\0';
-	CoTaskMemFree(homeDir);
-#else
-    const char* home_dir = getenv("HOME");
-    if(home_dir == NULL)
-    {
-        SPEW(("gos_GetUserDataDirectory", "home directory is not set\n"));
+        std::string report;
+        if (!user_dir::prepare(dir, legacy, &report)) {
+            SPEW(("gos_GetUserDataDirectory", "cannot create %s\n", dir.c_str()));
+            return false;
+        }
+        if (!report.empty())
+            fprintf(stderr, "USERDIR: %s", report.c_str());
+        cached = dir;
+    }
+    if (len <= 0 || cached.size() >= (size_t)len)
         return false;
-    }
-
-    const char* config_dir = getenv("XDG_CONFIG_HOME");
-    if(config_dir != NULL) {
-        strncpy(cfg_dir, config_dir, cfg_dir_size-1);
-        cfg_dir[cfg_dir_size-1] = '\0';
-
-        if(-1 == stat(cfg_dir, &st)) {
-            SPEW(("stat: %s\n", strerror(errno)));
-            return false;
-        }
-
-        if(!S_ISDIR(st.st_mode)) {
-            SPEW(("SAVELOAD", "gos_GetUserDataDirectory: %s is not directory\n", cfg_dir));
-            return false;
-        }
-    } else {
-        strncpy(cfg_dir, home_dir, cfg_dir_size-1);
-        cfg_dir[cfg_dir_size-1] = '\0';
-    }
-#endif
-
-    // 1 + 1 =  for \0 and /
-    char* mc2_conf_dir = new char[strlen(cfg_dir) + strlen(g_user_config_dir) + 1 + 1];
-    sprintf(mc2_conf_dir, "%s/%s", cfg_dir, g_user_config_dir);
-
-    // if directory does not exist create it
-#ifndef PLATFORM_WINDOWS
-	int permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | S_IXUSR | S_IXGRP;      
-#endif
-
-    if(-1 == stat(mc2_conf_dir, &st)) {
-#ifdef PLATFORM_WINDOWS
-        if(-1 == _mkdir(mc2_conf_dir)) {
-#else
-        if(-1 == mkdir(mc2_conf_dir, permissions)) {
-#endif
-            SPEW(("stat: %s\n", strerror(errno)));
-            delete[] mc2_conf_dir;
-            return false;
-        }
-    }
-    
-    size_t conf_len = strlen(mc2_conf_dir);
-    conf_len = len - 1 < conf_len ? len - 1 : conf_len;
-
-    strncpy(user_dir, mc2_conf_dir, conf_len);
-    user_dir[conf_len] = '\0';
-    delete[] mc2_conf_dir;
+    memcpy(user_dir, cached.c_str(), cached.size() + 1);
     return true;
 }
 
