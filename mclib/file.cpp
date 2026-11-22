@@ -226,6 +226,12 @@ long File::open (const char* fName, FileMode _mode, long numChild, bool doNotLow
 	gosASSERT(fileName != NULL);
 		
 	strncpy(fileName,fName,fNameLength+1);
+#ifndef _WIN32
+	// Paths stored in the game's data files (.fit, .ini, ...) use '\\'.
+	for (char* c = fileName; *c; ++c)
+		if (*c == '\\')
+			*c = '/';
+#endif
 	fileMode = _mode;
 	//_fmode = _O_BINARY;
 

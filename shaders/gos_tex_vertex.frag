@@ -17,7 +17,10 @@ void main(void)
     c *= tex_color;
     
 #ifdef ALPHA_TEST
-    if(tex_color.a < 0.5)
+    // The original renderer only rejects fully transparent texels (alpha
+    // reference 0); a 0.5 cut-off dropped partly transparent UI parts such
+    // as the compass.
+    if(tex_color.a <= 0.0)
         discard;
 #endif
 

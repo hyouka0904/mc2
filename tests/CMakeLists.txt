@@ -90,6 +90,11 @@ mc2_add_unit_test(unit_heap
     INCLUDES ${COMMON_INCLUDE_DIRS}
     LIBS gameos windows MC2::SDL MC2::Mixer ZLIB::ZLIB ${ADDITIONAL_LIBS})
 
+mc2_add_unit_test(unit_dice
+    SOURCES unit/test_dice.cpp ${CMAKE_SOURCE_DIR}/mclib/routines.cpp
+    INCLUDES ${COMMON_INCLUDE_DIRS}
+    LIBS gameos windows MC2::SDL MC2::Mixer ZLIB::ZLIB ${ADDITIONAL_LIBS})
+
 mc2_add_unit_test(unit_render_state
     SOURCES unit/test_render_state.cpp ${MC2_GAMEOS_DIR}/render/render_state.cpp
     INCLUDES ${COMMON_INCLUDE_DIRS})

@@ -187,7 +187,9 @@ long RandomNumber (long range)
 //---------------------------------------------------------------------------
 bool RollDice (long percent)
 {
-	return (((rand()*100)>>15) < percent);			// Optimized the % out
+	// gos_rand() is 0..32767 like the original VC rand(); the C library rand()
+	// may be much larger (Linux: 0..2^31-1), which made every roll fail.
+	return (((gos_rand()*100)>>15) < percent);			// Optimized the % out
 }
 
 
