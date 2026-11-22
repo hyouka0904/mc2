@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #include "render/render_state.h"
 
 #include "gameos.hpp"

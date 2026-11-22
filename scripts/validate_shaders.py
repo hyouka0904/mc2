@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
 """Compile and link every shader variant offline (no GPU needed).
 
     validate_shaders.py <shaders_dir>

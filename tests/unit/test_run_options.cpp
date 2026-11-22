@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for GameOS command line options, the PNG writer and the fixed-step
 // clock used by the deterministic screenshot tests.
 

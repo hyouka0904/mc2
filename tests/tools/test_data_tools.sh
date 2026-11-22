@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
 # Round-trip tests for the data tools used to build the game's data packs.
 #
 #   test_data_tools.sh <case> <tools_dir>

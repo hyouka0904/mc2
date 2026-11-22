@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for TGA decoding in GameOS/gameos/utils/Image.cpp, which loads every
 // texture shipped inside the game's fastfiles.
 

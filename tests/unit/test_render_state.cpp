@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for the backend independent render state (GameOS/gameos/render/render_state).
 
 #include "mc2test.h"

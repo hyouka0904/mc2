@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #pragma once
 
 // Minimal replacement for the Windows registry used by gos_LoadDataFromRegistry

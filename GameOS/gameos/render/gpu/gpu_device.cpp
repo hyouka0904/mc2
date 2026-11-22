@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // SDL3 GPU implementation of gos_render::Device (Vulkan, D3D12 or Metal).
 //
 // GameOS is an immediate mode API: the game changes state, updates a vertex

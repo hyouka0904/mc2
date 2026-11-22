@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for the GameOS sound API on SDL3_mixer (GameOS/gameos/gameos_sound.cpp).
 //
 // The mixer is created without an audio device and pulled with

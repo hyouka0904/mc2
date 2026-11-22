@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for the A* open list (mclib/pqueue).
 
 #include "mc2test.h"

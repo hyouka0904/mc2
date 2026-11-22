@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
 """Compile the GameOS shaders for the non-OpenGL backends.
 
     build_shaders.py <shaders_dir> <out_dir> [--require msl,hlsl,dxil]

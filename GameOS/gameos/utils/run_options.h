@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef GAMEOS_RUN_OPTIONS_H
 #define GAMEOS_RUN_OPTIONS_H
 

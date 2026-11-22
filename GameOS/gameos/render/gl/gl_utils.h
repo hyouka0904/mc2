@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef __GL_UTILS_H__
 #define __GL_UTILS_H__
 

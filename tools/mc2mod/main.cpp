@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // mc2mod - create, check and inspect MechCommander 2 mods and modpacks.
 //
 //   mc2mod new <mods_dir> <id> [name...]        scaffold a new mod

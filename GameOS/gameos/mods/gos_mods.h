@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef GOS_MODS_H
 #define GOS_MODS_H
 

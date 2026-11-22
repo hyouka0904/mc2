@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #include "utils/kv_registry.h"
 
 #include <stdio.h>

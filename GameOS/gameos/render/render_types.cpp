@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #include "render/render_types.h"
 
 #include "utils/vec.h"

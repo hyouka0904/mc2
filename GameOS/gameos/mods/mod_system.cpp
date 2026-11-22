@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Implementation of the mod system (see mod_system.h). Built as C++17 for
 // std::filesystem; the header is plain C++11 so the game can include it.
 

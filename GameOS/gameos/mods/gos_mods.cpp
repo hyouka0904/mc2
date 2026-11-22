@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #include "gos_mods.h"
 
 #include "mod_system.h"

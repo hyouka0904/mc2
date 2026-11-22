@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
 # Builds the game data from the mc2srcdata repository and assembles a
 # runnable game directory.
 #

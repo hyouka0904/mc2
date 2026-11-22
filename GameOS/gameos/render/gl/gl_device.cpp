@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // OpenGL implementation of gos_render::Device (render/render_device.h).
 // This file and the rest of render/gl/ are the only places that call OpenGL.
 

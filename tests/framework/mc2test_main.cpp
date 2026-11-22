@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #include "mc2test.h"
 
 int main(int argc, char** argv)

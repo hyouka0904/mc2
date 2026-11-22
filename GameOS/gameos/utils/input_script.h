@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef GAMEOS_INPUT_SCRIPT_H
 #define GAMEOS_INPUT_SCRIPT_H
 

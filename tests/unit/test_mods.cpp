@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for the mod system (GameOS/gameos/mods): versions and requirements,
 // manifests, modpacks, load order, the file overlay, scaffolding and the
 // in-game hook gos_ModResolvePath().

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef PLATFORM_CLOCK_H
 #define PLATFORM_CLOCK_H
 

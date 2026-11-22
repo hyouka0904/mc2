@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef GOS_RENDER_SHADER_PARAMS_H
 #define GOS_RENDER_SHADER_PARAMS_H
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #pragma once
 
 // Minimal self-contained unit test framework (no external dependencies).

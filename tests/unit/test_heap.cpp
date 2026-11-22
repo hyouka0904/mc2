@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for the GameOS memory heaps (GameOS/gameos/gameos.cpp): blocks made
 // while a heap is current are tracked, released by
 // gos_DestroyMemoryHeap(heap, false) and left valid by (heap, true).

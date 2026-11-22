@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-only
 # SDL3, SDL3_mixer and SDL3_ttf.
 #
 # Installed packages are used when CMake can find them (set CMAKE_PREFIX_PATH

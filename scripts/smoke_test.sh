@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
 # End-to-end smoke test: launches the real game headless and checks that it
 # reaches gameplay without crashing or getting stuck on a dialog.
 #

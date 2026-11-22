@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
 # End-to-end test of the mc2mod tool on a scratch directory and on the
 # example mods shipped in examples/.
 #   test_mc2mod.sh <mc2mod binary> <repo dir>

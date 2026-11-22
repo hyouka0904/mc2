@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
 # Phase 3 rule: OpenGL is only used under GameOS/gameos/render/gl/.
 # Fails if any other source file calls gl*() or includes a GL header.
 set -u

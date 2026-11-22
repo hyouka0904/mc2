@@ -572,7 +572,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | Viewer（模型檢視器） | 不再需要，已移除 |
 | 階段 7 的停止條件 | mc2_01 每幀 draw call 降到 100 以下 |
 | DXIL 輸出 | 暫緩：需要在 CI 下載 Microsoft 的 dxc 預編譯執行檔，待另行決定 |
-| 新檔案的授權標頭 | 尚未決定 |
+| 新檔案的授權標頭 | 本移植新增的原始碼、腳本、著色器、CMake 與 CI 檔加上 `SPDX-License-Identifier: GPL-3.0-only`；微軟原始檔不加，維持原有聲明 |
 | 網路對戰 | 尚未決定是否列入範圍 |
 
 ### 其他尚未完成的項目
@@ -593,3 +593,5 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 
 - 原始遊戲程式碼以 Shared Source Limited Permission License 釋出，請見 `EULA.txt`。
 - 本專案作者撰寫的程式碼以 GPL v3 授權，請見 `license.txt`。
+- 本移植新增的檔案在開頭標示 `SPDX-License-Identifier: GPL-3.0-only`；沒有這行的檔案沿用上面兩條的說明。
+- GPL v3 與 Shared Source 授權第 (E) 條（原始碼散布只能沿用該授權）能否並存並不明確；公開或商業散布前請先諮詢法律意見。遊戲美術素材只能非商業使用。

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for the cross-platform string helpers and Win32 shims in GameOS/src.
 
 #include "mc2test.h"

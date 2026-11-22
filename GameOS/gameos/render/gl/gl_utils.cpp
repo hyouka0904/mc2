@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifdef PLATFORM_WINDOWS
 #include <windows.h>
 #endif

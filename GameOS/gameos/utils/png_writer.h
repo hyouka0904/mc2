@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef GAMEOS_PNG_WRITER_H
 #define GAMEOS_PNG_WRITER_H
 

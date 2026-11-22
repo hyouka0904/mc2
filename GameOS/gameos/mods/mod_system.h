@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef MC2_MOD_SYSTEM_H
 #define MC2_MOD_SYSTEM_H
 

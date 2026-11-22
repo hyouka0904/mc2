@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
 """Deterministic screenshot tests.
 
     run_screenshot_tests.py <game_dir> <out_dir> [--update] [--only NAME...]

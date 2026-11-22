@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef GOS_RENDER_TYPES_H
 #define GOS_RENDER_TYPES_H
 

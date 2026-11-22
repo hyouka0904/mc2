@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Tests for the registry emulation used by gos_Load/SaveDataToRegistry.
 
 #include "mc2test.h"

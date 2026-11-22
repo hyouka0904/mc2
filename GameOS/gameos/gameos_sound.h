@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 #ifndef GAMEOS_SOUND_H
 #define GAMEOS_SOUND_H
 

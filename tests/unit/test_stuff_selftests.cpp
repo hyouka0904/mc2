@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 // Runs the self-tests that ship with the original Stuff library
 // (mclib/stuff/*_test.cpp). They were compiled into the game but never
 // executed; each TestClass() returns false on the first failed assumption.
