@@ -882,9 +882,12 @@ void __stdcall InitializeGameEngine()
 		}
 	}
 
-	//Check for sufficient hard Drive space on drive game is running from
+	//Check for sufficient hard Drive space where saves and settings go (the
+	// user data directory: the game directory can be read-only, an AppImage
+	// or a system install, and then reports no free space)
 	char currentPath[1024];
-	gos_GetCurrentPath( currentPath, 1023 );
+	if ( !gos_GetUserDataDirectory( currentPath, sizeof(currentPath) ) )
+		gos_GetCurrentPath( currentPath, 1023 );
 	__int64 driveSpace = gos_GetDriveFreeSpace(currentPath);
 	if (driveSpace < (20 * 1024 * 1024))
 	{

@@ -124,7 +124,7 @@ jobs:
       - name: Screenshot comparison (tests/golden, SDL3 GPU + Vulkan validation)
         run: python3 scripts/run_screenshot_tests.py game shots_gpu --renderer gpu --gpu-validation
 
-      - name: UI flows (options screen, quick save / load; OpenGL and SDL3 GPU)
+      - name: UI flows (every screen; OpenGL and SDL3 GPU)
         run: |
           python3 scripts/run_flow_tests.py game --out flows --timeout 300
           python3 scripts/run_flow_tests.py game --renderer gpu --out flows_gpu --timeout 300
