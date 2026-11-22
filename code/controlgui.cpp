@@ -2863,7 +2863,7 @@ void ControlGui::playMovie( const char* fileName )
 	_splitpath(fileName,NULL,NULL,realName,NULL);
 
 	FullPathFileName movieName;
-	movieName.init(moviePath,realName,".bik");
+	movieName.init(moviePath,realName,MC2_MOVIE_EXT);
 	bMovie = new MC2Movie;
 	bMovie->init(movieName,vRect,true);
 

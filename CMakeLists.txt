@@ -188,7 +188,7 @@ set(SOURCES
     )
 
 
-include_directories(${COMMON_INCLUDE_DIRS} "./mclib" "./gui" "./code" "./netlib")
+include_directories(${COMMON_INCLUDE_DIRS} "./mclib" "./gui" "./code" "./netlib" "./thirdparty")
 
 if(NOT WIN32)
 	set(ADDITIONAL_LIBS dl)

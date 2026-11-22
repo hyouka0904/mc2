@@ -2,7 +2,11 @@
 //
 // Movie class
 //
-//Notes:
+// Plays the game's movies: MPEG-1 video with MP2 sound in an MPEG program
+// stream (.mpg), decoded with pl_mpeg. Frames are converted to RGBA and drawn
+// as one textured quad, so every graphics backend can show them. The sound
+// comes from data/sound/<name>.wav when the game asks for a separate track
+// and that file exists, otherwise from the movie itself.
 //
 //---------------------------------------------------------------------------//
 // Copyright (C) Microsoft Corporation. All rights reserved.                 //
@@ -21,96 +25,54 @@
 #endif
 
 #include"platform_windows.h"
+#include"gameos.hpp"
 
-//--------------------------------------------------------------------------
-const DWORD MAX_TEXTURES_NEEDED = 6;
+#include <stdint.h>
+#include <vector>
+
+// Extension of the movie files (the originals were Bink .bik files; the data
+// build converts them to MPEG-1).
+#define MC2_MOVIE_EXT ".mpg"
+
+typedef struct plm_t plm_t;
 
 //--------------------------------------------------------------------------
 class MC2Movie
 {
 	public:
-		MC2Movie (void)
-		{
-			MC2Surface = NULL;
+		MC2Movie (void);
+		~MC2Movie (void);
 
-			for (long i=0;i<MAX_TEXTURES_NEEDED;i++)
-			{
-				mc2TextureNodeIndex[i] = 0xffffffff;
-			}
-
-			MC2Rect.bottom = MC2Rect.top = MC2Rect.left = MC2Rect.right = 0;
-
-			numWide = numHigh = 0;
-			totalTexturesUsed = 0;
-
-			forceStop = false;
-			stillPlaying = false;
-
-			separateWAVE = false;
-			soundStarted = false;
-
-			waveName = NULL;
-			m_MC2Name = NULL;
-		}
-
-		~MC2Movie (void)
-		{
-			if (MC2Surface)
-			{
-				systemHeap->Free(MC2Surface);
-				MC2Surface = NULL;
-			}
-
-			if (waveName)
-			{
-				delete [] waveName;
-				waveName = NULL;
-			}
-
-			if (m_MC2Name)
-			{
-				delete [] m_MC2Name;
-				m_MC2Name = NULL;
-			}
-		}
-
-		//Movie name assumes path is correct.
-		// Sets up the MC2 to be played.
+		// Opens the movie (data/movies/<name>.mpg; the directory and
+		// extension of MC2Name are ignored) to be shown in mRect. With
+		// useWaveFile the sound comes from data/sound/<name>.wav if it exists.
+		// A movie that cannot be opened counts as finished.
 		void init (const char *MC2Name, RECT mRect, bool useWaveFile);
 
-		//Handles tickling MC2 to make sure we keep playing back
-		// Returns true when MC2 is DONE playing!!
+		// Advances playback by one game frame. Returns true when the movie
+		// is DONE playing!!
 		bool update (void);
 
-		//Actually draws the MC2 texture using gos_DrawTriangle.
+		// Draws the current frame into the movie rectangle.
 		void render (void);
 
-		//Immediately stops playback of MC2.
+		// Immediately stops playback.
 		void stop (void)
 		{
 			forceStop = true;
 		}
 
-		//Pause video playback.
-		void pause (bool pauseState)
+		// Pauses or resumes playback (and the movie's own sound).
+		void pause (bool pauseState);
+
+		// Restarts the movie from the beginning. Can be called anytime.
+		void restart (void);
+
+		// Moves or resizes the movie on screen.
+		void setRect (RECT vRect)
 		{
-			if (stillPlaying)
-			{
-			}
-
-			forceStop = false;
+			MC2Rect = vRect;
 		}
-
-		//Restarts MC2 from beginning.  Can be called anytime.
-		void restart (void)
-		{
-			stillPlaying = true;
-			forceStop = false;
-		}
-
-		//Changes rect.  If resize, calls malloc which will be QUITE painful during a MC2 playback
-		// If just move, its awfully fast.
-		void setRect (RECT vRect);
 
 		bool isPlaying (void)
 		{
@@ -121,30 +83,37 @@ class MC2Movie
 		{
 			return m_MC2Name;
 		}
-		
-	protected:
-	
-		DWORD*		MC2Surface;									//Extra surface used if MC2 Movie is larger then 256x256
-		DWORD		mc2TextureNodeIndex[MAX_TEXTURES_NEEDED];		//Handles to textures for MC2 movie data.
-		RECT		MC2Rect;										//Physical Location on screen for MC2 movie.
-					
-		DWORD 		numWide;										//Number of textures wide display is
-		DWORD		numHigh;										//Number of textures high the display is
-		DWORD		totalTexturesUsed;                              //total Number of texture used to display 
-					
-		bool		forceStop;										//Should MC2 movie end now?
-					
-		DWORD		singleTextureSize;								//Size of the single texture.  Fit it to smallest texture we can use.
-		bool		stillPlaying;									//Is MC2 movie over?
 
-		bool		separateWAVE;									//Tells us if this MC2 movie has a separate soundtrack.
-		bool		soundStarted;									//If this MC2 movie has a separate soundtrack, this tells us when to start it.
-		char		*waveName;										//Name of the wavefile.
-		char		*m_MC2Name;										//Name of the Movie.
+		// Seconds of movie played so far
+		double getTime (void) const;
 
-		void BltMovieFrame (void);								//Actually moves frame data from MC2 movie to surface and/or texture(s)
+	private:
+		MC2Movie (const MC2Movie&);
+		MC2Movie& operator= (const MC2Movie&);
+
+		friend struct MC2MovieDecoder; // pl_mpeg callbacks (mc2movie.cpp)
+		void close (void);
+		void stopSound (void);
+
+		RECT		MC2Rect;			// where the movie is drawn
+		bool		forceStop;			// should the movie end now?
+		bool		stillPlaying;		// is the movie still running?
+		bool		paused;
+
+		bool		separateWAVE;		// sound comes from data/sound/<name>.wav
+		bool		soundStarted;
+		char*		waveName;
+		char*		m_MC2Name;
+
+		plm_t*		plm;
+		DWORD		texture;			// gos texture holding the current frame
+		int			textureWidth;
+		int			textureHeight;
+		std::vector<uint8_t> rgba;		// frame converted for the texture
+		HGOSPCMSTREAM pcm;				// the movie's own sound, if played
 };
 
 typedef MC2Movie *MC2MoviePtr;
+
 //--------------------------------------------------------------------------
 #endif

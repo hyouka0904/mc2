@@ -145,7 +145,7 @@ int MainMenu::init( FitIniFile& file )
 
 	introMovie = 0;
 
-	path.init( moviePath, "msft", ".bik" );
+	path.init( moviePath, "msft", MC2_MOVIE_EXT);
 
 	RECT movieRect;
 	movieRect.top = 0;

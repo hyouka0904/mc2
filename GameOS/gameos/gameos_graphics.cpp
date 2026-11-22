@@ -668,6 +668,17 @@ class gosTexture {
             is_locked_ = false;
         }
 
+        // Replaces all pixels; rgba is in the backends' RGBA order
+        void updateRGBA(const uint8_t* rgba) {
+            gosASSERT(is_locked_ == false);
+            const size_t bytes = (size_t)tex_.w * tex_.h * 4;
+            shadow_.assign(rgba, rgba + bytes);
+            gos_FlushDrawBatch(); // pending draws see the old pixels
+            gos_render::device()->updateTexture(tex_, shadow_.data(), TF_RGBA8);
+            if(atlas_page_ >= 0)
+                gos_AtlasUpdate(this, shadow_.data());
+        }
+
         // Number of textures that had to be read back from the GPU once
         static uint32_t s_shadow_readbacks;
 
@@ -2660,6 +2671,12 @@ void __stdcall gos_UnLockTexture( DWORD Handle )
     ptex->Unlock();
 
     //gosASSERT(0 && "Not implemented");
+}
+
+void __stdcall gos_UpdateTextureRGBA( DWORD Handle, const void* Pixels )
+{
+    gosASSERT(g_gos_renderer && Pixels);
+    g_gos_renderer->getTexture(Handle)->updateRGBA((const uint8_t*)Pixels);
 }
 
 void __stdcall gos_PushRenderStates()

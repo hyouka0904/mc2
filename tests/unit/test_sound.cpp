@@ -299,3 +299,75 @@ TEST(sound_3d_channel_is_attenuated_and_panned)
     gosAudio_SetChannelPlayMode(5, gosAudio_Stop);
     gosAudio_DestroyResource(&tone);
 }
+
+// Movie soundtracks: float PCM queued while the game runs
+static std::vector<float> stereoTone(int rate, int ms, float amp)
+{
+    std::vector<float> s((size_t)rate * ms / 1000 * 2);
+    for (size_t i = 0; i < s.size(); i += 2)
+        s[i] = s[i + 1] = (((i / 2) / 20) & 1) ? amp : -amp;
+    return s;
+}
+
+TEST(pcm_stream_plays_queued_samples)
+{
+    AudioFixture f;
+    REQUIRE(f.ok);
+    HGOSPCMSTREAM s = gosAudio_CreatePCMStream(44100, 2); // resampled to the mixer rate
+    REQUIRE(s != nullptr);
+    double l, r;
+    mix(20, &l, &r);
+    CHECK(l < 1e-4 && r < 1e-4); // nothing queued yet
+
+    std::vector<float> tone = stereoTone(44100, 300, 0.5f);
+    gosAudio_QueuePCM(s, tone.data(), (int)tone.size() / 2);
+    mix(50, &l, &r);
+    CHECK(l > 0.1 && r > 0.1);
+
+    gosAudio_SetPCMStreamVolume(s, 0.0f);
+    mix(50, &l, &r);
+    CHECK(l < 1e-4 && r < 1e-4);
+    gosAudio_SetPCMStreamVolume(s, 1.0f);
+
+    gosAudio_PausePCMStream(s, true);
+    mix(50, &l, &r);
+    CHECK(l < 1e-4 && r < 1e-4);
+    gosAudio_PausePCMStream(s, false);
+    mix(20, &l, &r);
+    CHECK(l > 0.1);
+
+    gosAudio_ClearPCM(s);
+    mix(50, &l, &r);
+    CHECK(l < 1e-4 && r < 1e-4);
+
+    gosAudio_DestroyPCMStream(&s);
+    CHECK(s == nullptr);
+}
+
+TEST(pcm_stream_queue_is_bounded)
+{
+    AudioFixture f;
+    REQUIRE(f.ok);
+    HGOSPCMSTREAM s = gosAudio_CreatePCMStream(22050, 2);
+    REQUIRE(s != nullptr);
+    // 10 seconds pushed with nothing pulling: only about 2 seconds are kept
+    std::vector<float> tone = stereoTone(22050, 500, 0.5f);
+    for (int i = 0; i < 20; ++i)
+        gosAudio_QueuePCM(s, tone.data(), (int)tone.size() / 2);
+    mix(2600, nullptr, nullptr);
+    double l, r;
+    mix(50, &l, &r);
+    CHECK(l < 1e-4 && r < 1e-4);
+    gosAudio_DestroyPCMStream(&s);
+}
+
+TEST(pcm_stream_rejects_bad_formats)
+{
+    AudioFixture f;
+    REQUIRE(f.ok);
+    CHECK(gosAudio_CreatePCMStream(0, 2) == nullptr);
+    CHECK(gosAudio_CreatePCMStream(44100, 3) == nullptr);
+    HGOSPCMSTREAM none = nullptr;
+    gosAudio_QueuePCM(none, nullptr, 10); // ignored
+    gosAudio_DestroyPCMStream(&none);
+}

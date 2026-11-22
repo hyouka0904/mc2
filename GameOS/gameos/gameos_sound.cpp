@@ -22,6 +22,14 @@ public:
     MIX_Audio* audio = nullptr;
 };
 
+// HGOSPCMSTREAM: an SDL audio stream played by a track of its own
+class gosPCMStream {
+public:
+    SDL_AudioStream* stream = nullptr;
+    MIX_Track* track = nullptr;
+    bool paused = false;
+};
+
 namespace {
 
 class SoundEngine {
@@ -37,6 +45,9 @@ public:
     gosAudio* createFromFile(const char* path);
     gosAudio* createFromMemory(const gosAudio_Format& fmt, const void* data, int size);
     void destroyAudio(gosAudio* audio);
+
+    gosPCMStream* createPCMStream(int rate, int channels);
+    void destroyPCMStream(gosPCMStream* s);
 
     // channel -1 is the mixer: master volume / balance and the 3D listener
     gosAudio_ChannelInfo* channel(int i) {
@@ -61,6 +72,7 @@ private:
     gosAudio_ChannelInfo mixer_info_;
     bool is3d_[NUM_CHANNELS] = {};
     std::vector<gosAudio*> audio_list_;
+    std::vector<gosPCMStream*> pcm_list_;
 };
 
 bool SoundEngine::init(int frequency, bool stereo, bool open_device)
@@ -122,6 +134,8 @@ bool SoundEngine::init(int frequency, bool stereo, bool open_device)
 
 void SoundEngine::destroy()
 {
+    while (!pcm_list_.empty())
+        destroyPCMStream(pcm_list_.back());
     for (int i = 0; i < NUM_CHANNELS; ++i) {
         if (tracks_[i])
             MIX_DestroyTrack(tracks_[i]);
@@ -172,6 +186,42 @@ gosAudio* SoundEngine::createFromMemory(const gosAudio_Format& fmt, const void* 
     a->audio = audio;
     audio_list_.push_back(a);
     return a;
+}
+
+gosPCMStream* SoundEngine::createPCMStream(int rate, int channels)
+{
+    if (!mixer_ || rate <= 0 || channels < 1 || channels > 2)
+        return nullptr;
+    SDL_AudioSpec src = {SDL_AUDIO_F32, channels, rate};
+    SDL_AudioSpec dst;
+    if (!MIX_GetMixerFormat(mixer_, &dst))
+        return nullptr;
+    gosPCMStream* s = new gosPCMStream;
+    s->stream = SDL_CreateAudioStream(&src, &dst);
+    s->track = MIX_CreateTrack(mixer_);
+    if (!s->stream || !s->track || !MIX_SetTrackAudioStream(s->track, s->stream)) {
+        SPEW(("AUDIO", "PCM stream: %s\n", SDL_GetError()));
+        if (s->track)
+            MIX_DestroyTrack(s->track);
+        if (s->stream)
+            SDL_DestroyAudioStream(s->stream);
+        delete s;
+        return nullptr;
+    }
+    pcm_list_.push_back(s);
+    return s;
+}
+
+void SoundEngine::destroyPCMStream(gosPCMStream* s)
+{
+    auto it = std::find(pcm_list_.begin(), pcm_list_.end(), s);
+    if (it == pcm_list_.end())
+        return;
+    pcm_list_.erase(it);
+    MIX_StopTrack(s->track, 0);
+    MIX_DestroyTrack(s->track);
+    SDL_DestroyAudioStream(s->stream);
+    delete s;
 }
 
 void SoundEngine::destroyAudio(gosAudio* audio)
@@ -513,4 +563,64 @@ gosAudio_PlayMode __stdcall gosAudio_GetChannelPlayMode(int Channel)
     // A paused channel still counts as busy, as it did with SDL2_mixer
     const bool busy = MIX_TrackPlaying(track) || MIX_TrackPaused(track);
     return busy ? ci->ePlayMode : gosAudio_Stop;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// PCM streams
+
+HGOSPCMSTREAM __stdcall gosAudio_CreatePCMStream(int SamplesPerSec, int Channels)
+{
+    return g_sound_engine ? g_sound_engine->createPCMStream(SamplesPerSec, Channels) : nullptr;
+}
+
+void __stdcall gosAudio_DestroyPCMStream(HGOSPCMSTREAM* Stream)
+{
+    if (Stream && *Stream) {
+        if (g_sound_engine)
+            g_sound_engine->destroyPCMStream(*Stream);
+        *Stream = nullptr;
+    }
+}
+
+void __stdcall gosAudio_QueuePCM(HGOSPCMSTREAM Stream, const float* Samples, int NumFrames)
+{
+    if (!Stream || !Samples || NumFrames <= 0)
+        return;
+    SDL_AudioSpec src;
+    if (!SDL_GetAudioStreamFormat(Stream->stream, &src, nullptr))
+        return;
+    // When nothing pulls the stream (no audio device and no MIX_Generate),
+    // drop new data rather than let it pile up: at most 2 seconds wait
+    const int frame_bytes = src.channels * (int)sizeof(float);
+    if (SDL_GetAudioStreamQueued(Stream->stream) > 2 * src.freq * frame_bytes)
+        return;
+    SDL_PutAudioStreamData(Stream->stream, Samples, NumFrames * frame_bytes);
+    // A track stops whenever its stream runs dry: start it again
+    if (!Stream->paused && !MIX_TrackPlaying(Stream->track) && !MIX_PlayTrack(Stream->track, 0))
+        SPEW(("AUDIO", "PCM stream: %s\n", SDL_GetError()));
+}
+
+void __stdcall gosAudio_ClearPCM(HGOSPCMSTREAM Stream)
+{
+    if (Stream)
+        SDL_ClearAudioStream(Stream->stream);
+}
+
+void __stdcall gosAudio_PausePCMStream(HGOSPCMSTREAM Stream, bool Paused)
+{
+    if (!Stream)
+        return;
+    Stream->paused = Paused;
+    if (Paused)
+        MIX_PauseTrack(Stream->track);
+    else if (MIX_TrackPaused(Stream->track))
+        MIX_ResumeTrack(Stream->track);
+    else if (SDL_GetAudioStreamQueued(Stream->stream) > 0)
+        MIX_PlayTrack(Stream->track, 0);
+}
+
+void __stdcall gosAudio_SetPCMStreamVolume(HGOSPCMSTREAM Stream, float Volume)
+{
+    if (Stream)
+        MIX_SetTrackGain(Stream->track, std::max(0.0f, Volume));
 }

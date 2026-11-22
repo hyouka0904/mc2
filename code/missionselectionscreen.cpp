@@ -231,7 +231,7 @@ void MissionSelectionScreen::begin()
 	if ( str && strlen( str ) )
 	{
 		FullPathFileName videoName;
-		videoName.init( moviePath, str, ".bik" );
+		videoName.init( moviePath, str, MC2_MOVIE_EXT);
 
 		if (fileExists(videoName) || fileExistsOnCD(videoName))
 		{

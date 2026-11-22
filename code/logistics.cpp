@@ -290,7 +290,7 @@ long Logistics::update (void)
 				bMovie = NULL;
 
 				FullPathFileName path;
-				path.init( moviePath, "credits", ".bik" );
+				path.init( moviePath, "credits", MC2_MOVIE_EXT);
 
 				RECT movieRect;
 				movieRect.top = 0;
@@ -883,7 +883,7 @@ void Logistics::playFullScreenVideo( const char* fileName )
 		return;
 
 	FullPathFileName path;
-	path.init( moviePath, fileName, ".bik" );
+	path.init( moviePath, fileName, MC2_MOVIE_EXT);
 
 	RECT movieRect;
 	movieRect.top = 100;

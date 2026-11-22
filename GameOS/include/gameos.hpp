@@ -705,6 +705,21 @@ void __stdcall gosAudio_SetChannelPlayMode( int Channel, enum gosAudio_PlayMode 
 //
 gosAudio_PlayMode __stdcall gosAudio_GetChannelPlayMode( int Channel );
 
+//
+// PCM streams: sound produced while the game runs (movie soundtracks). Each
+// stream plays on its own mixer track, outside the numbered channels.
+// Samples are 32-bit float, interleaved when there are two channels.
+//
+typedef class gosPCMStream* HGOSPCMSTREAM;
+HGOSPCMSTREAM __stdcall gosAudio_CreatePCMStream( int SamplesPerSec, int Channels );
+void __stdcall gosAudio_DestroyPCMStream( HGOSPCMSTREAM* Stream );
+// Appends NumFrames frames (one sample per channel each)
+void __stdcall gosAudio_QueuePCM( HGOSPCMSTREAM Stream, const float* Samples, int NumFrames );
+// Drops everything queued and not yet played
+void __stdcall gosAudio_ClearPCM( HGOSPCMSTREAM Stream );
+void __stdcall gosAudio_PausePCMStream( HGOSPCMSTREAM Stream, bool Paused );
+void __stdcall gosAudio_SetPCMStreamVolume( HGOSPCMSTREAM Stream, float Volume );
+
 //////////////////////////////////////////////////////////////////////////////////
 // Get the filename, type, frequency and number of channels for a sound resource
 //
@@ -2866,6 +2881,13 @@ void __stdcall gos_LockTexture( DWORD Handle, DWORD MipMapSize, bool ReadOnly, T
 // Unlocks and updates a texture (may have to build and upload mipmaps)
 //
 void __stdcall gos_UnLockTexture( DWORD Handle );
+
+//
+// Replaces every pixel of a texture (mip 0) without a lock: width*height
+// pixels of 4 bytes in R, G, B, A order. Meant for textures that change every
+// frame, such as movie frames.
+//
+void __stdcall gos_UpdateTextureRGBA( DWORD Handle, const void* Pixels );
 
 //
 // Converts from 32bpp source to subrect of n-bpp dest, bypassing intermediate 32bpp buffer
