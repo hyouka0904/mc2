@@ -1209,10 +1209,14 @@ bool GpuDevice::flush(bool present, int dl_w, int dl_h, std::vector<uint8_t>* do
             upload_ = SDL_CreateGPUTransferBuffer(dev_, &tci);
         }
         uint8_t* p = (uint8_t*)SDL_MapGPUTransferBuffer(dev_, upload_, true);
-        memcpy(p, ring_.data(), ring_.size());
-        memcpy(p + staging_off, tex_staging_.data(), tex_staging_.size());
+        // an empty vector's data() may be null, which memcpy does not allow
+        if (!ring_.empty())
+            memcpy(p, ring_.data(), ring_.size());
+        if (!tex_staging_.empty())
+            memcpy(p + staging_off, tex_staging_.data(), tex_staging_.size());
         for (size_t i = 0; i < promote.size(); ++i)
-            memcpy(p + promote_off[i], promote[i]->data.data(), promote[i]->data.size());
+            if (!promote[i]->data.empty())
+                memcpy(p + promote_off[i], promote[i]->data.data(), promote[i]->data.size());
         SDL_UnmapGPUTransferBuffer(dev_, upload_);
     }
     if (ring_size) {

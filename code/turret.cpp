@@ -95,6 +95,13 @@ extern void LogWeaponFireChunk (WeaponFireChunkPtr chunk, GameObjectPtr attacker
 
 bool Turret::turretsEnabled[MAX_TEAMS] = {true, true, true, true, true, true, true, true};
 
+// Turrets without a team (id -1) used to read the byte before the array,
+// which was zero padding: they count as disabled.
+static bool teamTurretsEnabled(long teamId)
+{
+	return teamId >= 0 && teamId < MAX_TEAMS && Turret::turretsEnabled[teamId];
+}
+
 #define MAX_TURRET_PITCH		(-45.0f)
 
 inline float agsqrt( float _a, float _b )
@@ -585,7 +592,7 @@ long Turret::update (void)
 		return(true);	//NEVER RETURN ANYTHING BUT TRUE!!!!!!!!!!!!!!!!
 	}
 
-	if (!turretsEnabled[getTeamId()]) {
+	if (!teamTurretsEnabled(getTeamId())) {
 		targetWID = 0;
 	}
 
@@ -658,7 +665,7 @@ long Turret::update (void)
 	//Must reveal every frame now for REAL LOS!!
 	if ((turn > 1) && active && getTeam())
 	{
-		if (turretsEnabled[getTeamId()]) 
+		if (teamTurretsEnabled(getTeamId())) 
 		{
 			TurretTypePtr turretType = (TurretTypePtr)ObjectManager->getObjectType(typeHandle);
 			getTeam()->markSeen(position,turretType->LOSFactor);

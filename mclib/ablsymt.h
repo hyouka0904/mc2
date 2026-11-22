@@ -53,7 +53,8 @@ typedef enum {
 	DFN_FUNCTION
 } DefinitionType;
 
-typedef enum {
+// int based: the game registers routine keys past the listed ones
+typedef enum : int {
 	RTN_DECLARED,
 	RTN_FORWARD,
 	RTN_RETURN,

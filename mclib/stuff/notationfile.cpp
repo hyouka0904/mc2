@@ -342,17 +342,17 @@ void
 			{
 				if (!comment_mode)
 				{
-					strcpy(p-1, p+1);
+					memmove(p-1, p+1, strlen(p+1) + 1); // overlapping: not strcpy
 					--p;
 				}
 				else if (!comment_start)
 				{
-					strcpy(buffer, p+1);
+					memmove(buffer, p+1, strlen(p+1) + 1); // overlapping: not strcpy
 					p = buffer;
 				}
 				else
 				{
-					strcpy(comment_start, p+1);
+					memmove(comment_start, p+1, strlen(p+1) + 1); // overlapping: not strcpy
 					p = comment_start;
 				}
 				comment_start = NULL;

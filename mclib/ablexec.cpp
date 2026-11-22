@@ -264,12 +264,17 @@ void crunchOffset (Address address) {
 char* createCodeSegment (long& codeSegmentSize) {
 
 	codeSegmentSize = codeBufferPtr - codeBuffer + 1;
-	char* codeSegment = (char*)ABLCodeMallocCallback(codeSegmentSize);
+	// Two bytes past the code: the interpreter reads the token after the
+	// last statement (execStatement skips trailing semicolons), and the
+	// last byte used to be whatever the buffer held. TKN_NONE ends it.
+	char* codeSegment = (char*)ABLCodeMallocCallback(codeSegmentSize + 1);
 	if (!codeSegment)
 		ABL_Fatal(0, " ABL: Unable to AblCodeHeap->malloc code segment ");
 
-	for (long i = 0; i < codeSegmentSize; i++)
+	for (long i = 0; i < codeSegmentSize - 1; i++)
 		codeSegment[i] = codeBuffer[i];
+	codeSegment[codeSegmentSize - 1] = TKN_NONE;
+	codeSegment[codeSegmentSize] = TKN_NONE;
 
 	codeBufferPtr = codeBuffer;
 	return(codeSegment);

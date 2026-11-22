@@ -779,7 +779,7 @@ void gos_AtlasUpdate(gosTexture* t, const void* rgba) {
 }
 
 void gos_AtlasRemove(gosTexture* t) {
-    if(t->atlas_page_ < 0)
+    if(t->atlas_page_ < 0 || t->atlas_page_ >= (int)g_atlas_pages.size())
         return;
     g_atlas_pages[t->atlas_page_].free_slots.push_back(t->atlas_slot_);
     t->atlas_page_ = t->atlas_slot_ = -1;
@@ -1439,7 +1439,6 @@ void gosRenderer::init() {
 
 void gosRenderer::destroy() {
 
-    gos_AtlasShutdown();
     gos_render::device()->destroyBuffer(shape_vb_);
     gos_render::device()->destroyBuffer(shape_ib_);
 
@@ -1468,6 +1467,8 @@ void gosRenderer::destroy() {
     textureList_.clear();
     freeTextureSlots_.clear();
 
+    // after the textures: their destructors give their atlas slots back
+    gos_AtlasShutdown();
 }
 
 void gosRenderer::initRenderStates() {

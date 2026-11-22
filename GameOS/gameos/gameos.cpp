@@ -13,6 +13,7 @@
 #include "platform_clock.h"
 #include <string>
 #include <mutex>
+#include <new>
 #include <vector>
 
 #include <stdlib.h> // getenv
@@ -260,6 +261,35 @@ void operator delete[](void* ptr)
 #ifndef PLATFORM_WINDOWS
 noexcept
 #endif
+{
+    gos_Free(ptr);
+}
+
+// Sized deallocation (C++14) and the nothrow forms. The standard library's
+// versions forward to the ones above, but a replacement allocator such as
+// AddressSanitizer's does not: its nothrow new skipped gos_Malloc and its
+// sized delete freed gos_Malloc blocks with its own allocator.
+void operator delete(void* ptr, size_t) noexcept
+{
+    gos_Free(ptr);
+}
+void operator delete[](void* ptr, size_t) noexcept
+{
+    gos_Free(ptr);
+}
+void* operator new(size_t sz, const std::nothrow_t&) noexcept
+{
+    return gos_Malloc(sz, NULL);
+}
+void* operator new[](size_t sz, const std::nothrow_t&) noexcept
+{
+    return gos_Malloc(sz, NULL);
+}
+void operator delete(void* ptr, const std::nothrow_t&) noexcept
+{
+    gos_Free(ptr);
+}
+void operator delete[](void* ptr, const std::nothrow_t&) noexcept
 {
     gos_Free(ptr);
 }

@@ -515,26 +515,37 @@ namespace Stuff {
 
 		static int andAway[3] = {0x000000ff, 0x0000ffff, 0x00ffffff };
 
-		IteratorPosition ret = 0;
+		// Unsigned sums and a shift count below 32: the signed overflow and
+		// the shift by 32 or more of the original were undefined behaviour
+		// (x86 masks the count, hence i & 31). The last 1-3 characters are
+		// copied instead of read as a whole int past the end of the string;
+		// the bytes that are not copied were masked away (or were the
+		// terminating zero), so the hash values do not change.
+		unsigned ret = 0;
 
 		/*register*/ int i, r, len = stringLength >> 2;
 
 		for(i=0;i<len;i++)
 		{
-			r = ((int *)stringText)[i];
+			memcpy(&r, stringText + 4 * i, sizeof(r));
 // sebi: !NB            
 #ifndef LINUX_BUILD
 			_asm mov ecx, i
 			_asm ror r, cl
 #else
-            r = r >> i;
+            r = r >> (i & 31);
 #endif
-			ret += r;
+			ret += (unsigned)r;
 		}
 
-		ret += stringLength&0x3 ? ((int *)stringText)[i] & andAway[stringLength&0x3-1] : 0;
+		if (stringLength & 0x3)
+		{
+			int tail = 0;
+			memcpy(&tail, stringText + 4 * i, stringLength & 0x3);
+			ret += (unsigned)(tail & andAway[(stringLength & 0x3) - 1]);
+		}
 
-		return (ret & 0x7fffffff);
+		return (IteratorPosition)(ret & 0x7fffffff);
 	}
 
 	//##########################################################################

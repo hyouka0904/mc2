@@ -379,6 +379,9 @@ TG_ShapePtr TG_TypeShape::CreateFrom (void)
 		gosASSERT(newShape->listOfShadowVertices != NULL);
 
 		memset(newShape->listOfShadowVertices,0xff,sizeof(TG_ShadowVertex) * numTypeVertices * MAX_SHADOWS);
+		// 0xff is not a valid bool: mark the entries as not valid explicitly
+		for (long v = 0; v < numTypeVertices * MAX_SHADOWS; v++)
+			newShape->listOfShadowVertices[v].bDataIsNotValid = true;
 		
 		//Mark with invalid pointer so we now to get RAM from POOL! 	
 		newShape->listOfShadowTVertices = NULL;

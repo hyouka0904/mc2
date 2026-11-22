@@ -71,7 +71,7 @@ int LogisticsChassis::init( CSVFile* file, int chassisID )
 	
 	houseID;
 	result = file->readLong( 4, 2, houseID );
-	ID |= ((houseID << 8) & 0x0000ff00);
+	ID |= (((unsigned long)houseID << 8) & 0x0000ff00); // houseID can be -1
 	gosASSERT( result == NO_ERR );
 
 	for ( int row = 9; row < 12; ++row )

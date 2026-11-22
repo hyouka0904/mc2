@@ -35,7 +35,8 @@
 //------------
 // TOKEN CODES
 
-typedef enum {
+// int based: code segments also hold values outside the list
+typedef enum : int {
 	TKN_NONE,
 	TKN_IDENTIFIER,
 	TKN_NUMBER,
