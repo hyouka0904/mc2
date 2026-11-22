@@ -427,7 +427,7 @@ SDL3 GPU 後端在沒有 GPU 的環境使用 Mesa 的軟體 Vulkan（lavapipe）
 | `-shader-reload` | 開發用：著色器原始碼變更時在遊戲中重新編譯（每半秒檢查一次，預設關閉） |
 | `-renderer gl\|gpu` | 繪圖後端：`gpu`＝SDL3 GPU（預設，Linux 上為 Vulkan），`gl`＝OpenGL。截圖比對腳本一律明確指定。環境變數 `MC2_GPU_DEBUG=1` 開啟 Vulkan 驗證層，`SDL_GPU_DRIVER` 可指定驅動 |
 | `-no-batching` | 關閉繪製合併，每個 `gos_Draw*` 呼叫各畫一次（比較效能或排查問題用） |
-| `-gpu-shapes` | 實驗用：3D 模型的實心部分另外用 `gos_RenderShape`（GPU 轉換與光照）畫一次；GPU 光照尚未與遊戲一致（例如機甲會偏白），預設關閉 |
+| `-gpu-shapes` | 3D 模型的實心部分改用 `gos_RenderShape` 在 GPU 上轉換與打光（光照與 CPU 路徑一致）；在軟體繪圖上較慢，預設關閉 |
 
 測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 18 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
 暫停中的任務，以及載入範例 Mod / Modpack 的主選單。執行與比對：
@@ -511,6 +511,10 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 
 **3D 模型的硬體路徑（`-gpu-shapes`）預設關閉。** 上游 port 在 CPU 繪製（原作的做法：CPU 轉換、打光後送出三角形）之外，另外加了一條「把整個模型交給 GPU 轉換與打光」的實驗路徑，兩條路徑每幀都會畫。調查多貼圖問題時發現，這條路徑的頂點著色器留有除錯用的 `+100` 像素水平位移（上游 commit 8fc2a89 「render shape base functionality (WIP)」），所以它畫出的模型一直偏右 100 像素：大部分被隨後的 CPU 繪製蓋住，蓋不住的地方就成了建築物的「殘影」（mc2_03 第 900 幀的儲存槽、管線最明顯，舊的參考截圖也包含這些殘影）。拿掉位移後，GPU 光照與 CPU 光照不一致（機甲隊伍顏色、夜間燈光等），因此改為預設只用 CPU 路徑——與原作相同、少了殘影，也更快（mc2_01 每幀 draw call 74 → 68，平均幀時間 GL 13.4 → 11.5 ms、GPU 11.4 → 10.6 ms）——並重新產生參考截圖。硬體路徑保留為 `-gpu-shapes`，並已修正：多貼圖模型依貼圖分段（每段用自己的貼圖）、套用建築物縮放（`shapeScalar`）、`MC_TextureManager` 的形狀清單在第三種旗標組合時用錯欄位（`vertexData3`）而丟掉形狀、未貼圖清單寫入時多寫一格。
 
+**`-gpu-shapes` 的光照已移到著色器**（`shaders/include/lighting.hglsl`）：頂點著色器重現 `TG_Shape::MultiTransformShape` 的漫射色與霧——夜間燈色（粉紅／黃／綠熱點）、烘焙在頂點的燈光、`BaseVertexColor`、環境光、無限遠光與帶衰減的無限遠光、選取高亮、高度霧與距離霧。CPU 路徑另外算的高光（點光源、聚光燈、地形光）沒有任何像素著色器讀取，因此不重現。光源以世界座標計算；高度霧用「頂點比物件原點高多少」，只在部件被動畫旋轉時與 CPU 的結果略有不同。每個物件一組 1280 位元組的光照參數，同一物件的部件共用、仍可合併繪製；OpenGL 以 `glBindBufferRange` 只綁該物件的那組（原本以陣列索引，最多 32 組），SDL3 GPU 後端每次繪製複製那一組。GPU 畫過的實心面不再由 CPU 重畫。截圖測試（`run_screenshot_tests.py --gpu-shapes`）與 CPU 路徑的參考截圖相比：OpenGL、SDL3 GPU 都是 18/18，最多差 0.25% 像素，無驗證層訊息。
+
+在 Mesa 軟體繪圖上 `-gpu-shapes` 反而較慢（mc2_01 第 1–900 幀平均：GL 11.6 → 13.1 ms、SDL3 GPU 10.1 → 10.5 ms；每幀 draw call 49 → 55），因為軟體繪圖的頂點著色器同樣在 CPU 上執行，而且物件之間無法合併。因此預設仍是 CPU 路徑，待在實體 GPU 上量測後再決定。
+
 量測（第 300–900 幀，Xvfb + Mesa 軟體繪圖，`-perf-csv`）：
 
 | | mc2_01 第 600 幀 draw call | mc2_01 平均 | mc2_01 平均幀時間（GL / GPU） | mc2_07 第 600 幀 |
@@ -557,7 +561,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 4 著色器 | 完成（DXIL 待 CI 安裝 dxc） | Vulkan 風格 GLSL（`PerDraw` / `LightsData` / `SceneData` 三個 uniform block、明確的 set / binding / location）；建置時編成 SPIR-V（通過 `spirv-val`）、MSL、HLSL；OpenGL 後端改用 uniform block 後 18 張截圖逐像素相同；熱重載改為 `-shader-reload` 開發選項 |
 | 5 SDL3 GPU 後端 | 完成 | `render/gpu/`（Vulkan via SDL3 GPU）、`-renderer gl\|gpu`、記錄重播式的即時模式模擬、管線快取、每幀上傳環狀緩衝區；兩個後端共用的繪製合併讓 mc2_01 第 600 幀 draw call 從 242 降到 156；CI 對兩個後端各跑冒煙測試與 18 張截圖比對（GPU 後端開啟 Vulkan 驗證層，零訊息）；兩後端差異最多 0.25%，門檻維持 0.5% |
 | 6 移除 OpenGL / GLEW | 進行中（依決策保留 OpenGL 一個版本週期） | 預設改為 SDL3 GPU，無法啟動時自動退回 OpenGL；OpenGL 後端移到獨立的 `gameos_gl` 函式庫，資料工具（含 `aseconv`）與測試不再連結 libGL / GLEW（CI 以 `ldd` 檢查）；移除 Viewer；修正 OpenGL 結束時重複 `glDetachShader` 的錯誤。待備援期結束後刪除 `render/gl/` 與 GLEW |
-| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併），3D 模型的硬體路徑改用它；繪製合併與小貼圖圖集；找出硬體路徑的 `+100` 像素殘影，改為預設關閉（`-gpu-shapes` 開啟）；mc2_01 第 600 幀 draw call 242 → 68、平均幀時間 26.7 → 11.5 ms（GL） |
+| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併），3D 模型的硬體路徑改用它；繪製合併與小貼圖圖集；找出硬體路徑的 `+100` 像素殘影，改為預設關閉（`-gpu-shapes` 開啟）；`-gpu-shapes` 的光照移到著色器；mc2_01 第 600 幀 draw call 242 → 68、平均幀時間 26.7 → 11.5 ms（GL） |
 | 8 平台層精簡 | 未開始 | |
 
 ### 決策紀錄
@@ -578,7 +582,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 ### 其他尚未完成的項目
 
 - **網路對戰**未實作。
-- **3D 模型的 GPU 光照**（`-gpu-shapes`）：要成為預設，著色器需重現 `TG_Shape::MultiTransformShape` 的 CPU 光照（各種光源、夜間「熱點」燈色、`BaseVertexColor`、選取高亮、霧），並在 GPU 畫過的實心面上略過 CPU 繪製；目前 CPU 光照是正確且預設的路徑。
+- **`-gpu-shapes` 是否改為預設**：GPU 光照已完成（見上方「3D 模型的硬體路徑」），但在 Mesa 軟體繪圖上比 CPU 路徑慢，需要在實體 GPU 上量測後再決定。
 - GameOS 其餘繪圖 API 的型別安全（3D 模型已改用 `gos_RenderShape`）。
 - 編譯警告：從 643 則降到 0 則（GCC 13，Debug 與 RelWithDebInfo）。修正了全部 `printf` / `scanf` 型別不符（64 位元下 `long` 配 `%d`）、所有可能的 `sprintf` 緩衝區溢位與 `snprintf` 截斷（改用 `snprintf` 並把緩衝區加大到放得下）、ABL 腳本 `objectVisible` / `objectActivate` 對群組使用時的空指標存取、讀取被截斷的字型檔時的無窮迴圈、多人模式未實作時以空指標當作玩家名稱；`fread` 皆檢查回傳值；刪除未使用的變數（只在除錯或 `LAB_ONLY` 程式碼中用到的計時變數保留並標示）。
 - 尚未在 Windows、實體 GPU、長時間遊玩下重新驗證（CI 只在 Linux + Mesa 軟體繪圖上執行）。
