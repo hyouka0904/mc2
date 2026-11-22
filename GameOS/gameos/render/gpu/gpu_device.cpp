@@ -151,6 +151,7 @@ struct GpuBuffer {
     uint32_t ring_flush = 0;
     uint32_t ring_version = 0;
     uint32_t ring_offset = 0;
+    bool queued_for_promotion = false; // in GpuDevice::promote_queue_
 };
 
 enum class CmdType : uint8_t { Clear, Viewport, TexUpload, Draw };
@@ -446,6 +447,16 @@ private:
 
     uint32_t next_buffer_id_ = 1;
     std::unordered_map<uint32_t, std::unique_ptr<GpuBuffer> > buffers_;
+    // Static buffers created or changed since the last flush: the candidates
+    // for their own GPU copy (walking all of buffers_ every frame was ~10% of
+    // the main thread with ~1700 buffers)
+    std::vector<uint32_t> promote_queue_;
+    void queuePromotion(uint32_t id, GpuBuffer* b) {
+        if (b->usage == BufferUsage::Static && b->kind != BufferKind::Uniform && !b->queued_for_promotion) {
+            b->queued_for_promotion = true;
+            promote_queue_.push_back(id);
+        }
+    }
     BufferHandle uniform_slots_[4] = {};
 
     PipelineDesc desc_;
@@ -1069,6 +1080,7 @@ BufferHandle GpuDevice::createBuffer(BufferKind kind, BufferUsage usage, const v
     else
         b->data.assign(size, 0);
     const uint32_t id = next_buffer_id_++;
+    queuePromotion(id, b.get());
     buffers_[id] = std::move(b);
     return id;
 }
@@ -1085,6 +1097,7 @@ void GpuDevice::updateBuffer(BufferHandle h, BufferKind, const void* data, size_
     else
         b->data.assign(size, 0);
     ++b->version;
+    queuePromotion(h, b);
 }
 
 void GpuDevice::destroyBuffer(BufferHandle h)
@@ -1126,12 +1139,16 @@ bool GpuDevice::flush(bool present, int dl_w, int dl_h, std::vector<uint8_t>* do
     // Buffers to copy to their own GPU buffer after the replay: static
     // buffers whose contents changed (drawn from the ring until then)
     std::vector<GpuBuffer*> promote;
-    for (auto& kv : buffers_) {
-        GpuBuffer* b = kv.second.get();
-        if (b->usage == BufferUsage::Static && b->kind != BufferKind::Uniform && b->gpu_version != b->version &&
-            !b->data.empty())
+    for (uint32_t id : promote_queue_) {
+        auto it = buffers_.find(id);
+        if (it == buffers_.end())
+            continue; // destroyed since
+        GpuBuffer* b = it->second.get();
+        b->queued_for_promotion = false;
+        if (b->gpu_version != b->version && !b->data.empty())
             promote.push_back(b);
     }
+    promote_queue_.clear();
 
     // One transfer buffer: [ring][texture staging][promoted buffers]
     const uint32_t ring_size = alignUp((uint32_t)ring_.size(), 16);

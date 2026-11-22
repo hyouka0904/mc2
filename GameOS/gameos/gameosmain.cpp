@@ -322,7 +322,7 @@ int main(int argc, char** argv)
             fprintf(stderr, "error: cannot write %s\n", run_opts.perf_csv.c_str());
             return 2;
         }
-        fprintf(perf_csv, "frame,frame_ms,draw_calls,pipeline_changes,pipelines\n");
+        fprintf(perf_csv, "frame,frame_ms,draw_calls,pipeline_changes,pipelines,cpu_ms\n");
     }
 
     //signal(SIGTRAP, SIG_IGN);
@@ -399,6 +399,7 @@ int main(int argc, char** argv)
 
 		uint64_t start_tick = timing::gettickcount();
 		const auto perf_start = std::chrono::steady_clock::now();
+		const double perf_cpu_start = perf_csv ? timing::thread_cpu_ms() : 0.0;
 		++frame_number;
 		if (platform_clock::is_fixed()) {
 			// Deterministic mode: the game sees a constant frame time no
@@ -430,8 +431,8 @@ int main(int argc, char** argv)
         if (perf_csv) {
             const gos_render::Device::Stats st = gos_render::device()->stats();
             const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - perf_start).count();
-            fprintf(perf_csv, "%u,%.3f,%u,%u,%u\n", frame_number, ms, st.draw_calls,
-                    st.pipeline_changes, st.pipeline_cache_size);
+            fprintf(perf_csv, "%u,%.3f,%u,%u,%u,%.3f\n", frame_number, ms, st.draw_calls,
+                    st.pipeline_changes, st.pipeline_cache_size, timing::thread_cpu_ms() - perf_cpu_start);
         }
 
         g_exit |= gosExitGameOS();

@@ -1029,22 +1029,27 @@ class MC_TextureManager
 
 		void clearArrays (void)
 		{
-			for (long i=0;i<MC_MAXTEXTURES;i++)
+			// Only the nodes handed out this frame are in use: every vertex
+			// node records the texture it was given to (textureIndex), and the
+			// nodes past nextAvailable* are still zero from the last clear.
+			// Clearing all MC_MAXTEXTURES entries every frame cost ~3% of the
+			// main thread.
+			for (long i=0;i<nextAvailableVertexNode;i++)
 			{
-				masterTextureNodes[i].vertexData = NULL;
-				masterTextureNodes[i].vertexData2 = NULL;
-				masterTextureNodes[i].vertexData3 = NULL;
-
-				masterTextureNodes[i].hardwareVertexData = NULL;
-				masterTextureNodes[i].hardwareVertexData2 = NULL;
-				masterTextureNodes[i].hardwareVertexData3 = NULL;
+				MC_TextureNode& t = masterTextureNodes[masterVertexNodes[i].textureIndex];
+				t.vertexData = t.vertexData2 = t.vertexData3 = NULL;
+			}
+			for (size_t i=0;i<nextAvailableHardwareVertexNode;i++)
+			{
+				MC_TextureNode& t = masterTextureNodes[masterHardwareVertexNodes[i].textureIndex];
+				t.hardwareVertexData = t.hardwareVertexData2 = t.hardwareVertexData3 = NULL;
 			}
 
 			vertexData = vertexData2 = vertexData3 = vertexData4 = vertexData5 = NULL;
 			hardwareVertexData = hardwareVertexData2 = hardwareVertexData3 = hardwareVertexData4 = hardwareVertexData5 = NULL;
 			
-			memset(masterVertexNodes,0,sizeof(MC_VertexArrayNode)*MC_MAXTEXTURES);
-			memset(masterHardwareVertexNodes,0,sizeof(MC_HardwareVertexArrayNode)*MC_MAXTEXTURES);
+			memset(masterVertexNodes,0,sizeof(MC_VertexArrayNode)*nextAvailableVertexNode);
+			memset(masterHardwareVertexNodes,0,sizeof(MC_HardwareVertexArrayNode)*nextAvailableHardwareVertexNode);
 			
 			nextAvailableVertexNode = 0;
 			nextAvailableHardwareVertexNode = 0;

@@ -15,7 +15,8 @@
 //   -exit-after <n>          quit after frame <n> (default: last capture frame)
 //   -input-script <file>     replay mouse/keyboard events (utils/input_script.h)
 //   -perf-csv <file>         write per-frame statistics (frame, wall-clock ms,
-//                            draw calls, pipeline changes, distinct pipelines)
+//                            draw calls, pipeline changes, distinct pipelines,
+//                            CPU ms of the main thread)
 //   -mods <dir>              load the enabled mods from <dir> (default: ./mods
 //                            if it exists)
 //   -modpack <modpack.ini>   load exactly the mods a modpack lists

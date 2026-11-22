@@ -77,4 +77,21 @@ namespace timing {
 		milliseconds += ts.tv_nsec / 1e+6;
         return milliseconds;
     }
+
+	double thread_cpu_ms()
+	{
+#ifdef PLATFORM_WINDOWS
+		FILETIME created, exited, kernel, user;
+		if (!GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user))
+			return 0.0;
+		const uint64_t k = ((uint64_t)kernel.dwHighDateTime << 32) | kernel.dwLowDateTime;
+		const uint64_t u = ((uint64_t)user.dwHighDateTime << 32) | user.dwLowDateTime;
+		return (double)(k + u) / 10000.0; // 100 ns units
+#else
+		struct timespec ts;
+		if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) != 0)
+			return 0.0;
+		return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
+#endif
+	}
 }
