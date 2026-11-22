@@ -44,6 +44,11 @@
 #include <string>
 #include <vector>
 
+// std::string first defined under a #pragma pack gets a smaller alignment
+// and a different layout in some files (see gameos.hpp)
+static_assert(alignof(std::string) == alignof(void*), "std::string defined under #pragma pack");
+static_assert(alignof(std::vector<uint32_t>) == alignof(void*), "std::vector defined under #pragma pack");
+
 namespace gos_run_options {
 
 struct Options {

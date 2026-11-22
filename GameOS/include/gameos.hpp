@@ -16,6 +16,22 @@
 // x64 a different packing changes the layout of structures the OS reads).
 #include <windows.h>
 #endif
+// Standard headers too: a class first defined under pack(4) gets 4 byte
+// alignment, so with libc++ (where <chrono> brings in <string> and
+// <vector>) std::string and std::vector had a different layout in files
+// that include this header first than in the others; structures holding
+// them, such as gos_run_options::Options, then disagreed about where their
+// members are (mc2 -version did nothing on macOS).
+#include <inttypes.h>
+#include <cstdarg>
+#include <stdlib.h>
+#include <errno.h>
+#include <signal.h>
+#include <string.h>
+#include <math.h>
+#include <chrono>
+#include <string>
+#include <vector>
 #pragma pack(push,4)
 #ifdef PLATFORM_WINDOWS
 #pragma warning( disable: 4725 )					// fdiv generates a warning

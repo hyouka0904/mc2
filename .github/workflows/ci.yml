@@ -177,7 +177,8 @@ jobs:
           status=0
           build/mc2.app/Contents/MacOS/mc2 -version > version.out 2> version.err || status=$?
           echo "-version: exit $status, stdout: $(cat version.out), stderr: $(cat version.err)"
-          [ "$status" = 0 ] && grep -q "MechCommander 2" version.out
+          [ "$status" = 0 ]
+          grep -q "MechCommander 2" version.out
           vtool -show-build build/mc2.app/Contents/MacOS/mc2 | grep -E "minos 13\.0"
           if otool -L build/mc2.app/Contents/MacOS/mc2 | grep -iE "sdl|glew|opengl"; then
             echo "unexpected SDL / OpenGL library in mc2"; exit 1
