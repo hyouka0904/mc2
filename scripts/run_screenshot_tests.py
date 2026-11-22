@@ -84,6 +84,8 @@ def main():
     ap.add_argument("--screen", default="800x600")
     ap.add_argument("--renderer", choices=["gl", "gpu"], default="gl")
     ap.add_argument("--gpu-validation", action="store_true")
+    ap.add_argument("--gpu-shapes", action="store_true",
+                    help="draw 3D models with the GPU path (-gpu-shapes)")
     args = ap.parse_args()
 
     for tool in ("Xvfb", "xdpyinfo"):
@@ -108,6 +110,8 @@ def main():
     if args.gpu_validation:
         env["MC2_GPU_DEBUG"] = "1"
     fixed_args = FIXED_ARGS + ["-renderer", args.renderer]
+    if args.gpu_shapes:
+        fixed_args.append("-gpu-shapes")
     failed = False
     try:
         if not os.path.exists(os.path.join(game_dir, "options.cfg")):

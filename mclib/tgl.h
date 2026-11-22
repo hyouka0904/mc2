@@ -280,21 +280,39 @@ typedef  TG_Light *TG_LightPtr;
 
 #define MAX_HW_LIGHTS_IN_WORLD	16
 
-struct TG_HWLightsData {
-	float lightToWorld[MAX_HW_LIGHTS_IN_WORLD][16];
-	float lightDir[MAX_HW_LIGHTS_IN_WORLD][4];
-	float lightColor[MAX_HW_LIGHTS_IN_WORLD][4];
-    int numLights_;
-    int pad[3];
+// Lighting of one TG shape drawn on the GPU (-gpu-shapes). Same layout as
+// ObjectLights in shaders/include/lighting.hglsl (std140). Per object values
+// come first, so that comparing two blocks stops early.
+#define TG_HWLIGHT_IS_NIGHT          1
+#define TG_HWLIGHT_LIGHTS_OUT        2
+#define TG_HWLIGHT_HUD_ELEMENT       4
+#define TG_HWLIGHT_VERTEX_LIGHTING   8
+#define TG_HWLIGHT_HEIGHT_FOG        16
+#define TG_HWLIGHT_HAZE              32
 
-    TG_HWLightsData():numLights_(0)
+struct TG_HWLightsData {
+    int numLights_;
+    int flags_;                 // TG_HWLIGHT_*
+    int pad0_[2];
+    float params_[4];           // night factor, fog base (0..1), object origin y, haze fog (0..1)
+    float params2_[4];          // normal scale (1 / shape scale)
+    float hotPink_[4];
+    float hotYellow_[4];
+    float hotGreen_[4];
+    float highlight_[4];
+    float pad1_[4];
+	float lightDir[MAX_HW_LIGHTS_IN_WORLD][4];      // world direction, w: light type
+	float lightPos[MAX_HW_LIGHTS_IN_WORLD][4];      // world position
+	float lightColor[MAX_HW_LIGHTS_IN_WORLD][4];    // rgb, 0..1
+	float lightFalloff[MAX_HW_LIGHTS_IN_WORLD][4];  // near, far, 1 / (far - near)
+    float pad2_[8][4];          // 1280 bytes: a multiple of the GL uniform offset alignment
+
+    TG_HWLightsData()
     {
-		memset(lightToWorld, 0, sizeof(lightToWorld));
-		memset(lightDir, 0, sizeof(lightDir));
-		memset(lightColor, 0, sizeof(lightColor));
-        pad[0] = pad[1] = pad[2] = 13;
+        memset(this, 0, sizeof(*this));
     } 
 };
+static_assert(sizeof(TG_HWLightsData) == 1280, "keep in sync with ObjectLights in lighting.hglsl");
 
 typedef TG_HWLightsData* TG_HWLightsDataPtr;
 
@@ -764,6 +782,7 @@ class TG_Shape
 		static Stuff::LinearMatrix4D 	s_lightToShape[MAX_LIGHTS_IN_WORLD];
 		static Stuff::Vector3D			s_lightDir[MAX_LIGHTS_IN_WORLD];
 		static Stuff::Vector3D			s_spotDir[MAX_LIGHTS_IN_WORLD];
+		static float					s_objectBaseY;		//World y of the origin of the object being transformed (GPU height fog)
 		static Stuff::Vector3D			s_rootLightDir[MAX_LIGHTS_IN_WORLD];
 
 		static UserHeapPtr 				tglHeap;		//Stores all TGL data so we don't need to go through the FREE merry go round of GOS!

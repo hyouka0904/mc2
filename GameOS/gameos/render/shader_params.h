@@ -19,6 +19,11 @@ enum UniformSlot {
 
 static const char* const kPerDrawBlockName = "PerDraw";
 
+// Size of one ObjectLights entry of the LightsData buffer (TG_HWLightsData in
+// mclib/tgl.h). Each draw uses one entry: OpenGL binds its range (the size is
+// a multiple of every GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT in use, 256 at most).
+static const size_t kObjectLightsSize = 1280;
+
 // std140, matrices row major (the order GameOS keeps them in)
 struct PerDraw {
     float mvp[16];

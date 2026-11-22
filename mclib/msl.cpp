@@ -1298,6 +1298,7 @@ long TG_MultiShape::TransformMultiShape (Stuff::Point3D *pos, Stuff::UnitQuatern
 
     shapeOrigin.BuildRotation(*rot);
     shapeOrigin.BuildTranslation(*pos);
+    TG_Shape::s_objectBaseY = pos->y;
 
     Stuff::EulerAngles angles(*rot);
     yawRotation = angles.yaw;

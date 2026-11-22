@@ -15,6 +15,7 @@
 #include "platform_str.h"
 
 #include "render/render_device.h"
+#include "render/shader_params.h"
 #include "utils/Image.h"
 #include "utils/vec.h"
 #include "utils/string_utils.h"
@@ -1942,6 +1943,22 @@ static bool shapeLayout(HGOSVERTEXDECLARATION vdecl, int* pos_offset, int* norma
     return *pos_offset >= 0 && *normal_offset >= 0;
 }
 
+// The buffer bound to LIGHT_DATA_ATTACHMENT_SLOT and how many bytes it holds
+static gosBuffer* g_light_buffer = nullptr;
+static size_t g_light_bytes = 0;
+
+// Selects entry `light_index` of the LightsData buffer for the next draw
+static void bindObjectLights(int light_index)
+{
+    if (!g_light_buffer || light_index < 0)
+        return;
+    const size_t offset = (size_t)light_index * gos_render::kObjectLightsSize;
+    if (offset + gos_render::kObjectLightsSize > g_light_bytes)
+        return;
+    gos_render::device()->bindUniformBufferRange(LIGHT_DATA_ATTACHMENT_SLOT, g_light_buffer->buffer_, offset,
+                                                 gos_render::kObjectLightsSize);
+}
+
 void gosRenderer::drawShapeUnbatched(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* world,
                                      const float* wvp, int light_index)
 {
@@ -1953,6 +1970,7 @@ void gosRenderer::drawShapeUnbatched(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDEC
     const float ld[4] = { (float)light_index, 0.0f, 0.0f, 0.0f };
     mat->getShader()->setFloat4("light_offset_", ld);
     mat->setUniformBlock("LightsData", LIGHT_DATA_ATTACHMENT_SLOT);
+    bindObjectLights((int)ld[0]);
     mat->setUniformBlock("SceneData", SCENE_DATA_ATTACHMENT_SLOT);
     gos_ApplyRenderMaterial(mat);
     gosMesh::drawIndexed(ib, vb, vdecl);
@@ -2048,6 +2066,7 @@ void gosRenderer::flushShapes()
     const float ld[4] = { (float)shape_light_, 0.0f, 0.0f, 0.0f };
     mat->getShader()->setFloat4("light_offset_", ld);
     mat->setUniformBlock("LightsData", LIGHT_DATA_ATTACHMENT_SLOT);
+    bindObjectLights((int)ld[0]);
     mat->setUniformBlock("SceneData", SCENE_DATA_ATTACHMENT_SLOT);
     gos_ApplyRenderMaterial(mat);
     gos_render::device()->drawIndexed(gos_render::Primitive::Triangles, shape_vb_, shape_ib_, 2,
@@ -2963,6 +2982,10 @@ uint32_t gos_GetBufferSizeBytes(HGOSBUFFER buffer)
 void __stdcall gos_DestroyBuffer(gosBuffer* buffer)
 {
 	gosASSERT(buffer);
+	if (buffer == g_light_buffer) {
+		g_light_buffer = nullptr;
+		g_light_bytes = 0;
+	}
     gosASSERT(g_gos_renderer);
 	bool rv = g_gos_renderer->deleteBuffer(buffer);
     (void)rv;
@@ -2976,6 +2999,10 @@ void __stdcall gos_BindBufferBase(gosBuffer* buffer, uint32_t slot)
 
 	gosASSERT(buffer->type_ == gosBUFFER_TYPE::UNIFORM);
 	gos_render::device()->bindUniformBuffer((int)slot, buffer->buffer_);
+	if (slot == LIGHT_DATA_ATTACHMENT_SLOT && g_light_buffer != buffer) {
+		g_light_buffer = buffer;
+		g_light_bytes = (size_t)buffer->element_size_ * buffer->count_;
+	}
 }
 
 void __stdcall gos_UpdateBuffer(HGOSBUFFER buffer, void* data, size_t offset, size_t num_bytes)
@@ -2985,6 +3012,8 @@ void __stdcall gos_UpdateBuffer(HGOSBUFFER buffer, void* data, size_t offset, si
 	(void)offset; // whole buffer replaced, as before
 	g_gos_renderer->flushBatch(); // pending draws see the old contents
 	gos_render::device()->updateBuffer(buffer->buffer_, toBufferKind(buffer->type_), data, num_bytes);
+	if(buffer == g_light_buffer)
+		g_light_bytes = num_bytes;
 	if(buffer->type_ != gosBUFFER_TYPE::UNIFORM)
 		buffer->cpu_.assign((const uint8_t*)data, (const uint8_t*)data + num_bytes);
 }

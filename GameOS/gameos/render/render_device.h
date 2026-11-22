@@ -88,6 +88,12 @@ public:
     virtual void updateBuffer(BufferHandle b, BufferKind kind, const void* data, size_t size) = 0;
     virtual void destroyBuffer(BufferHandle b) = 0;
     virtual void bindUniformBuffer(int slot, BufferHandle b) = 0;
+    // Binds `size` bytes of `b` from `offset` (OpenGL: glBindBufferRange).
+    // Backends that copy uniform data per draw may bind the whole buffer.
+    virtual void bindUniformBufferRange(int slot, BufferHandle b, size_t offset, size_t size) {
+        (void)offset; (void)size;
+        bindUniformBuffer(slot, b);
+    }
 
     // Pipeline state; implementations skip redundant changes.
     virtual void applyPipeline(const PipelineDesc& d) = 0;

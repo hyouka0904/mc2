@@ -205,6 +205,14 @@ public:
             glDeleteBuffers(1, &b);
     }
     void bindUniformBuffer(int slot, BufferHandle b) override { glBindBufferBase(GL_UNIFORM_BUFFER, slot, b); }
+    void bindUniformBufferRange(int slot, BufferHandle b, size_t offset, size_t size) override {
+        static GLint align = 0;
+        if (!align) {
+            glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &align);
+            gosASSERT(align > 0 && (offset % align) == 0);
+        }
+        glBindBufferRange(GL_UNIFORM_BUFFER, slot, b, (GLintptr)offset, (GLsizeiptr)size);
+    }
 
     void applyPipeline(const PipelineDesc& d) override;
 

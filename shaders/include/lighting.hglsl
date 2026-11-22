@@ -1,6 +1,20 @@
-#include <scene.hglsl>
+// Vertex lighting of TG shapes (3D models) drawn on the GPU (-gpu-shapes).
+//
+// Reproduces the CPU lighting of TG_Shape::MultiTransformShape
+// (mclib/tgl.cpp) for the parts the pixel shader uses: the diffuse vertex
+// colour and the fog value. The CPU path also computes a specular colour
+// (point, spot and terrain lights, "lightening"), but no pixel shader reads
+// it, so it is not reproduced here.
+//
+// Differences from the CPU path, all small:
+//   - lights are evaluated in world space (the CPU uses shape space; the
+//     result is the same for rigid transforms) and in float instead of 8 bit
+//     integers;
+//   - the height used for height fog is the vertex height above the object's
+//     origin in world space; the CPU adds up the rest positions of the node
+//     hierarchy, which differs only while a node is rotated by an animation.
 
-#define ENABLE_VERTEX_LIGHTING              0
+#include <scene.hglsl>
 
 #define 	TG_LIGHT_AMBIENT				0
 #define		TG_LIGHT_INFINITE				1
@@ -10,137 +24,172 @@
 #define		TG_LIGHT_TERRAIN				5
 #define MAX_LIGHTS_IN_WORLD 16
 
-#define Stuff_SMALL                         1e-4
+// ObjectLights.flags
+#define GOS_LIGHT_IS_NIGHT          1
+#define GOS_LIGHT_LIGHTS_OUT        2
+#define GOS_LIGHT_HUD_ELEMENT       4
+#define GOS_LIGHT_VERTEX_LIGHTING   8
+#define GOS_LIGHT_HEIGHT_FOG        16
+#define GOS_LIGHT_HAZE              32
 
+#define MAX_FOG_ELEVATION           100.0
+#define Stuff_SMALL                 1e-4
+
+// Keep in sync with TG_HWLightsData (mclib/tgl.h). Per object values first,
+// so that comparing two blocks on the CPU stops early.
 struct ObjectLights {
-    mat4 light_to_world[MAX_LIGHTS_IN_WORLD];
-    vec4 light_dir[MAX_LIGHTS_IN_WORLD]; // w - light type
-    vec4 light_color[MAX_LIGHTS_IN_WORLD];
-    ivec4 numLights;
+    ivec4 info;         // x: number of lights, y: flags
+    vec4 params;        // x: night factor, y: fog base (0..1), z: object origin y, w: haze fog (0..1)
+    vec4 params2;       // x: normal scale (1 / shape scale)
+    vec4 hot_pink;      // night light colours of the shape (rgb)
+    vec4 hot_yellow;
+    vec4 hot_green;
+    vec4 highlight;     // selection highlight added to the colour (rgb)
+    vec4 pad0;
+    vec4 light_dir[MAX_LIGHTS_IN_WORLD];     // world direction, w: light type
+    vec4 light_pos[MAX_LIGHTS_IN_WORLD];     // world position
+    vec4 light_color[MAX_LIGHTS_IN_WORLD];   // rgb
+    vec4 light_falloff[MAX_LIGHTS_IN_WORLD]; // x: near, y: far, z: 1 / (far - near)
+    vec4 pad1[8];         // 1280 bytes: a multiple of the GL offset alignment
 };
 
-#ifdef VULKAN
-// The SDL3 GPU backend uploads only the entry selected by light_offset_.x
-// (uniform data is pushed per draw and limited to 32 KB per slot).
+// One ObjectLights per draw: OpenGL binds the range of the selected entry,
+// the SDL3 GPU backend uploads the entry selected by light_offset_.x.
 GOS_UBO(LIGHT_DATA_ATTACHMENT_SLOT, 1) uniform LightsData
 {
-    ObjectLights light[1];
+    ObjectLights g_lights;
 };
-#define GOS_OBJECT_LIGHTS(index) light[0]
-#else
-GOS_UBO(LIGHT_DATA_ATTACHMENT_SLOT, 1) uniform LightsData
-{
-    ObjectLights light[32];
-};
-#define GOS_OBJECT_LIGHTS(index) light[index]
-#endif
 
-//================================================================================ 
-//================================================================================ 
-vec3 get_base_light(
-        in vec4 startVLight, 
-        in bool isNight, in float nightFactor, in bool isHudElement, in bool lightsOut,
-        in vec3 hotPinkRGB, in vec3 hotYellowRGB, in vec3 hotGreenRGB)
+bool gos_light_flag(int f) { return (g_lights.info.y & f) != 0; }
+
+// TG_Light::GetFalloff
+bool gos_light_falloff(int i, float len, out float falloff)
 {
-    vec3 final = vec3(0.0);
+    vec4 f = g_lights.light_falloff[i];
+    falloff = 1.0;
+    if (len <= f.x)
+        return true;
+    if (len >= f.y)
+        return false;
+    falloff = (f.y - len) * f.z;
+    return true;
+}
+
+// Colour baked into the vertex: night lights, burned-in light, base colour.
+// startVLight is the vertex aRGBLight as r, g, b, a in 0..1.
+vec3 gos_base_light(vec4 startVLight)
+{
     uint r = uint(clamp(startVLight.x*255.0 + 0.5, 0.0, 255.0));
     uint g = uint(clamp(startVLight.y*255.0 + 0.5, 0.0, 255.0));
     uint b = uint(clamp(startVLight.z*255.0 + 0.5, 0.0, 255.0));
     uint a = uint(clamp(startVLight.w*255.0 + 0.5, 0.0, 255.0));
+    // compared with the hexadecimal values of tgl.cpp
+    uint v = b | (g<<8) | (r<<16) | (a<<24);
 
-    // bgra ecause we compare with hexadecimals which are in this format (see tgl.cpp)
-    uint start_v_light = b | (g<<8) | (r<<16) | (a<<24);
-#if 0
-    if(start_v_light == 0xffffff6f)
-        return vec3(0,0,1);
-    else
-        return vec3(1,0,0);
-#endif
+    const bool isNight = gos_light_flag(GOS_LIGHT_IS_NIGHT);
+    const float nightFactor = g_lights.params.x;
 
-    if (start_v_light == 0xffff00ff)			//Hot Pink -- Lit Windows -- ONLY at NIGHT
+    vec3 final = vec3(0.0);
+    if (v == 0xffff00ffu)          // hot pink: lit windows, only at night
     {
         if (isNight)
-        {
-            final = hotPinkRGB;
-        }
+            final = g_lights.hot_pink.rgb;
         else if (nightFactor > Stuff_SMALL)
-        {
-            final = hotPinkRGB * nightFactor;
-        }
-        else		//Its not night, paint windows dark grey
-        {
-            final = vec3(0x2f/255.0);
-        }
+            final = g_lights.hot_pink.rgb * nightFactor;
+        else
+            final = vec3(float(0x2f)/255.0); // day: dark grey windows
     }
-    else if (start_v_light == 0xffffff00)		//Hot Yellow -- Outside Building Lights -- ONLY at NIGHT
+    else if (v == 0xffffff00u)     // hot yellow: outside building lights
     {
         if (nightFactor >= 0.75)
-        {
-            if (isNight)
-            {
-                final = hotYellowRGB;
-            }
-            else
-            {
-                final = hotYellowRGB * nightFactor;
-            }
-        }
+            final = isNight ? g_lights.hot_yellow.rgb : g_lights.hot_yellow.rgb * nightFactor;
     }
-    else if (start_v_light == 0xff00ff00)		//Hot Green -- Building Base Lights -- ONLY at NIGHT
+    else if (v == 0xff00ff00u)     // hot green: building base lights
     {
         if (isNight)
-        {
-            final = hotGreenRGB;
-        }
+            final = g_lights.hot_green.rgb;
         else if (nightFactor > Stuff_SMALL)
-        {
-            final = hotGreenRGB * nightFactor;
-        }
+            final = g_lights.hot_green.rgb * nightFactor;
     }
-    else if (start_v_light == 0xffff0000)		//Hot Red -- Blink this light.
+    else if (v == 0xffff0000u || v == 0xff0000ffu)
     {
-
+        // hot red / hot blue: blinking lights, not lit
     }
-    else if (start_v_light == 0xff0000ff)		//Hot Blue -- Blink this light.
+    else if ((v & 0x00ffffffu) != 0u)
     {
-
-    }
-    else if ((start_v_light & 0x00ffffff)!=0)		//Some other kind of light, just add it in.
-    {
-        if (!lightsOut)
-        {
+        if (!gos_light_flag(GOS_LIGHT_LIGHTS_OUT))
             final = startVLight.xyz;
+    }
+    else if (gos_light_flag(GOS_LIGHT_HUD_ELEMENT))
+    {
+        final = vec3(1.0);
+    }
+
+    final += g_scene.baseVertexColor.xyz;
+    return clamp(final, vec3(0.0), vec3(1.0));
+}
+
+// Diffuse vertex colour (rgb, 0..1). wpos and wnormal are in world space;
+// wnormal is scaled by the shape scale (params2.x undoes it).
+vec3 gos_vertex_light(vec4 startVLight, vec3 wpos, vec3 wnormal)
+{
+    vec3 final = gos_base_light(startVLight);
+    vec3 n = wnormal * g_lights.params2.x;
+
+    if (gos_light_flag(GOS_LIGHT_VERTEX_LIGHTING))
+    {
+        vec3 amb = vec3(0.0);
+        for (int i = 0; i < g_lights.info.x; ++i)
+        {
+            const int type = int(g_lights.light_dir[i].w);
+            const vec3 col = g_lights.light_color[i].rgb;
+            const vec3 dir = g_lights.light_dir[i].xyz;
+            if (type == TG_LIGHT_AMBIENT)
+            {
+                amb = col; // the last ambient light wins
+            }
+            else if (type == TG_LIGHT_INFINITE)
+            {
+                float c = dot(dir, n);
+                if (c < 0.0)
+                    final += col * -c;
+            }
+            else if (type == TG_LIGHT_INFINITEWITHFALLOFF)
+            {
+                float falloff;
+                if (gos_light_falloff(i, length(g_lights.light_pos[i].xyz - wpos), falloff))
+                    final += col * falloff * -dot(dir, n); // not clamped on the CPU either
+            }
+        }
+        final = clamp(final + amb, vec3(0.0), vec3(1.0));
+    }
+    else
+    {
+        final = vec3(0.0); // the CPU path keeps only the (unset) ambient term
+    }
+
+    return clamp(final + g_lights.highlight.rgb, vec3(0.0), vec3(1.0));
+}
+
+// Fog value (1: no fog, 0: fog colour) for the gos_State_Fog colour.
+float gos_vertex_fog(vec3 wpos)
+{
+    float fogValue = g_lights.params.y;
+    if (gos_light_flag(GOS_LIGHT_HEIGHT_FOG))
+    {
+        float relElevation = wpos.y - g_lights.params.z;
+        if (relElevation < MAX_FOG_ELEVATION)
+        {
+            float f = (MAX_FOG_ELEVATION - relElevation) / MAX_FOG_ELEVATION;
+            f = (f <= 1.0) ? 1.0 - f * f : 0.0;
+            fogValue += (1.0 - fogValue) * f;
+        }
+        else
+        {
+            fogValue = 1.0;
         }
     }
-    else if (isHudElement)
-    {
-        final = vec3(1.0);	//Just max out its light.
-    }
-
-    final.xyz += g_scene.baseVertexColor.xyz; // used for brightness
-
-    return clamp(final.xyz, vec3(0.0), vec3(1.0));
+    if (gos_light_flag(GOS_LIGHT_HAZE))
+        fogValue = min(fogValue, g_lights.params.w);
+    return fogValue;
 }
-
-//================================================================================ 
-//================================================================================ 
-vec3 calc_light(in int lights_index, in vec3 normal, in vec3 base_light)
-{
-    // hardcode for now:
-    //  0 light - directional
-    //  1st light ambient
-    
-    ObjectLights ld = GOS_OBJECT_LIGHTS(lights_index);
-
-    if(0 == ld.numLights.x)
-        return vec3(1,1,1);
-    
-    float n_dot_l = clamp(dot((normal), -ld.light_dir[0].xyz), 0.0, 1.0);
-    vec3 diffuse = n_dot_l * ld.light_color[0].xyz;
-    vec3 ambient = ld.light_color[1].xyz;
-    // in software version ther is clamp, but I delibertely removed it
-    // now at least lighting stays same independently of ENABLE_VERTEX_LIGHTING
-    return vec3(base_light + diffuse + ambient);
-    //return clamp(base_light + diffuse + ambient, 0.0, 1.0);
-}
-

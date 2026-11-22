@@ -714,7 +714,8 @@ void MC_TextureManager::addRenderShape(DWORD nodeId, TG_RenderShape* render_shap
 
 uint32_t MC_TextureManager::addLightDataStructure(TG_HWLightsData* light_data)
 {
-    for(uint32_t i = 0; i < lightDataStructuresCount; ++i)
+    // the nodes of one object usually share a block: look at the newest first
+    for(uint32_t i = lightDataStructuresCount; i-- > 0;)
     {
         if(0 == memcmp(lightData_ + i, light_data, sizeof(TG_HWLightsData)))
         {
@@ -801,6 +802,7 @@ public:
 
 };
 
+// World space lights for the GPU path of TG shapes (see lighting.hglsl)
 void GatherLightsParameters(TG_HWLightsData* lights)
 {
 	gosASSERT(lights);
@@ -816,55 +818,49 @@ void GatherLightsParameters(TG_HWLightsData* lights)
 		if (num_lights == max_num_lights)
 			break;
 
-		if ((listOfLights[iLight] != NULL) && (listOfLights[iLight]->active))
+		const TG_LightPtr light = listOfLights[iLight];
+		if (!light || !light->active)
+			continue;
+
+		const DWORD type = light->lightType;
+		gosASSERT(type <= TG_LIGHT_TERRAIN);
+
+		// only these reach the diffuse colour (the others only the unused specular one)
+		if (type != TG_LIGHT_AMBIENT && type != TG_LIGHT_INFINITE && type != TG_LIGHT_INFINITEWITHFALLOFF)
+			continue;
+
+		float* dir = lights->lightDir[num_lights];
+		float* pos = lights->lightPos[num_lights];
+		float* col = lights->lightColor[num_lights];
+		float* fall = lights->lightFalloff[num_lights];
+
+		if (TG_LIGHT_AMBIENT != type)
 		{
-
-			const DWORD type = listOfLights[iLight]->lightType;
-
-			Stuff::LinearMatrix4D light2world;
-			if (TG_LIGHT_AMBIENT != type)
-				light2world = listOfLights[iLight]->lightToWorld;
-			else
-				light2world = Stuff::LinearMatrix4D::Identity;
-
-			memcpy(lights->lightToWorld[num_lights], (const float*)light2world, 12*sizeof(float));
-			lights->lightToWorld[num_lights][12] = lights->lightToWorld[num_lights][13] = lights->lightToWorld[num_lights][14] = 0.0f;
-			lights->lightToWorld[num_lights][15] = 1.0f;
-
 			Stuff::UnitVector3D uVec;
-			light2world.GetLocalForwardInWorld(&uVec);
-			lights->lightDir[num_lights][0] = uVec.x;
-			lights->lightDir[num_lights][1] = uVec.y;
-			lights->lightDir[num_lights][2] = uVec.z;
+			light->lightToWorld.GetLocalForwardInWorld(&uVec);
+			dir[0] = uVec.x;
+			dir[1] = uVec.y;
+			dir[2] = uVec.z;
 
-			lights->lightDir[num_lights][3] = (float)type;
-
-			DWORD startLight = listOfLights[iLight]->GetaRGB();
-
-			lights->lightColor[num_lights][0] = ((startLight >> 16) & 0x000000ff) / 255.0f;
-			lights->lightColor[num_lights][1] = ((startLight >> 8) & 0x000000ff) / 255.0f;
-			lights->lightColor[num_lights][2] = ((startLight) & 0x000000ff) / 255.0f;
-			lights->lightColor[num_lights][3] = 1.0f;
-
-			switch (type)
-			{
-			case TG_LIGHT_AMBIENT:
-				break;
-			case TG_LIGHT_INFINITE:
-			case TG_LIGHT_INFINITEWITHFALLOFF:
-				break;
-			case TG_LIGHT_POINT:
-				break;
-			case TG_LIGHT_TERRAIN:
-				break;
-			case TG_LIGHT_SPOT:
-				break;
-			default:
-				STOP(("Unknown light type id: %d", type));
-			}
-
-			num_lights++;
+			Stuff::Point3D origin;
+			origin = light->lightToWorld;
+			pos[0] = origin.x;
+			pos[1] = origin.y;
+			pos[2] = origin.z;
 		}
+		dir[3] = (float)type;
+
+		const DWORD startLight = light->GetaRGB();
+		col[0] = ((startLight >> 16) & 0x000000ff) / 255.0f;
+		col[1] = ((startLight >> 8) & 0x000000ff) / 255.0f;
+		col[2] = ((startLight) & 0x000000ff) / 255.0f;
+		col[3] = 1.0f;
+
+		fall[0] = light->closeDistance;
+		fall[1] = light->farDistance;
+		fall[2] = light->oneOverDistance;
+
+		num_lights++;
 	}
 
 	lights->numLights_ = num_lights;

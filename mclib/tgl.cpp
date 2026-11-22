@@ -63,6 +63,7 @@ Stuff::LinearMatrix4D 	TG_Shape::s_lightToShape[MAX_LIGHTS_IN_WORLD];
 Stuff::Vector3D			TG_Shape::s_lightDir[MAX_LIGHTS_IN_WORLD];
 Stuff::Vector3D			TG_Shape::s_rootLightDir[MAX_LIGHTS_IN_WORLD];
 Stuff::Vector3D			TG_Shape::s_spotDir[MAX_LIGHTS_IN_WORLD];
+float					TG_Shape::s_objectBaseY = 0.0f;
 
 UserHeapPtr 			TG_Shape::tglHeap = NULL;
 
@@ -1669,6 +1670,7 @@ long TG_Shape::MultiTransformShape (Stuff::Matrix4D *shapeToClip, Stuff::Point3D
 	}
 		
 	TG_TypeShapePtr theShape = (TG_TypeShapePtr)myType;
+	const bool gpuDrawsSolid = gos_GPUShapesEnabled() && !isSpotlight && !isWindow && (alphaValue == 0xff) && theShape->numHWSegments_;	// solid faces go to the GPU path
 	
 	//At this point, we know we are going to process this shape,
 	// Get memory for its components from the pools!
@@ -2466,7 +2468,7 @@ long TG_Shape::MultiTransformShape (Stuff::Matrix4D *shapeToClip, Stuff::Point3D
 				{
 					mcTextureManager->addTriangle(theShape->listOfTextures[theShape->listOfTypeTriangles[j].localTextureHandle].mcTextureNodeIndex,MC2_DRAWALPHA | addFlags);
 				}
-				else
+				else if (!gpuDrawsSolid)	// else the GPU draws it (below)
 				{
 					mcTextureManager->addTriangle(theShape->listOfTextures[theShape->listOfTypeTriangles[j].localTextureHandle].mcTextureNodeIndex,MC2_DRAWSOLID | addFlags);
 				}
@@ -2477,7 +2479,7 @@ long TG_Shape::MultiTransformShape (Stuff::Matrix4D *shapeToClip, Stuff::Point3D
 
 	// The GPU path draws the segments with solid textures (alpha ones go
 	// through the vertex lists above)
-	if (gos_GPUShapesEnabled() && !isSpotlight && !isWindow && (alphaValue == 0xff) && theShape->numHWSegments_)
+	if (gpuDrawsSolid)
 	{
 		DWORD addFlags = 0;
 		if (isHudElement)
@@ -2497,9 +2499,43 @@ long TG_Shape::MultiTransformShape (Stuff::Matrix4D *shapeToClip, Stuff::Point3D
 
 		{
 
-            size_t numLights = MAX_HW_LIGHTS_IN_WORLD; (void)numLights; // used only by debug / LAB_ONLY code
-            GatherLightsParameters(&lightData_);
-            gosASSERT(numLights > 0); // ensure at least one light was filled
+			// lighting parameters of this shape for lighting.hglsl: the
+			// same inputs as the CPU lighting above
+			GatherLightsParameters(&lightData_);
+
+			DWORD flags = 0;
+			if (isNight)
+				flags |= TG_HWLIGHT_IS_NIGHT;
+			if (lightsOut)
+				flags |= TG_HWLIGHT_LIGHTS_OUT;
+			if (isHudElement)
+				flags |= TG_HWLIGHT_HUD_ELEMENT;
+			if (useVertexLighting && (Environment.Renderer != 3))
+				flags |= TG_HWLIGHT_VERTEX_LIGHTING;
+			if (useFog && (Environment.Renderer != 3))
+				flags |= TG_HWLIGHT_HEIGHT_FOG;
+			if (useFog && Camera::HazeFactor != 0.0f)
+				flags |= TG_HWLIGHT_HAZE;
+			lightData_.flags_ = flags;
+
+			auto rgb = [](DWORD c, float* out) {
+				out[0] = ((c >> 16) & 0xff) / 255.0f;
+				out[1] = ((c >> 8) & 0xff) / 255.0f;
+				out[2] = (c & 0xff) / 255.0f;
+				out[3] = 0.0f;
+			};
+			rgb(theShape->hotPinkRGB, lightData_.hotPink_);
+			rgb(theShape->hotYellowRGB, lightData_.hotYellow_);
+			rgb(theShape->hotGreenRGB, lightData_.hotGreen_);
+			rgb(aRGBHighlight, lightData_.highlight_);
+
+			lightData_.params_[0] = nightFactor;
+			lightData_.params_[1] = ((fogRGB >> 24) & 0xff) / 255.0f;
+			lightData_.params_[2] = (flags & TG_HWLIGHT_HEIGHT_FOG) ? s_objectBaseY : 0.0f;
+			lightData_.params_[3] = (flags & TG_HWLIGHT_HAZE) ? float2long((1.0f - Camera::HazeFactor) * 255.0f) / 255.0f : 0.0f;
+			// the world matrix of the draw includes the shape scale; the CPU
+			// lights unscaled normals
+			lightData_.params2_[0] = (shapeScalar > 0.0f) ? 1.0f / shapeScalar : 1.0f;
 
 			cur_viewport[0] = viewMulX;
 			cur_viewport[1] = viewMulY;
@@ -2566,6 +2602,7 @@ void TG_Shape::Render (float forceZ, bool isHudElement, BYTE alphaValue, bool is
 	}
 
 	TG_TypeShapePtr theShape = (TG_TypeShapePtr)myType;
+	const bool gpuDrawsSolid = gos_GPUShapesEnabled() && !isSpotlight && !isWindow && (alphaValue == 0xff) && theShape->numHWSegments_;	// solid faces go to the GPU path
 
 	gos_SetRenderState( gos_State_AlphaTest, theShape->alphaTestOn);
 	gos_SetRenderState( gos_State_Filter, theShape->filterOn ? gos_FilterBiLinear : gos_FilterNone);
@@ -2696,11 +2733,9 @@ void TG_Shape::Render (float forceZ, bool isHudElement, BYTE alphaValue, bool is
 						{
 							mcTextureManager->addVertices(theShape->listOfTextures[triType.localTextureHandle].mcTextureNodeIndex,gVertex,MC2_DRAWALPHA | addFlags);
 						}
-						else
+						else if (!gpuDrawsSolid)	// else the GPU draws it (below)
 						{
 							mcTextureManager->addVertices(theShape->listOfTextures[triType.localTextureHandle].mcTextureNodeIndex,gVertex,MC2_DRAWSOLID | addFlags);
-
-							
 						}
 					}
 				}
@@ -2709,7 +2744,7 @@ void TG_Shape::Render (float forceZ, bool isHudElement, BYTE alphaValue, bool is
 	}
 
 
-	if (gos_GPUShapesEnabled() && !isSpotlight && !isWindow && (alphaValue == 0xff) && theShape->numHWSegments_)
+	if (gpuDrawsSolid)
 	{
 		DWORD addFlags = 0;
 		if (isHudElement)

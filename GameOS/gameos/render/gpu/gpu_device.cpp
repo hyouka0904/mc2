@@ -41,7 +41,7 @@ namespace gos_render {
 namespace {
 
 // std140 sizes of the blocks in shaders/include/lighting.hglsl, scene.hglsl
-const uint32_t kObjectLightsSize = 16 * 64 + 16 * 16 + 16 * 16 + 16; // 1552
+const uint32_t kObjectLightsSize = 1280; // ObjectLights in shaders/include/lighting.hglsl
 const uint32_t kSceneDataSize = 64;
 const uint32_t kMaxTextureUnits = 4;
 // GL's window origin is bottom left, SDL GPU's top left. Edges and lines
