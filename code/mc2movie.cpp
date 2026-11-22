@@ -132,6 +132,13 @@ void MC2Movie::init (const char *MC2Name, RECT mRect, bool useWaveFile)
 		}
 	}
 
+	// MC2_NO_MOVIES=1: every movie counts as finished at once. Screenshot
+	// tests set it so their frames do not depend on the movie files (Git
+	// LFS clips or placeholders of a different length).
+	static const bool noMovies = getenv("MC2_NO_MOVIES") && atoi(getenv("MC2_NO_MOVIES")) != 0;
+	if (noMovies)
+		return;
+
 	FullPathFileName path;
 	path.init(moviePath, name, MC2_MOVIE_EXT);
 	const char* modPath = gos_ModResolvePath(path);

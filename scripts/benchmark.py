@@ -38,7 +38,8 @@ SKIP_FRAMES = 100
 
 def run_once(game_dir, display, mission, frames, renderer, tmp, exe="mc2"):
     csv_path = os.path.join(tmp, "perf_%s.csv" % mission)
-    env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", MC2_NO_DIALOGS="1")
+    env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", MC2_NO_DIALOGS="1",
+               MC2_NO_MOVIES="1")
     cmd = [os.path.join(game_dir, exe)] + FIXED_ARGS + [
         "-mission", mission, "-exit-after", str(frames), "-perf-csv", csv_path]
     if renderer:

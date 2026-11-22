@@ -107,7 +107,7 @@ def main():
 
     xvfb, display = start_xvfb(args.screen)
     env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", LIBGL_ALWAYS_SOFTWARE="1",
-               MC2_NO_DIALOGS="1")
+               MC2_NO_DIALOGS="1", MC2_NO_MOVIES="1")  # frames independent of the movie files
     if args.gpu_validation:
         env["MC2_GPU_DEBUG"] = "1"
     fixed_args = FIXED_ARGS + ["-renderer", args.renderer]
