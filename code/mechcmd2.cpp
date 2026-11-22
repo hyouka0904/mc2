@@ -501,8 +501,9 @@ void DEBUGWINS_removeGameObject (GameObjectPtr obj) {
 
 void DEBUGWINS_update (void) {
 
+	// Only windows that are shown: the text is rebuilt every frame
 	for (long i = 0; i < 3; i++)
-		if (DebugGameObject[i])
+		if (DebugGameObject[i] && DebugWindowOpen[1 + i])
 			DebugGameObject[i]->updateDebugWindow(DebugWindow[1 + i]);
 }
 

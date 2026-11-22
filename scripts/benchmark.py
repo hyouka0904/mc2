@@ -36,10 +36,10 @@ from run_screenshot_tests import FIXED_ARGS, start_xvfb  # noqa: E402
 SKIP_FRAMES = 100
 
 
-def run_once(game_dir, display, mission, frames, renderer, tmp):
+def run_once(game_dir, display, mission, frames, renderer, tmp, exe="mc2"):
     csv_path = os.path.join(tmp, "perf_%s.csv" % mission)
     env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", MC2_NO_DIALOGS="1")
-    cmd = [os.path.join(game_dir, "mc2")] + FIXED_ARGS + [
+    cmd = [os.path.join(game_dir, exe)] + FIXED_ARGS + [
         "-mission", mission, "-exit-after", str(frames), "-perf-csv", csv_path]
     if renderer:
         cmd += ["-renderer", renderer]
@@ -73,33 +73,45 @@ def main():
     ap.add_argument("--missions", default="mc2_01,mc2_07")
     ap.add_argument("--renderer", default="gpu")
     ap.add_argument("--json")
+    ap.add_argument("--exe", default="mc2",
+                    help="executable(s) in game_dir, comma separated: several are run "
+                         "alternately, so machine load affects them alike")
     args = ap.parse_args()
+    exes = args.exe.split(",")
 
     game_dir = os.path.abspath(args.game_dir)
     xvfb, display = start_xvfb("800x600")
-    results = {}
+    results = {e: {} for e in exes}
     try:
         with tempfile.TemporaryDirectory() as tmp:
             for mission in args.missions.split(","):
-                runs = [run_once(game_dir, display, mission, args.frames, args.renderer, tmp)
-                        for _ in range(args.runs)]
-                mean = statistics.median(r[0] for r in runs)
-                med = statistics.median(r[1] for r in runs)
-                draws = runs[0][2]
-                cpu = statistics.median(r[3] for r in runs)
-                results[mission] = {"mean_ms": mean, "median_ms": med, "draws": draws, "cpu_ms": cpu,
-                                    "runs_mean_ms": [round(r[0], 3) for r in runs],
-                                    "runs_cpu_ms": [round(r[3], 3) for r in runs]}
-                print("%-8s wall %7.3f ms (median %7.3f)  main-thread CPU %6.3f ms  draws/frame %6.1f"
-                      "  runs cpu %s" % (mission, mean, med, cpu, draws,
-                                         " ".join("%.3f" % r[3] for r in runs)))
+                runs = {e: [] for e in exes}
+                for _ in range(args.runs):
+                    for e in exes:
+                        runs[e].append(run_once(game_dir, display, mission, args.frames,
+                                                args.renderer, tmp, e))
+                for e in exes:
+                    r = runs[e]
+                    res = {"mean_ms": statistics.median(x[0] for x in r),
+                           "median_ms": statistics.median(x[1] for x in r),
+                           "draws": r[0][2],
+                           "cpu_ms": statistics.median(x[3] for x in r),
+                           "runs_mean_ms": [round(x[0], 3) for x in r],
+                           "runs_cpu_ms": [round(x[3], 3) for x in r]}
+                    results[e][mission] = res
+                    print("%-10s %-8s wall %7.3f ms (median %7.3f)  main-thread CPU %6.3f ms"
+                          "  draws/frame %6.1f  runs cpu %s" % (
+                              e, mission, res["mean_ms"], res["median_ms"], res["cpu_ms"],
+                              res["draws"], " ".join("%.3f" % x for x in res["runs_cpu_ms"])))
     finally:
         xvfb.kill()
-    print("total    wall %7.3f ms  main-thread CPU %6.3f ms" % (
-        sum(r["mean_ms"] for r in results.values()), sum(r["cpu_ms"] for r in results.values())))
+    for e in exes:
+        print("%-10s total    wall %7.3f ms  main-thread CPU %6.3f ms" % (
+            e, sum(r["mean_ms"] for r in results[e].values()),
+            sum(r["cpu_ms"] for r in results[e].values())))
     if args.json:
         with open(args.json, "w") as f:
-            json.dump(results, f, indent=1)
+            json.dump(results if len(exes) > 1 else results[exes[0]], f, indent=1)
 
 
 if __name__ == "__main__":

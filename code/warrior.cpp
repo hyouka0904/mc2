@@ -2149,9 +2149,6 @@ long MechWarrior::runBrain (void) {
 	CurContact = NULL;
 	curEventID = 0;
 	curEventTrigger = 0;
-	ModuleInfo moduleInfo;
-	brain->getInfo(&moduleInfo);
-
 	brain->execute();
 #ifdef LAB_ONLY
 	__int64 startTime = GetCycles();
