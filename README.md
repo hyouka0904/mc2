@@ -591,6 +591,7 @@ Windows 與 macOS 的 CI 機器沒有可用的 GPU，所以那兩個平台只測
 安裝包測試曾經抓到的問題（都已修正）：
 
 - **AppImage 啟動約 8 秒就結束**：遊戲啟動時檢查「目前目錄」的剩餘空間，AppImage 掛載的唯讀映像檔回報 0，於是跳出「硬碟空間不足」對話框。現在改為檢查存檔所在的使用者目錄。
+- **Windows 上一進遊戲就黑屏閃退**（v0.1.0 草稿，玩家回報）：SDL3 GPU 建立裝置時宣告支援 SPIR-V、MSL、DXIL 三種著色器，SDL 在 Windows 上因此優先選了 D3D12，但安裝包沒有 DXIL（依決策暫緩），所有著色器都載入失敗，之後存取空指標當掉，也沒有退回 OpenGL。現在只宣告實際附上的格式（Windows 上因此使用 Vulkan），並在初始化時先建立一個著色器測試，失敗就改用 OpenGL。CI 的 Windows 機器沒有 GPU，所以測不到這條路徑。
 - **macOS 上 `mc2 -version` 沒有作用，遊戲照常啟動後當掉**：`gameos.hpp` 先 `#pragma pack(push,4)` 才引入標準函式庫，在 macOS（libc++）上讓 `std::string`、`std::vector` 的對齊變成 4，不同原始檔看到的結構配置不一樣，主程式讀錯了命令列選項的位置。現在 `gameos.hpp` 在設定對齊之前先引入會用到的標準標頭，`run_options.h` 也加上 `static_assert`，對齊再被改到時會直接編譯失敗。新增程式碼時，標準標頭請在 `gameos.hpp` 之前引入。
 
 ### 在本機打包
@@ -613,10 +614,10 @@ python3 scripts/package.py --platform linux --build build --game game --version 
 
 | 後端 | 參數 | 說明 |
 |---|---|---|
-| SDL3 GPU | 預設，或 `-renderer gpu` | Linux 上為 Vulkan，Windows 上為 D3D12，macOS 上為 Metal；讀取建置時編好的 `shaders/compiled/` |
+| SDL3 GPU | 預設，或 `-renderer gpu` | Linux 與 Windows 上為 Vulkan，macOS 上為 Metal；讀取建置時編好的 `shaders/compiled/`。只向 SDL 要求實際附上的著色器格式，目前沒有 DXIL，所以 Windows 不會用 D3D12 |
 | OpenGL | `-renderer gl`；或 SDL3 GPU 無法啟動時自動改用 | OpenGL 4 Core Profile，執行時編譯 `shaders/`；位於獨立的 `gameos_gl` 函式庫，只有遊戲本體連結它 |
 
-未指定 `-renderer` 時先試 SDL3 GPU，失敗（例如沒有 Vulkan 驅動或缺少 `shaders/compiled/`）就重建視窗改用 OpenGL；明確指定時不會自動切換。OpenGL 後端保留一個版本週期作為備援，之後再移除（見下方「決策紀錄」）。
+未指定 `-renderer` 時先試 SDL3 GPU，失敗（例如沒有 Vulkan 驅動、缺少 `shaders/compiled/`，或驅動程式無法建立附上的著色器）就重建視窗改用 OpenGL；明確指定時不會自動切換。OpenGL 後端保留一個版本週期作為備援，之後再移除（見下方「決策紀錄」）。
 
 GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，重複使用同一個緩衝區），SDL3 GPU 則要求上傳在繪圖通道外進行、狀態烘焙進管線物件。因此 SDL3 GPU 後端（`render/gpu/gpu_device.cpp`）會先記錄整個幀：
 

@@ -325,6 +325,11 @@ std::vector<uint8_t> readFile(const std::string& path)
 class GpuDevice : public Device {
 public:
     bool init() override;
+    // Any shader every build ships; its files tell which formats are there
+    static constexpr const char* kProbeShader = "gos_vertex.base";
+    static std::string shaderPath(const std::string& dir, const std::string& base, bool vertex,
+                                  SDL_GPUShaderFormat format);
+    bool shaderFileExists(const std::string& dir, SDL_GPUShaderFormat format) const;
     void shutdown() override;
     const char* name() const override { return name_.c_str(); }
 
@@ -485,13 +490,31 @@ void GpuShader::apply() { dev_->setCurrent(this); }
 bool GpuDevice::init()
 {
     const bool debug = SDL_getenv("MC2_GPU_DEBUG") != nullptr;
-    dev_ = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL | SDL_GPU_SHADERFORMAT_DXIL,
-                               debug, nullptr);
+    if (!loadManifest("shaders/compiled")) {
+        fprintf(stderr, "SDL3 GPU: shaders/compiled/shaders.txt is missing: build the project with "
+                        "glslangValidator and spirv-val installed (see README)\n");
+        return false;
+    }
+    // Ask only for the shader formats that were shipped. Offering DXIL
+    // without the files made SDL pick D3D12 on Windows, every shader then
+    // failed to load and the game crashed instead of using Vulkan.
+    SDL_GPUShaderFormat shipped = 0;
+    if (shaderFileExists("shaders/compiled", SDL_GPU_SHADERFORMAT_SPIRV))
+        shipped |= SDL_GPU_SHADERFORMAT_SPIRV;
+    if (shaderFileExists("shaders/compiled", SDL_GPU_SHADERFORMAT_DXIL))
+        shipped |= SDL_GPU_SHADERFORMAT_DXIL;
+    if (shaderFileExists("shaders/compiled", SDL_GPU_SHADERFORMAT_MSL))
+        shipped |= SDL_GPU_SHADERFORMAT_MSL;
+    if (!shipped) {
+        fprintf(stderr, "SDL3 GPU: no compiled shaders in shaders/compiled\n");
+        return false;
+    }
+    dev_ = SDL_CreateGPUDevice(shipped, debug, nullptr);
     if (!dev_) {
         fprintf(stderr, "SDL_CreateGPUDevice: %s\n", SDL_GetError());
         return false;
     }
-    const SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(dev_);
+    const SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(dev_) & shipped;
     format_ = (formats & SDL_GPU_SHADERFORMAT_SPIRV) ? SDL_GPU_SHADERFORMAT_SPIRV
             : (formats & SDL_GPU_SHADERFORMAT_DXIL) ? SDL_GPU_SHADERFORMAT_DXIL
             : SDL_GPU_SHADERFORMAT_MSL;
@@ -501,11 +524,18 @@ bool GpuDevice::init()
         dev_ = nullptr;
         return false;
     }
-    if (!loadManifest("shaders/compiled")) {
-        fprintf(stderr, "SDL3 GPU: shaders/compiled/shaders.txt is missing: build the project with "
-                        "glslangValidator and spirv-val installed (see README)\n");
-        shutdown();
-        return false;
+    // Fail here (and let the caller fall back to OpenGL) rather than later
+    // with shaders that cannot be created
+    {
+        StageInfo info;
+        SDL_GPUShader* probe = loadStage("shaders/compiled", kProbeShader, true, &info);
+        if (!probe) {
+            fprintf(stderr, "SDL3 GPU: the %s driver cannot create the shipped shaders\n",
+                    SDL_GetGPUDeviceDriver(dev_));
+            shutdown();
+            return false;
+        }
+        SDL_ReleaseGPUShader(dev_, probe);
     }
 
     const SDL_GPUTextureFormat depth_candidates[] = {SDL_GPU_TEXTUREFORMAT_D16_UNORM, SDL_GPU_TEXTUREFORMAT_D24_UNORM,
@@ -575,6 +605,22 @@ void GpuDevice::shutdown()
     dev_ = nullptr;
 }
 
+bool GpuDevice::shaderFileExists(const std::string& dir, SDL_GPUShaderFormat format) const
+{
+    return SDL_GetPathInfo(shaderPath(dir, kProbeShader, true, format).c_str(), nullptr);
+}
+
+std::string GpuDevice::shaderPath(const std::string& dir, const std::string& base, bool vertex,
+                                  SDL_GPUShaderFormat format)
+{
+    const char* ext = vertex ? "vert" : "frag";
+    if (format == SDL_GPU_SHADERFORMAT_SPIRV)
+        return dir + "/spirv/" + base + "." + ext + ".spv";
+    if (format == SDL_GPU_SHADERFORMAT_DXIL)
+        return dir + "/dxil/" + base + "." + ext + ".dxil";
+    return dir + "/msl/" + base + "." + ext + ".metal";
+}
+
 bool GpuDevice::loadManifest(const std::string& dir)
 {
     std::vector<uint8_t> text = readFile(dir + "/shaders.txt");
@@ -608,17 +654,9 @@ SDL_GPUShader* GpuDevice::loadStage(const std::string& dir, const std::string& b
         return nullptr;
     }
     *info = it->second;
-    const char* ext = vertex ? "vert" : "frag";
-    std::string path;
-    const char* entry = "main";
-    if (format_ == SDL_GPU_SHADERFORMAT_SPIRV) {
-        path = dir + "/spirv/" + base + "." + ext + ".spv";
-    } else if (format_ == SDL_GPU_SHADERFORMAT_DXIL) {
-        path = dir + "/dxil/" + base + "." + ext + ".dxil";
-    } else {
-        path = dir + "/msl/" + base + "." + ext + ".metal";
-        entry = "main0"; // spirv-cross renames main for Metal
-    }
+    const std::string path = shaderPath(dir, base, vertex, format_);
+    // spirv-cross renames main for Metal
+    const char* entry = format_ == SDL_GPU_SHADERFORMAT_MSL ? "main0" : "main";
     std::vector<uint8_t> code = readFile(path);
     if (code.empty()) {
         fprintf(stderr, "SDL3 GPU: cannot read %s\n", path.c_str());
