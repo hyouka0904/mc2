@@ -4519,7 +4519,7 @@ long MoveMap::setUp (long mapULr,
 	else
 		map[goalR * maxWidth + goalC].setFlag(MOVEFLAG_GOAL);
 
-	__int64 startTime = GetCycles();
+	__int64 startTime = GetCycles(); (void)startTime; // used only by debug / LAB_ONLY code
 
 	if (params & MOVEPARAM_STATIONARY_MOVERS)
 		if (placeStationaryMoversCallback)
@@ -4546,7 +4546,7 @@ long MoveMap::setUp (long level,
 					 long offsets,
 					 unsigned long params) {
 
-	__int64 startTime = GetCycles();
+	__int64 startTime = GetCycles(); (void)startTime; // used only by debug / LAB_ONLY code
 
 	//-----------------------------------------------------------------------------
 	// If the map has not been allocated yet, then the tile height and width passed
@@ -4806,7 +4806,7 @@ inline bool MoveMap::adjacentCellOpenJUMP (long r, long c, long dir) {
 //---------------------------------------------------------------------------
 
 inline int MoveMap::calcHPrime (int r, int c) {
-	__int64 startTime = GetCycles();
+	__int64 startTime = GetCycles(); (void)startTime; // used only by debug / LAB_ONLY code
 	long sum = 0;
 	if (r > goalR)
 		sum += (r - goalR);
@@ -6225,7 +6225,7 @@ long MoveMap::calcEscapePath (MovePathPtr path, Stuff::Vector3D* goalWorldPos, l
 			File* pathDebugFile = new File;
 			pathDebugFile->create("longpath.dbg");
 			char s[512];
-			sprintf(s, "Path Too Long: %d steps (Max = %d) (please save longpath.dbg file:)", numCells, MAX_STEPS_PER_MOVEPATH);
+			sprintf(s, "Path Too Long: %ld steps (Max = %d) (please save longpath.dbg file:)", numCells, MAX_STEPS_PER_MOVEPATH);
 			pathDebugFile->writeString(s);
 			pathDebugFile->writeString("\n\n");
 			writeDebug(pathDebugFile);
@@ -6250,7 +6250,7 @@ long MoveMap::calcEscapePath (MovePathPtr path, Stuff::Vector3D* goalWorldPos, l
 				File* pathDebugFile = new File;
 				pathDebugFile->create("longpath.dbg");
 				char s[512];
-				sprintf(s, "New Longest Path: %d steps (Max = %d)\n\n", numCells, MAX_STEPS_PER_MOVEPATH);
+				sprintf(s, "New Longest Path: %ld steps (Max = %d)\n\n", numCells, MAX_STEPS_PER_MOVEPATH);
 				pathDebugFile->writeString(s);
 				writeDebug(pathDebugFile);
 				pathDebugFile->close();

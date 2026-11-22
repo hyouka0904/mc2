@@ -21,16 +21,6 @@ OptionsArea.cpp			: Implementation of the OptionsArea component.
 #include"gamesound.h"
 #endif
 
-static bool bShadows = true;
-static bool bDetailTexture = true;
-static int objectDetail = 0;
-static int difficulty = 0;
-static bool bUnLimitedAmmo = false;
-static long DigitalMasterVolume = 255;
-static long MusicVolume = 64;
-static long sfxVolume = 64;
-static long RadioVolume = 64;
-static long BettyVolume = 64;
 CPrefs prefs;
 CPrefs originalSettings;
 

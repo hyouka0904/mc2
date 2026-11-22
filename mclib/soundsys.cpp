@@ -144,7 +144,7 @@ long SoundSystem::init (const char *soundFileName)
 		
 		for (long i=0;i<(long)numSoundBites;i++)
 		{
-			char biteBlock[20];
+			char biteBlock[64];
 			snprintf(biteBlock, sizeof(biteBlock),"SoundBite%ld",i);
 			
 			result = soundFile.seekBlock(biteBlock);

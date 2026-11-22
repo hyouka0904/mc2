@@ -1223,7 +1223,7 @@ void Mission::load (const char *loadFileName)
 
 		for (i = 1; i < numParts + 1; i++)
 		{
-			char partName[12];
+			char partName[64];
 			snprintf(partName, sizeof(partName),"Part%d", i);
 			
 			//------------------------------------------------------------------

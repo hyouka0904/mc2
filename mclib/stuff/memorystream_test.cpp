@@ -49,6 +49,8 @@ bool
 
 bool SingeBitStreamTest(int total_sections_to_write)
 {
+	if (total_sections_to_write <= 0)
+		return false;
 	bool *source_array_of_bools = new bool[total_sections_to_write];
 	Register_Pointer(source_array_of_bools);
 

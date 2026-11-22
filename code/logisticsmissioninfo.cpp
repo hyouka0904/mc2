@@ -123,7 +123,7 @@ long LogisticsMissionInfo::init( FitIniFile& file )
 
 	currentStage = 0;
 
-	char blockName[32];
+	char blockName[64];
 
 	for ( int i = 0; i < groupCount; i++ )
 	{
@@ -205,8 +205,8 @@ long LogisticsMissionInfo::init( FitIniFile& file )
 				
 				if ( NO_ERR != missionFile.open( (char*)(const char*)path ) )
 				{
-					char errorStr[256];
-					sprintf( errorStr, "couldn't open file %s", fileName );
+					char errorStr[1088];
+					snprintf( errorStr, sizeof(errorStr), "couldn't open file %s", fileName );
 					Assert( 0, 0, errorStr );
 					continue;
 				}
@@ -353,7 +353,7 @@ long LogisticsMissionInfo::load( FitIniFile& file )
 	FitIniFile campaignFile;
 	if ( NO_ERR != campaignFile.open( fileName ) )
 	{
-		char errorStr[256];
+		char errorStr[1088];
 		snprintf(errorStr, sizeof(errorStr), "couldn't find file %s", path );
 		return -1;
 	}
@@ -734,7 +734,7 @@ void LogisticsMissionInfo::setSingleMission( const char* missionFileName )
 	
 	if ( NO_ERR != missionFile.open( (char*)(const char*)path ) )
 	{
-		char errorStr[256];
+		char errorStr[1088];
 		snprintf(errorStr, sizeof(errorStr), "couldn't open file %s", missionName );
 		Assert( 0, 0, errorStr );
 		return;

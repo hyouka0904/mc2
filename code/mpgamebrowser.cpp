@@ -20,7 +20,6 @@ MPGameBrowser.cpp			: Implementation of the MPGameBrowser component.
 
 #define CHECK_BUTTON 200
 
-static int connectionType = 0;
 
 static const int FIRST_BUTTON_ID = 1000010;
 static const int OK_BUTTON_ID = 1000001;
@@ -94,7 +93,7 @@ void MPGameBrowser::init(FitIniFile* file)
 		FitIniFile PNfile;
 		if ( NO_ERR != PNfile.open( path ) )
 		{
-			char error[256];
+			char error[320];
 			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;

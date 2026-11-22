@@ -1128,7 +1128,7 @@ void __stdcall InitializeGameEngine()
 					memset(fastFiles,0,maxFastFiles*sizeof(FastFile *));
 	
 					int fileNum = 0;
-					char fastFileId[10];
+					char fastFileId[64];
 					char fileName[100];
 					sprintf(fastFileId,"File%d",fileNum);
 		

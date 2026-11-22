@@ -76,7 +76,7 @@ void
 	// First, Initialize all the non registered classes
 	//-------------------------------------------------
 	//
-	Verify(FirstFreeStuffClassID <= LastStuffClassID);
+	Verify((int)FirstFreeStuffClassID <= (int)LastStuffClassID);
 	Verify(!FileStreamManager::Instance);
 	FileStreamManager::Instance = new FileStreamManager;
 	RegisteredClass::InitializeClass();

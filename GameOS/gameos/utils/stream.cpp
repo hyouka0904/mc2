@@ -144,30 +144,34 @@ size_t file_stream::read(void* pbuf, size_t size, size_t count) const
 char file_stream::read_byte()
 {
 	assert(_file);
-	char c;
-	fread(&c, 1, 1, _file);
+	char c = 0;
+	if (fread(&c, 1, 1, _file) != 1)
+		c = 0;
 	return c;
 }
 short file_stream::read_word()
 {
 	assert(_file);
-	short sh;
-	fread(&sh, 2, 1, _file);
+	short sh = 0;
+	if (fread(&sh, 2, 1, _file) != 1)
+		sh = 0;
 	return sh;
 }
 unsigned int file_stream::read_dword() const
 {
 	assert(_file);
-	unsigned int dw;
-	fread(&dw, 4, 1, _file);
+	unsigned int dw = 0;
+	if (fread(&dw, 4, 1, _file) != 1)
+		dw = 0;
 	return dw;
 }
 
 float file_stream::read_float() const
 {
 	assert(_file);
-	float f;
-	fread(&f, 4, 1, _file);
+	float f = 0;
+	if (fread(&f, 4, 1, _file) != 1)
+		f = 0;
 	return f;
 }
 

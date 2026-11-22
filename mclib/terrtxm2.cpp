@@ -1564,7 +1564,7 @@ long TerrainColorMap::init (char *fileName)
 		//Load up the detail texture first.
 		// Detail texture is named same as colormap with .detail in name.
 		// if no file exists, no texture drawn.
-		char dName[1024];
+		char dName[1088];
 		sprintf(dName,"%s.detail",fileName);
 		
 		FullPathFileName detailFile;

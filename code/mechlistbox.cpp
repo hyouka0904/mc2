@@ -121,7 +121,7 @@ int MechListBox::init()
 	FitIniFile file;
 	if ( NO_ERR != file.open( path ) )
 	{
-		char errorStr[256];
+		char errorStr[320];
 		snprintf(errorStr, sizeof(errorStr), "couldn't open file %s", path );
 		Assert( 0, 0, errorStr );
 		return -1;

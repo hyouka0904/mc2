@@ -4147,7 +4147,7 @@ long Mech3DAppearance::update (bool animate)
 	if (logFile && (inDebugMoveMode))
 	{
 		char msg[1024];
-		sprintf(msg,"Gesture: %d, Frame: %f, SGoal: %d, OGoal: %d, Rot: %f",currentGestureId,currentFrame,currentStateGoal,oldStateGoal,rotation);
+		sprintf(msg,"Gesture: %ld, Frame: %f, SGoal: %ld, OGoal: %ld, Rot: %f",currentGestureId,currentFrame,currentStateGoal,oldStateGoal,rotation);
 		logFile->writeLine(msg);
 	}
 #endif

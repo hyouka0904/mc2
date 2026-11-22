@@ -2395,7 +2395,7 @@ void Mover::updateDebugWindow (GameDebugWindow* debugWindow) {
 	debugPage %= 3;
 
 	debugWindow->clear();
-	static char s[128];
+	static char s[192];
 	MovePathPtr path = getPilot()->getMovePath();
 	long distToObj1 = -1;
 	if (DebugGameObject[2])
@@ -4842,7 +4842,7 @@ long Mover::calcMoveGoal (GameObjectPtr target,
 				position = start;
 				cellPositionRow = curGoalCell[0];
 				cellPositionCol = curGoalCell[1];
-				__int64 lstartTime = GetCycles();
+				__int64 lstartTime = GetCycles(); (void)lstartTime; // used only by debug / LAB_ONLY code
                 // sebi
 				//if (goalList[i][1] > -10000) {
 				if (weight > -10000) {

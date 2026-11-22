@@ -158,7 +158,7 @@ void MPPrefs::begin()
 
     // need to add items to the save game list
 	char findString[512];
-    char path[256];
+    char path[320];
 	sprintf(findString,"%s*.tga",path2insignia);
 
 	WIN32_FIND_DATA	findResult;

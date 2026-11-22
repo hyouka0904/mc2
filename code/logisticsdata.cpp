@@ -303,7 +303,7 @@ void LogisticsData::initVariants()
 		CSVFile mechFile;
 		if ( NO_ERR != mechFile.open( variantFullPath ) )
 		{
-			char error[256];
+			char error[1088];
 			snprintf(error, sizeof(error), "couldn't open file %s", variantFullPath );
 			Assert( 0, 0, error );
 			return;

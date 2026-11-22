@@ -781,7 +781,7 @@ void MissionInterfaceManager::update (void)
 	if (MPlayer) {
 		char mpStr[256];
 		if (MPlayer->isServer())
-			sprintf(mpStr, ", MULTIPLAY: %s-(%ld)SERVER {%ld,%ld}", MPlayer->getPlayerName(), MPlayer->commanderID, MPlayer->maxReceiveLoad, MPlayer->maxReceiveSize);
+			snprintf(mpStr, sizeof(mpStr), ", MULTIPLAY: %s-(%ld)SERVER {%ld,%ld}", MPlayer->getPlayerName(), MPlayer->commanderID, MPlayer->maxReceiveLoad, MPlayer->maxReceiveSize);
 		else
 			snprintf(mpStr, sizeof(mpStr), ", MULTIPLAY: %s-(%ld)CLIENT {%ld,%ld}", MPlayer->getPlayerName(), MPlayer->commanderID, MPlayer->maxReceiveLoad, MPlayer->maxReceiveSize);
 		strcat(DebugStatusBarString, mpStr);

@@ -1585,7 +1585,8 @@ class MultiPlayer {
 		void initSpecialBuildings (char commandersToLoad[8][3]);
 
 		char* getPlayerName (void) {
-			return(NULL);
+			static char noName[1] = "";	// network play is not implemented
+			return(noName);
 		}
 
 		void addToLocalMovers (MoverPtr mover);

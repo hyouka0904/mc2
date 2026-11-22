@@ -228,7 +228,7 @@ void MissionBegin::begin()
 	FitIniFile file;
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;
@@ -246,7 +246,7 @@ void MissionBegin::begin()
 	strcat( path, "mcl_cm_layout.fit" );
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;
@@ -263,7 +263,7 @@ void MissionBegin::begin()
 	
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;
@@ -278,7 +278,7 @@ void MissionBegin::begin()
 	pMechBayScreen = new MechBayScreen();
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;
@@ -302,7 +302,7 @@ void MissionBegin::begin()
 	strcat( path, "mcl_pr_layout.fit" );
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;	
@@ -325,7 +325,7 @@ void MissionBegin::begin()
 
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;		
@@ -341,7 +341,7 @@ void MissionBegin::begin()
 	strcat( path, "mcl_mc.fit" );
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;		
@@ -357,7 +357,7 @@ void MissionBegin::begin()
 	strcat( path, "mcl_loadingscreen.fit" );
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;		
@@ -1002,7 +1002,7 @@ void MissionBegin::beginMPlayer()
 
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[576];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;		
@@ -1022,7 +1022,7 @@ void MissionBegin::beginMPlayer()
 
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[576];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;		
@@ -1039,7 +1039,7 @@ void MissionBegin::beginMPlayer()
 
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[576];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;		
@@ -1057,7 +1057,7 @@ void MissionBegin::beginMPlayer()
 
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[576];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;		
@@ -1072,7 +1072,7 @@ void MissionBegin::beginMPlayer()
 	strcat( path, "mcl_loadingscreen.fit" );
 	if ( NO_ERR != file.open( path ) )
 	{
-		char error[256];
+		char error[576];
 		snprintf(error, sizeof(error), "couldn't open file %s", path );
 		Assert( 0, 0, error );
 		return;		

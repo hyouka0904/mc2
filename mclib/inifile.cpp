@@ -219,8 +219,8 @@ long FitIniFile::afterOpen (void)
 
 			if (line[count] == '\n')
 			{
-				char error[256];
-				sprintf( error, "couldn't resolve block %s in file %s", line, getFilename() );
+				char error[576];
+				snprintf( error, sizeof(error), "couldn't resolve block %s in file %s", line, getFilename() );
 				Assert( 0, 0, error );
 				return SYNTAX_ERROR;
 			}

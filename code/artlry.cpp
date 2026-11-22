@@ -1559,8 +1559,8 @@ void Artillery::init (bool create, ObjectTypePtr _type)
 				buildingAppearanceType = appearanceTypeList->getAppearance(appearanceType,appearName);
 				if (!buildingAppearanceType)
 				{
-					char msg[1024];
-					sprintf(msg,"No Building Appearance Named %s",appearName);
+					char msg[1088];
+					snprintf(msg, sizeof(msg),"No Building Appearance Named %s",appearName);
 					Fatal(0,msg);
 				}
 			}
@@ -1627,8 +1627,8 @@ void Artillery::init (bool create, ObjectTypePtr _type)
 				buildingAppearanceType = appearanceTypeList->getAppearance(appearanceType,appearName);
 				if (!buildingAppearanceType)
 				{
-					char msg[1024];
-					sprintf(msg,"No Building Appearance Named %s",appearName);
+					char msg[1088];
+					snprintf(msg, sizeof(msg),"No Building Appearance Named %s",appearName);
 					Fatal(0,msg);
 				}
 			}
@@ -1695,8 +1695,8 @@ void Artillery::init (bool create, ObjectTypePtr _type)
 				buildingAppearanceType = appearanceTypeList->getAppearance(appearanceType,appearName);
 				if (!buildingAppearanceType)
 				{
-					char msg[1024];
-					sprintf(msg,"No Building Appearance Named %s",appearName);
+					char msg[1088];
+					snprintf(msg, sizeof(msg),"No Building Appearance Named %s",appearName);
 					Fatal(0,msg);
 				}
 			}

@@ -115,7 +115,7 @@ void
 		bool Convert_To_Triangle_Meshes
 	)
 {
-	Verify(FirstFreeMLRClassID <= LastMLRClassID);
+	Verify((int)FirstFreeMLRClassID <= (int)LastMLRClassID);
 
 	Verify(!StaticHeap);
 	StaticHeap = gos_CreateMemoryHeap("MLR Static");

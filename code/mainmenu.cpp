@@ -523,8 +523,8 @@ void MainMenu::update()
 
 				if ( NO_ERR != file.createWithCase( name ) )
 				{
-					char errorStr[1024];
-					sprintf( errorStr, "couldn't open the file %s", name );
+					char errorStr[1088];
+					snprintf( errorStr, sizeof(errorStr), "couldn't open the file %s", name );
 					Assert( 0, 0, errorStr );
 				}
 				else
@@ -551,8 +551,8 @@ void MainMenu::update()
 				const bool do_not_make_lower = true;
 				if ( NO_ERR != file.open( name, READ, 50, do_not_make_lower ) )
 				{
-					char errorStr[1024];
-					sprintf( errorStr, "couldn't open the file %s", name );
+					char errorStr[1088];
+					snprintf( errorStr, sizeof(errorStr), "couldn't open the file %s", name );
 					Assert( 0, 0, errorStr );
 				}
 				else

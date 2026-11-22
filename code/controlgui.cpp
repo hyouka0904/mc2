@@ -2250,7 +2250,7 @@ void ControlButton::initButtons( FitIniFile& buttonFile, long buttonCount, Contr
 		long result = buttonFile.seekBlock( path );
 		if ( result != NO_ERR )
 		{
-			char errorStr[256];
+			char errorStr[320];
 			snprintf(errorStr, sizeof(errorStr), "couldn't find button %s", path );
 			Assert( 0, 0, errorStr );
 			continue;
@@ -2660,7 +2660,7 @@ void ControlGui::swapResolutions( int resolutionX, int resolutionY )
 	strcat( path, fileName );
 	if ( NO_ERR != buttonFile.open( path ) )
 	{
-		char error[256];
+		char error[320];
 		snprintf(error, sizeof(error), "couldn't find the file %s", path );
 		Assert( 0, 0, error );
 	}

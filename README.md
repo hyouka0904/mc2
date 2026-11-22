@@ -427,6 +427,7 @@ SDL3 GPU 後端在沒有 GPU 的環境使用 Mesa 的軟體 Vulkan（lavapipe）
 | `-shader-reload` | 開發用：著色器原始碼變更時在遊戲中重新編譯（每半秒檢查一次，預設關閉） |
 | `-renderer gl\|gpu` | 繪圖後端：`gpu`＝SDL3 GPU（預設，Linux 上為 Vulkan），`gl`＝OpenGL。截圖比對腳本一律明確指定。環境變數 `MC2_GPU_DEBUG=1` 開啟 Vulkan 驗證層，`SDL_GPU_DRIVER` 可指定驅動 |
 | `-no-batching` | 關閉繪製合併，每個 `gos_Draw*` 呼叫各畫一次（比較效能或排查問題用） |
+| `-gpu-shapes` | 實驗用：3D 模型的實心部分另外用 `gos_RenderShape`（GPU 轉換與光照）畫一次；GPU 光照尚未與遊戲一致（例如機甲會偏白），預設關閉 |
 
 測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 18 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
 暫停中的任務，以及載入範例 Mod / Modpack 的主選單。執行與比對：
@@ -506,7 +507,9 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 
 **貼圖圖集**：32／64／128 像素的正方形貼圖（地形格子是 64×64）另外複製一份到共用的 1024×1024 圖集頁。若一次繪製的貼圖座標保證只取樣該格子內的像素（最近取樣：0 ≤ u, v < 1；雙線性：u·s 介於 0.5 與 s−0.5），就改用圖集頁並換算座標；取樣位置不變，所以畫面相同，但相鄰格子的繪製可以合併。
 
-**`gos_RenderShape`**（新的繪圖 API，取代以字串設定材質參數再呼叫 `gos_RenderIndexedArray(ib, vb, vdecl)` 的寫法）：遊戲直接傳入網格、世界矩陣、`wvp` 與光源索引。連續的形狀若狀態、光源、頂點格式與攝影機相同，GameOS 會在 CPU 上把頂點轉到世界座標、合併成一次繪製（用共用的 view-projection 矩陣）。`mclib/txmmgr.cpp` 的 3D 模型繪製已改用它。
+**`gos_RenderShape`**（新的繪圖 API，取代以字串設定材質參數再呼叫 `gos_RenderIndexedArray(ib, vb, vdecl)` 的寫法）：遊戲直接傳入網格、世界矩陣、`wvp` 與光源索引。連續的形狀若狀態、光源、頂點格式與攝影機相同，GameOS 會在 CPU 上把頂點轉到世界座標、合併成一次繪製（用共用的 view-projection 矩陣）。`mclib/txmmgr.cpp` 的 3D 模型硬體路徑已改用它。
+
+**3D 模型的硬體路徑（`-gpu-shapes`）預設關閉。** 上游 port 在 CPU 繪製（原作的做法：CPU 轉換、打光後送出三角形）之外，另外加了一條「把整個模型交給 GPU 轉換與打光」的實驗路徑，兩條路徑每幀都會畫。調查多貼圖問題時發現，這條路徑的頂點著色器留有除錯用的 `+100` 像素水平位移（上游 commit 8fc2a89 「render shape base functionality (WIP)」），所以它畫出的模型一直偏右 100 像素：大部分被隨後的 CPU 繪製蓋住，蓋不住的地方就成了建築物的「殘影」（mc2_03 第 900 幀的儲存槽、管線最明顯，舊的參考截圖也包含這些殘影）。拿掉位移後，GPU 光照與 CPU 光照不一致（機甲隊伍顏色、夜間燈光等），因此改為預設只用 CPU 路徑——與原作相同、少了殘影，也更快（mc2_01 每幀 draw call 74 → 68，平均幀時間 GL 13.4 → 11.5 ms、GPU 11.4 → 10.6 ms）——並重新產生參考截圖。硬體路徑保留為 `-gpu-shapes`，並已修正：多貼圖模型依貼圖分段（每段用自己的貼圖）、套用建築物縮放（`shapeScalar`）、`MC_TextureManager` 的形狀清單在第三種旗標組合時用錯欄位（`vertexData3`）而丟掉形狀、未貼圖清單寫入時多寫一格。
 
 量測（第 300–900 幀，Xvfb + Mesa 軟體繪圖，`-perf-csv`）：
 
@@ -515,9 +518,10 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 原本（每次呼叫各畫一次） | 242 | 215 | 26.7 / 15.6 ms | — |
 | 合併連續相同狀態的繪製 | 156 | 140 | 19.9 / 14.2 ms | — |
 | ＋ 貼圖圖集 | 107 | 98 | 16.7 / 10.9 ms | — |
-| ＋ `gos_RenderShape` 合併 3D 模型 | **72** | **63** | **12.5 / 9.4 ms** | 76 |
+| ＋ `gos_RenderShape` 合併 3D 模型 | 72 | 63 | 12.5 / 9.4 ms | 76 |
+| 硬體路徑改為預設關閉（拿掉殘影） | **68** | **68** | **11.5 / 10.6 ms** | — |
 
-階段 7 的停止條件（mc2_01 每幀 draw call 低於 100）已達成；所有步驟的截圖比對結果不變。
+階段 7 的停止條件（mc2_01 每幀 draw call 低於 100）已達成。前四列的截圖比對結果不變；最後一列去掉了硬體路徑的殘影，參考截圖隨之更新（OpenGL 逐像素相同、SDL3 GPU 最多差 0.24%）。最後一列另以 1–900 幀量測，平均值不能和上面直接比較。
 
 整場只出現 16 個 SDL3 GPU 管線物件（8 種狀態組合 × 著色器變體），第一次建立的成本可忽略，因此沒有另外做「預先建立」。
 
@@ -553,7 +557,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 4 著色器 | 完成（DXIL 待 CI 安裝 dxc） | Vulkan 風格 GLSL（`PerDraw` / `LightsData` / `SceneData` 三個 uniform block、明確的 set / binding / location）；建置時編成 SPIR-V（通過 `spirv-val`）、MSL、HLSL；OpenGL 後端改用 uniform block 後 18 張截圖逐像素相同；熱重載改為 `-shader-reload` 開發選項 |
 | 5 SDL3 GPU 後端 | 完成 | `render/gpu/`（Vulkan via SDL3 GPU）、`-renderer gl\|gpu`、記錄重播式的即時模式模擬、管線快取、每幀上傳環狀緩衝區；兩個後端共用的繪製合併讓 mc2_01 第 600 幀 draw call 從 242 降到 156；CI 對兩個後端各跑冒煙測試與 18 張截圖比對（GPU 後端開啟 Vulkan 驗證層，零訊息）；兩後端差異最多 0.25%，門檻維持 0.5% |
 | 6 移除 OpenGL / GLEW | 進行中（依決策保留 OpenGL 一個版本週期） | 預設改為 SDL3 GPU，無法啟動時自動退回 OpenGL；OpenGL 後端移到獨立的 `gameos_gl` 函式庫，資料工具（含 `aseconv`）與測試不再連結 libGL / GLEW（CI 以 `ldd` 檢查）；移除 Viewer；修正 OpenGL 結束時重複 `glDetachShader` 的錯誤。待備援期結束後刪除 `render/gl/` 與 GLEW |
-| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併）並把 3D 模型繪製遷移過去；繪製合併與小貼圖圖集；mc2_01 第 600 幀 draw call 242 → 72、平均幀時間 26.7 → 12.5 ms（GL）；截圖比對不變 |
+| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併），3D 模型的硬體路徑改用它；繪製合併與小貼圖圖集；找出硬體路徑的 `+100` 像素殘影，改為預設關閉（`-gpu-shapes` 開啟）；mc2_01 第 600 幀 draw call 242 → 68、平均幀時間 26.7 → 11.5 ms（GL） |
 | 8 平台層精簡 | 未開始 | |
 
 ### 決策紀錄
@@ -574,12 +578,9 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 ### 其他尚未完成的項目
 
 - **網路對戰**未實作。
-- **光照完全移到著色器**：目前部分光照仍在 CPU 計算（`mclib/msl.cpp`、`shaders/gos_tex_vertex_lighted.vert`）。
+- **3D 模型的 GPU 光照**（`-gpu-shapes`）：要成為預設，著色器需重現 `TG_Shape::MultiTransformShape` 的 CPU 光照（各種光源、夜間「熱點」燈色、`BaseVertexColor`、選取高亮、霧），並在 GPU 畫過的實心面上略過 CPU 繪製；目前 CPU 光照是正確且預設的路徑。
 - GameOS 其餘繪圖 API 的型別安全（3D 模型已改用 `gos_RenderShape`）。
-- **多貼圖模型的 GPU 繪製**：`mclib/tgl.cpp` 的硬體路徑以模型第一個三角形的貼圖繪製整個模型。
-  試過「載入時依貼圖分段、每段各自繪製」（commit 35f3a7e），但完整重建後 mc2_03 中央的建築物消失、
-  截圖比對失敗，已還原；原因尚待調查（推測與硬體路徑和軟體頂點清單的交互有關）。
-- 編譯警告：從 643 則降到 141 則。已修正全部 `printf` / `scanf` 型別不符（64 位元下 `long` 配 `%d`）、所有可能的 `sprintf` 緩衝區溢位（改為 `snprintf` 或加大緩衝區）、ABL 腳本 `objectVisible` / `objectActivate` 對群組使用時的空指標存取。剩下的主要是 `snprintf` 可能截斷的提示（64 則）、未使用的變數（52 則）與忽略 `fread` 等回傳值（23 則）。
+- 編譯警告：從 643 則降到 0 則（GCC 13，Debug 與 RelWithDebInfo）。修正了全部 `printf` / `scanf` 型別不符（64 位元下 `long` 配 `%d`）、所有可能的 `sprintf` 緩衝區溢位與 `snprintf` 截斷（改用 `snprintf` 並把緩衝區加大到放得下）、ABL 腳本 `objectVisible` / `objectActivate` 對群組使用時的空指標存取、讀取被截斷的字型檔時的無窮迴圈、多人模式未實作時以空指標當作玩家名稱；`fread` 皆檢查回傳值；刪除未使用的變數（只在除錯或 `LAB_ONLY` 程式碼中用到的計時變數保留並標示）。
 - 尚未在 Windows、實體 GPU、長時間遊玩下重新驗證（CI 只在 Linux + Mesa 軟體繪圖上執行）。
 - `GameOS/include/platform_*.h` 中的 `FIXME` 來自 Wine 的 Win32 標頭，屬於上游註解。
 

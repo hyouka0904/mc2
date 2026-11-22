@@ -21,8 +21,6 @@
 
 #include<cassert>
 
-static unsigned long pwXMax,count;		// Must be static for assembly optimizations
-static unsigned char *FadeTable;		// Must be static for assembly optimizations
 
 //-----------------------------------------------------------
 struct tileStruct

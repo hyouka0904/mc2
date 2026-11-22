@@ -507,7 +507,7 @@
 					// Write out the record header
 					//----------------------------
 					//
-					output << static_cast<int>('RVNO') << sizeof(int) << 2;
+					output << static_cast<int>(('R' << 24) | ('V' << 16) | ('N' << 8) | 'O') /* 'RVNO' */ << sizeof(int) << 2;
 
 					//
 					//---------------------------------------------------------
@@ -522,7 +522,7 @@
 						header_size += 2*sizeof(int);
 						header_size += (strlen(trace->traceName)+4)&~3;
 					}
-					output << static_cast<int>('HDRS') << header_size;
+					output << static_cast<int>(('H' << 24) | ('D' << 16) | ('R' << 8) | 'S') /* 'HDRS' */ << header_size;
 					output << static_cast<int>(trace_count);
 
 					traces.First();
@@ -539,7 +539,7 @@
 						}
 					}
 
-					output << static_cast<int>('LOGS') << ((size+3)&~3);
+					output << static_cast<int>(('L' << 24) | ('O' << 16) | ('G' << 8) | 'S') /* 'LOGS' */ << ((size+3)&~3);
 					allocatedTraceLog->Rewind();
 					output.WriteBytes(allocatedTraceLog->GetPointer(), size);
 					while (size&3)

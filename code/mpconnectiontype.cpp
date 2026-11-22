@@ -98,7 +98,7 @@ void MPConnectionType::init(FitIniFile* file)
 		FitIniFile PNfile;
 		if ( NO_ERR != PNfile.open( path ) )
 		{
-			char error[256];
+			char error[320];
 			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
@@ -114,7 +114,7 @@ void MPConnectionType::init(FitIniFile* file)
 		FitIniFile PNfile;
 		if ( NO_ERR != PNfile.open( path ) )
 		{
-			char error[256];
+			char error[320];
 			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
@@ -130,7 +130,7 @@ void MPConnectionType::init(FitIniFile* file)
 		FitIniFile PNfile;
 		if ( NO_ERR != PNfile.open( path ) )
 		{
-			char error[256];
+			char error[320];
 			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;

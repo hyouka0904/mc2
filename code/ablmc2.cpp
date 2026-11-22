@@ -6201,8 +6201,8 @@ void execGetWeapons (void) {
 				}
 				#ifdef BUGLOG
 				if ((numWpns != mover->numFunctionalWeapons) && BugLog) {
-					char s[50];
-					sprintf(s, "[%.2f] ablmc2.execGetWeapons: numWpns != numFunctionalWeapons (%05d)%s", scenarioTime, mover->getPartId(), mover->getName());
+					char s[320];
+					snprintf(s, sizeof(s), "[%.2f] ablmc2.execGetWeapons: numWpns != numFunctionalWeapons (%05ld)%s", scenarioTime, mover->getPartId(), mover->getName());
 					BugLog->write(s);
 					BugLog->write(" ");
 				}

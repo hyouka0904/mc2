@@ -1524,7 +1524,7 @@ bool Mission::calcComplexDropZones (char* missionName, char dropZoneCID[MAX_MC_P
 	gosASSERT(result == NO_ERR);
 	if (numParts)
 		for (long i = 1; i < long(numParts + 1); i++) {
-			char partName[12];
+			char partName[64];
 			snprintf(partName, sizeof(partName),"Part%ld",i);
 			
 			//------------------------------------------------------------------
@@ -2015,7 +2015,7 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 		gosASSERT(result == NO_ERR);
 		if (numParts)
 			for (int i = 1; i < long(numParts + 1); i++) {
-				char partName[12];
+				char partName[64];
 				snprintf(partName, sizeof(partName),"Part%d",i);
 				
 				//------------------------------------------------------------------
@@ -2314,7 +2314,7 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 	{
 		for (long i = 1; i <= numWarriors; i++) 
 		{
-			char warriorName[12];
+			char warriorName[64];
 			snprintf(warriorName, sizeof(warriorName),"Warrior%ld",i);
 			
 			//-------------------------
@@ -2447,7 +2447,7 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 		long bigAlternatives = 0;
 
 		for (int i = 1; i < long(numParts + 1); i++) {
-			char partName[12];
+			char partName[64];
 			snprintf(partName, sizeof(partName),"Part%d",i);
 
 			result = missionFile->seekBlock(partName);
@@ -2509,7 +2509,7 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 
 		for (int i = 1; i < long(numParts + 1); i++)
 		{
-			char partName[12];
+			char partName[64];
 			snprintf(partName, sizeof(partName),"Part%d",i);
 			
 			//------------------------------------------------------------------

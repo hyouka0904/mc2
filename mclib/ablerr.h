@@ -13,7 +13,7 @@
 //***************************************************************************
 
 #define	MAX_SYNTAX_ERRORS		1 //20
-#define	MAXLEN_ERROR_MESSAGE	256
+#define	MAXLEN_ERROR_MESSAGE	4096
 
 #pragma warning( disable : 4514 )  
 

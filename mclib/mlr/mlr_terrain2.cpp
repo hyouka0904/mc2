@@ -141,7 +141,7 @@ MLR_Terrain2::MLR_Terrain2(
 	MLRTexture *orgTexture = (*MLRTexturePool::Instance)[referenceState.GetTextureHandle()];
 	Check_Object(orgTexture);
 	const char *texName = orgTexture->GetTextureName();
-	char texRoot[1024], name[1024];
+	char texRoot[1024], name[1088];
 
 	int len;
 	if((len = strlen(texName)) > 0)

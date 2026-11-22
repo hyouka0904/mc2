@@ -436,7 +436,7 @@ void aButton::init( FitIniFile& buttonFile, const char* str, HGOSFONT3D font )
 	char bmpName[256];
 	strcpy( bmpName, str );
 	strcat( bmpName, "Bmp" );
-	char finalName[256];
+	char finalName[288];
 	int counter = 0;
 	while(true)
 	{

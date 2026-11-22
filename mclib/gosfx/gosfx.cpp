@@ -33,7 +33,7 @@ const Stuff::LinearMatrix4D&
 void
 	gosFX::InitializeClasses()
 {
-	Verify(FirstFreegosFXClassID <= Stuff::LastgosFXClassID);
+	Verify((int)FirstFreegosFXClassID <= (int)Stuff::LastgosFXClassID);
 
 	Verify(!Heap);
 	Heap = gos_CreateMemoryHeap("gosFX");

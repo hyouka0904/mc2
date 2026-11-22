@@ -58,7 +58,7 @@ void MissionResults::begin()
 			
 			if ( NO_ERR != file.open( path ) )
 			{
-				char error[256];
+				char error[320];
 				snprintf(error, sizeof(error), "couldn't open file %s", path );
 				Assert( 0, 0, error );
 				return;
@@ -77,7 +77,7 @@ void MissionResults::begin()
 			pPilotScreen = new PilotReviewScreen();
 			if ( NO_ERR != file.open( path ) )
 			{
-				char error[256];
+				char error[320];
 				snprintf(error, sizeof(error), "couldn't open file %s", path );
 				Assert( 0, 0, error );
 				return;

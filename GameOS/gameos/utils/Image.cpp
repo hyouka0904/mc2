@@ -157,7 +157,10 @@ bool Image::loadTGA(FILE* file)
 {
 	TGAHeader header;
 
-	fread(&header, sizeof(header), 1, file);
+	if (fread(&header, sizeof(header), 1, file) != 1) {
+		fclose(file);
+		return false;
+	}
 	// Skip past the description if there's any
 	if (header.descLen) fseek(file, header.descLen, SEEK_CUR);
 
@@ -170,9 +173,8 @@ bool Image::loadTGA(FILE* file)
 
 		int size = header.width * header.height * pixelSize;
 		readPixels = new unsigned char[size];
-		fread(readPixels, size, 1, file);
-
-		rv = loadTGA(&header, readPixels);
+		if (fread(readPixels, size, 1, file) == 1)
+			rv = loadTGA(&header, readPixels);
 	}
 	else if(header.imageType == (unsigned char)TGADataType::kRLERGB) {
 
@@ -182,9 +184,8 @@ bool Image::loadTGA(FILE* file)
 		fseek(file, fpos, SEEK_SET);
 
 		readPixels = new unsigned char[fsize];
-		fread(readPixels, fsize, 1, file);
-
-		rv = loadCompressedTGA(&header, readPixels, fsize);
+		if (fread(readPixels, fsize, 1, file) == 1)
+			rv = loadCompressedTGA(&header, readPixels, fsize);
 	}
 
 	fclose(file);
@@ -411,8 +412,7 @@ bool Image::loadBMP(FILE* file)
 {
 	// Read the header
 	BMPHeader header;
-	fread(&header, sizeof(header), 1, file);
-	if (header.bfType != 0x4D42){
+	if (fread(&header, sizeof(header), 1, file) != 1 || header.bfType != 0x4D42){
 		fclose(file);
 		return false;
 	}
@@ -434,14 +434,16 @@ bool Image::loadBMP(FILE* file)
 			pixels = new unsigned char[width * height * 3];
 
 			unsigned char palette[1024];
-			fread(palette, sizeof(palette), 1, file);
+			if (fread(palette, sizeof(palette), 1, file) != 1)
+				memset(palette, 0, sizeof(palette));
 
 			// 8-bit paletted bitmap
 			unsigned char *tmp;
 			tmp = new unsigned char[width];
 			for (int i = height - 1; i >= 0; i--){
 				unsigned char *dest = pixels + i * width * 3;
-				fread(tmp, width, 1, file);
+				if (fread(tmp, width, 1, file) != 1)
+					memset(tmp, 0, width);
 				int len = width;
 				do {
 					unsigned char *src = palette + ((*tmp++) << 2);
@@ -466,7 +468,8 @@ bool Image::loadBMP(FILE* file)
 			pixels = new unsigned char[width * height * nChannels];
 			for (int i = height - 1; i >= 0; i--){
 				unsigned char *dest = pixels + i * width * nChannels;
-				fread(dest, width * nChannels, 1, file);
+				if (fread(dest, width * nChannels, 1, file) != 1)
+					memset(dest, 0, width * nChannels);
 				swapChannels(dest, width, nChannels, 0, 2);
 			}
 			break;

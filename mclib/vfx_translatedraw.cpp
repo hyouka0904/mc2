@@ -28,9 +28,6 @@ typedef struct
 //
 
 unsigned int lookaside;
-static unsigned int tempXmax,tempXmin;
-static unsigned int minX,minY,maxY,SkipLeft,NewWidth,StartofLine,StartofClip,EndofClip;
-static unsigned int lines,DestWidth,paneX0,paneX1,paneY0,paneY1;
 
 
 

@@ -19,7 +19,6 @@ MPHostGame.cpp			: Implementation of the MPHostGame component.
 
 #define CHECK_BUTTON 200
 
-static int connectionType = 0;
 
 static const int FIRST_BUTTON_ID = 1000010;
 static const int OK_BUTTON_ID = 1000001;

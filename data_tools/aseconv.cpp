@@ -166,7 +166,7 @@ long convertASE2TGL(char *file)
 {
 	//---------------------------------------------------
 	// Get all of the .ASE files in the tgl directory.
-	char findString[1024];
+	char findString[1088];
 	//char armFileName[1024];
 	if (file[0] == '\0')
 	{
@@ -228,7 +228,7 @@ long convertASE2TGL(char *file)
 							shape = NULL;
 						}
 
-						char aseName[1024];
+						char aseName[2112];
 
 						//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
 						snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
@@ -255,7 +255,7 @@ long convertASE2TGL(char *file)
 					}
 				}
 
-				char aseName[1024];
+				char aseName[2112];
 				//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
 				snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                 S_strlwr(aseName);
@@ -279,7 +279,7 @@ long convertASE2TGL(char *file)
 				result = iniFile.readIdString("ShadowName", fileName, 1023);
 				if (result == NO_ERR)
 				{
-					char aseName[1024];
+					char aseName[2112];
 					//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
 					snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                     S_strlwr(aseName);
@@ -345,7 +345,7 @@ long convertASE2TGL(char *file)
 							char name[MAX_PATH];
 							_splitpath(findResult.cFileName, NULL, NULL, name, NULL);
 
-							char mechFileName[1024];
+							char mechFileName[2112];
 							//sprintf(mechFileName, "%s%s%s.ase", tglPath, name, MechAnimationNames[i]);
 							snprintf(mechFileName, sizeof(mechFileName), "%s%s%s.ase", prefixPath, name, MechAnimationNames[i]);
 							S_strlwr(mechFileName);
@@ -378,7 +378,7 @@ long convertASE2TGL(char *file)
 							char name[MAX_PATH];
 							_splitpath(findResult.cFileName, NULL, NULL, name, NULL);
 
-							char mechFileName[1024];
+							char mechFileName[2112];
 							//sprintf(mechFileName, "%s%s%s.ase", tglPath, name, MechAnimationNames[i]);
 							snprintf(mechFileName, sizeof(mechFileName), "%s%s%s.ase", prefixPath, name, MechAnimationNames[i]);
 							S_strlwr(mechFileName);
@@ -411,7 +411,7 @@ long convertASE2TGL(char *file)
 							shape = NULL;
 						}
 
-						char aseName[1024];
+						char aseName[2112];
 						//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
 						snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                         S_strlwr(aseName);
@@ -435,7 +435,7 @@ long convertASE2TGL(char *file)
 					result = iniFile.readIdString("ShadowName", fileName, 1023);
 					if (result == NO_ERR)
 					{
-						char aseName[1024];
+						char aseName[2112];
 						//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
 						snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                         S_strlwr(aseName);

@@ -436,19 +436,19 @@ void DumpWeaponFireLog (void) {
 		char s[512];
 		char attackerName[128];
 		if (attacker->isMover())
-			sprintf(attackerName, "%s (%d)", attacker->getName(), attacker->getPartId());
+			snprintf(attackerName, sizeof(attackerName), "%s (%ld)", attacker->getName(), attacker->getPartId());
 		else
-			sprintf(attackerName, "objClass %d (%d)", attacker->getObjectClass(), attacker->getPartId());
+			snprintf(attackerName, sizeof(attackerName), "objClass %d (%ld)", attacker->getObjectClass(), attacker->getPartId());
 		char targetName[128];
 		if (target)
 			if (target->isMover())
-				sprintf(targetName, "%s (%d)", target->getName(), target->getPartId());
+				snprintf(targetName, sizeof(targetName), "%s (%ld)", target->getName(), target->getPartId());
 			else
-				sprintf(targetName, "objClass %d (%d)", target->getObjectClass(), target->getPartId());
+				snprintf(targetName, sizeof(targetName), "objClass %d (%ld)", target->getObjectClass(), target->getPartId());
 		else
 			sprintf(targetName, "NA/LOCATION");
 
-		sprintf(s, "attacker = %s, target = %s, data = %x, hit = %d, numMissiles = %d\n", attackerName, targetName, data, chunk.hit, chunk.numMissiles);
+		snprintf(s, sizeof(s), "attacker = %s, target = %s, data = %lx, hit = %d, numMissiles = %d\n", attackerName, targetName, data, chunk.hit, chunk.numMissiles);
 
 		WeaponFireLog->writeString(s);
 	}
@@ -462,7 +462,7 @@ void CloseWeaponFireLog (void) {
 	if (WeaponFireLog) {
 		DumpWeaponFireLog();
 		char s[512];
-		sprintf(s, "\nNum Total WeaponFires = %d\n", NumWeaponFiresInLog);
+		sprintf(s, "\nNum Total WeaponFires = %ld\n", NumWeaponFiresInLog);
 		WeaponFireLog->writeString(s);
 		WeaponFireLog->close();
 		delete WeaponFireLog;
@@ -1845,7 +1845,7 @@ extern __int64 MCTimeLOSUpdate;
 
 inline bool GameObject::lineOfSight (GameObjectPtr target, float startExtRad, bool checkVisibleBits) 
 {
-	__int64 timeStart = GetCycles(); 
+	__int64 timeStart = GetCycles();  (void)timeStart; // used only by debug / LAB_ONLY code
 
 	//If we call this without a target, we have no LOS!!
 	// Keeps it from crashing, too.

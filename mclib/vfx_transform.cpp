@@ -39,11 +39,8 @@ typedef struct
 // Bit 0 = 1	String packet [7654321] bytes
 //
 
-static unsigned int SourceWidth,tWidth,tHeight,DestWidth;			// Used for code optimizing
 //static _int64 xmask=-1;
-static unsigned int tempXmax,tempXmin;
-static unsigned int minX,minY,maxY,maxX,SkipLeft,NewWidth,StartofLine,StartofClip,EndofClip;
-static unsigned int lines,paneX0,paneX1,paneY0,paneY1,SourcePointer,DestPointer;
+static unsigned int maxY,maxX;
 static signed int X,Y,X1;
 
 static PANE tempPANE;
