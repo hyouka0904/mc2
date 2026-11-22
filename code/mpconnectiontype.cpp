@@ -138,7 +138,8 @@ void MPConnectionType::init(FitIniFile* file)
 		tcpipPanel.init(&PNfile);
 	}
 
-	connectionType = 0;
+	// The MSN Gaming Zone is gone: start on the LAN panel.
+	connectionType = 1;
 
 	buttons[indexOfButtonWithID(FIRST_BUTTON_ID+1)].press(!((1 == connectionType) || (2 == connectionType) || (3 == connectionType)));
 	buttons[indexOfButtonWithID(FIRST_BUTTON_ID+2)].press(1 == connectionType);
@@ -172,6 +173,9 @@ void MPConnectionType::begin()
 	if ( MPlayer )
 	{
 		MPlayer->closeSession();
+
+		// Zone.com no longer exists; its button would quit the game.
+		getButton( FIRST_BUTTON_ID+1 )->disable( true );
 
 		if ( !MPlayer->getOnLAN() )
 		{

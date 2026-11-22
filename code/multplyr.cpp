@@ -1481,6 +1481,7 @@ void MultiPlayer::sendPlayerUpdate (NETPLAYER receiver, long stage, long newComm
 	msg.dataHash = dataHash;
 	msg.info = playerInfo[cid];
 	sendMessage(iAmHost ? receiver : MCGROUP_SERVER, &msg, sizeof(msg), true);
+	NETLOG(2, "send player update commander %ld ready %d team %d", cid, (int)msg.info.ready, (int)msg.info.team);
 	lastSentPlayerInfo[cid] = playerInfo[cid];
 }
 
@@ -1499,6 +1500,7 @@ void MultiPlayer::handlePlayerUpdate (NETPLAYER sender, MCMSG_PlayerUpdate* msg)
 		// A client changed its own entry; take the fields players may edit.
 		MC2Player& info = playerInfo[cid];
 		const MC2Player& in = msg->info;
+		NETLOG(2, "player update from commander %ld: ready %d team %d cbills %d", cid, (int)in.ready, (int)in.team, in.cBills);
 		CopyString(info.name, in.name, MAXLEN_PLAYER_NAME);
 		CopyString(info.unitName, in.unitName, MAXLEN_UNIT_NAME);
 		CopyString(info.insigniaFile, in.insigniaFile, MAXLEN_INSIGNIA_FILE);
