@@ -79,6 +79,9 @@ MC2Movie::MC2Movie (void)
 
 MC2Movie::~MC2Movie (void)
 {
+	// Deleted while playing (mission aborted, screen left): silence it
+	if (stillPlaying)
+		stopSound();
 	close();
 	delete [] waveName;
 	delete [] m_MC2Name;
