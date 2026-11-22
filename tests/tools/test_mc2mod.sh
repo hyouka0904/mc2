@@ -19,7 +19,9 @@ echo "pilot data" > "$work/mods/my_mod/content/data/objects/pilots.csv"
 "$tool" validate "$work/mods/my_mod" | grep -q "ok: .*my_mod 0.1.0" || fail "validate"
 
 "$tool" new "$work/mods" addon >/dev/null
-sed -i 's/^\[dependencies\]$/[dependencies]\nmy_mod = ^0.1/' "$work/mods/addon/mod.ini"
+# portable in-place edit (BSD sed has no plain -i and no \n in replacements)
+awk '{ print } /^\[dependencies\]$/ { print "my_mod = ^0.1" }' "$work/mods/addon/mod.ini" > "$work/mod.ini.new" \
+    && mv "$work/mod.ini.new" "$work/mods/addon/mod.ini"
 echo "addon pilots" > "$work/mods/addon/content/data/objects/pilots.csv"
 out=$("$tool" resolve "$work/mods") || fail "resolve: $out"
 echo "$out" | grep -q "1. my_mod" || fail "dependency must load first: $out"

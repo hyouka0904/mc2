@@ -59,7 +59,7 @@ pak)
         [ ! -s out_$mode/packet_3 ] || fail "$mode: packet 3 should be empty"
     done
     # random data does not compress, but text-only packs should shrink
-    [ "$(stat -c %s compressed.pak)" -le "$(( $(stat -c %s raw.pak) + 64 ))" ] || fail "compression grew the pack"
+    [ "$(wc -c < compressed.pak)" -le "$(( $(wc -c < raw.pak) + 64 ))" ] || fail "compression grew the pack"
     ;;
 
 text_tool)
