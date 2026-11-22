@@ -32,6 +32,8 @@
 9. [與原專案的差異](#與原專案的差異)
 10. [授權](#授權)
 
+> 接下來的聯機模式（區網合作、Roguelike）與繁體中文補丁規劃，見 [ROADMAP_MULTIPLAYER_ZH.md](ROADMAP_MULTIPLAYER_ZH.md)。
+
 ---
 
 ## 專案架構
