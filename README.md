@@ -22,7 +22,7 @@
 3. [建置遊戲資料並執行](#建置遊戲資料並執行)
 4. [Mod / Modding / Modpack](#mod--modding--modpack)
 5. [自動化測試](#自動化測試)
-6. [在 Windows 上建置](#在-windows-上建置)
+6. [在 Windows 上建置](#在-windows-上建置)／[在 macOS 上建置](#在-macos-上建置)
 7. [已知限制與待辦事項](#已知限制與待辦事項)
 8. [授權](#授權)
 
@@ -460,7 +460,7 @@ scripts/run_screenshot_tests.py game shots
 
 `.github/workflows/ci.yml` 在每次 push / PR 時執行：
 
-1. 以 RelWithDebInfo 與 Debug 建置並執行全部 CTest 測試；
+1. 以 RelWithDebInfo 與 Debug 建置並執行全部 CTest 測試（Linux），另在 Windows（MSVC）與 macOS（Apple Silicon）建置並執行單元測試；
 2. 下載遊戲資料、建置資料，並以冒煙測試實際遊玩 `mc2_01` 60 秒；
 3. 執行截圖比對測試，上傳截圖、熱度圖與記錄檔。
 
@@ -468,27 +468,38 @@ scripts/run_screenshot_tests.py game shots
 
 ## 在 Windows 上建置
 
-> 本次更新尚未在 Windows 上實機驗證（CI 只跑 Linux）。
+> CI（`windows-latest`、MSVC x64）會建置全部程式並執行單元測試；尚未在 Windows 上實機遊玩驗證。
 
-SDL3 系列會由 CMake 自動下載並靜態編譯（與 Linux 相同），只需自行準備 zlib 與 GLEW，
-並以 `CMAKE_PREFIX_PATH` 指向它們：
-
-```
-3rdparty
-├── include
-│   ├── zconf.h, zlib.h
-│   └── GL/      (glew.h, wglew.h …)
-└── lib
-    └── x64/     (glew32.lib, zlib.lib 及對應 dll)
-```
-
-產生 Visual Studio 64 位元專案（版本依安裝的 Visual Studio 調整）：
+SDL3 系列會由 CMake 自動下載並靜態編譯（與 Linux 相同）。zlib、GLEW、FreeType 建議用 vcpkg 安裝
+（靜態函式庫 + 動態 CRT，與 CMake 的 Release 設定相同）：
 
 ```bat
-cmake.exe -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=c:/path_to_your_dependencies/ ..
+vcpkg install zlib glew freetype --triplet x64-windows-static-md
+cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+cmake --build build --config RelWithDebInfo
+ctest --test-dir build -C RelWithDebInfo
 ```
 
-字串資源 `libmc2res` 會跟主程式一起建置，不需要另外執行 `res_conv.pl`。
+字串資源 `mc2res_64.dll` 會跟主程式一起建置，放在 `mc2.exe` 旁邊或遊戲目錄中即可。
+SDL3 GPU 後端在 Windows 上會使用 Vulkan（讀取 SPIR-V）；D3D12 需要 DXIL，目前依決策暫緩。
+
+## 在 macOS 上建置
+
+> CI（`macos-latest`、Apple Silicon）會建置全部程式、執行單元測試並檢查 `.app`；macOS 實機遊玩仍需人工驗證。
+
+最低支援 macOS 13。macOS 只有已淘汰的 OpenGL 4.1，所以預設不建置 OpenGL 後端（`MC2_ENABLE_OPENGL=OFF`），
+只使用 SDL3 GPU（Metal）：
+
+```bash
+brew install glslang spirv-tools spirv-cross freetype
+cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMC2_SHADER_REQUIRE=msl
+cmake --build build -j"$(sysctl -n hw.ncpu)"
+ctest --test-dir build
+```
+
+產出 `build/mc2.app`（字串資源 `libmc2res.dylib` 在 `Contents/Resources/`）。`scripts/prepare_game_dir.sh`
+會把 `mc2.app` 複製到遊戲目錄，並建立 `./mc2` 指向其中的執行檔，可在終端機執行；
+從 Finder 開啟時，遊戲會到 `.app` 旁邊尋找 `data/`。
 
 ---
 
@@ -595,7 +606,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 - **`-gpu-shapes` 是否改為預設**：GPU 光照已完成（見上方「3D 模型的硬體路徑」），但在 Mesa 軟體繪圖上比 CPU 路徑慢，需要在實體 GPU 上量測後再決定。
 - GameOS 其餘繪圖 API 的型別安全（3D 模型已改用 `gos_RenderShape`）。
 - 編譯警告：從 643 則降到 0 則（GCC 13，Debug 與 RelWithDebInfo）。修正了全部 `printf` / `scanf` 型別不符（64 位元下 `long` 配 `%d`）、所有可能的 `sprintf` 緩衝區溢位與 `snprintf` 截斷（改用 `snprintf` 並把緩衝區加大到放得下）、ABL 腳本 `objectVisible` / `objectActivate` 對群組使用時的空指標存取、讀取被截斷的字型檔時的無窮迴圈、多人模式未實作時以空指標當作玩家名稱；`fread` 皆檢查回傳值；刪除未使用的變數（只在除錯或 `LAB_ONLY` 程式碼中用到的計時變數保留並標示）。
-- 尚未在 Windows、實體 GPU、長時間遊玩下重新驗證（CI 只在 Linux + Mesa 軟體繪圖上執行）。
+- 尚未在 Windows、macOS、實體 GPU、長時間遊玩下實機驗證（遊戲本身的 CI 只在 Linux + Mesa 軟體繪圖上執行；Windows 與 macOS 只在 CI 建置並跑單元測試）。
 - `GameOS/include/platform_*.h` 中的 `FIXME` 來自 Wine 的 Win32 標頭，屬於上游註解。
 
 `code/`、`mclib/` 中大量標註為 `HACK` 的註解是微軟 2001 年原始碼的開發紀錄，描述的是刻意的遊戲行為（AI、網路封包、地圖格子等），
