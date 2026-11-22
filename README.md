@@ -4,10 +4,11 @@
 
 本專案是《MechCommander 2》（微軟 2001 年發行的即時戰術遊戲）的開源引擎重製與跨平台移植。
 微軟在 Shared Source 授權下公開了遊戲程式碼，但其底層引擎 **GameOS** 只提供標頭檔（`.h`）而沒有實作；
-本專案依照這些介面，以 **SDL3 + OpenGL** 重新實作了整個 GameOS，使遊戲能以 64 位元在 Linux 與 Windows 上執行，
+本專案依照這些介面，以 **SDL3 + OpenGL** 重新實作了整個 GameOS，使遊戲能以 64 位元在 Linux、Windows 與 macOS 上執行，
 並修正了許多原版遊戲本身就存在的錯誤。
 
 - 單人戰役、任務、存讀檔、機甲實驗室等功能皆可運作。
+- 提供三個平台的安裝包（Windows 安裝程式／zip、macOS dmg、Linux AppImage／tar.gz），見[安裝包與發佈](#安裝包與發佈)。
 - **網路對戰未實作。**
 - 音效已可播放（含左右聲道定位 panning），並支援 3D 音效 API（位置、速度、距離衰減、都卜勒；遊戲本身目前自行計算音量與聲道，未使用這組 API）。
 
@@ -504,6 +505,8 @@ scripts/run_flow_tests.py game --only pause_menu      # 只跑指定的流程
 2. 下載遊戲資料、建置資料，並以冒煙測試實際遊玩 `mc2_01` 60 秒；
 3. 執行截圖比對測試與 UI 流程測試（兩個繪圖後端），上傳截圖、熱度圖與記錄檔。
 
+macOS job 另外檢查 `mc2.app` 的內容，並執行 `mc2 -version`，輸出不對或程式當掉時該步驟失敗。
+
 每個 job 都設有 `timeout-minutes`，遊戲卡住時不會一直佔用 CI。
 
 `.github/workflows/release.yml` 建置並測試三個平台的安裝包，見[安裝包與發佈](#安裝包與發佈)。
@@ -584,6 +587,11 @@ git push origin v0.1.0
 在 Actions 頁面手動執行（workflow_dispatch，可指定測試用版本號），或修改 `packaging/`、`scripts/package.py` 時，也會跑完前三步，安裝包保留為 workflow 的 artifact，不建立 Release。
 
 Windows 與 macOS 的 CI 機器沒有可用的 GPU，所以那兩個平台只測安裝流程與程式能否啟動，沒有實際進入遊戲。
+
+安裝包測試曾經抓到的問題（都已修正）：
+
+- **AppImage 啟動約 8 秒就結束**：遊戲啟動時檢查「目前目錄」的剩餘空間，AppImage 掛載的唯讀映像檔回報 0，於是跳出「硬碟空間不足」對話框。現在改為檢查存檔所在的使用者目錄。
+- **macOS 上 `mc2 -version` 沒有作用，遊戲照常啟動後當掉**：`gameos.hpp` 先 `#pragma pack(push,4)` 才引入標準函式庫，在 macOS（libc++）上讓 `std::string`、`std::vector` 的對齊變成 4，不同原始檔看到的結構配置不一樣，主程式讀錯了命令列選項的位置。現在 `gameos.hpp` 在設定對齊之前先引入會用到的標準標頭，`run_options.h` 也加上 `static_assert`，對齊再被改到時會直接編譯失敗。新增程式碼時，標準標頭請在 `gameos.hpp` 之前引入。
 
 ### 在本機打包
 
