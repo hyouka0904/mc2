@@ -528,7 +528,7 @@ int	PilotReadyScreen::handleMessage( unsigned long message, unsigned long who )
 			if ( pInfo )
 			{
 				const char* name = pInfo->name;
-				MPlayer->sendPlayerActionChat(NULL, name, IDS_MP_PLAYER_READY );
+				MPlayer->sendPlayerActionChat(0, name, IDS_MP_PLAYER_READY );
 			}
 
 			pilotListBox.SelectItem( -1 );

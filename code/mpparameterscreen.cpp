@@ -213,8 +213,19 @@ void MPParameterScreen::begin()
 	MPlayer->initParametersScreen();
 
 	if ( MPlayer->isHost() )
-		setMission( MPlayer->missionSettings.map, (status != UP && status != NEXT) ? 1 : 0 );
-	else
+	{
+		// A new room starts with the first multiplayer map instead of none.
+		if ( !strlen( MPlayer->missionSettings.map ) )
+		{
+			FullPathFileName defaultMap;
+			defaultMap.init( missionPath, "mc2_m01", ".fit" );
+			if ( fileExists( defaultMap ) )
+				strcpy( MPlayer->missionSettings.map, "mc2_m01" );
+		}
+		if ( strlen( MPlayer->missionSettings.map ) )
+			setMission( MPlayer->missionSettings.map, (status != UP && status != NEXT) ? 1 : 0 );
+	}
+	else if ( strlen( MPlayer->missionSettings.map ) )
 		setMissionClientOnly( MPlayer->missionSettings.map );
 
 	delayTime = 0.f;
@@ -637,8 +648,12 @@ void MPParameterScreen::setMission( const char* fileName, bool resetData )
 		strcpy( MPlayer->missionSettings.name, missionName );
 
 			
-		result = missionFile.readIdLong( "ResourcePoints", MPlayer->missionSettings.resourcePoints );
-		result = missionFile.readIdLong("AdditionalCBills", MPlayer->missionSettings.defaultCBills );
+		long readLong = 0;
+		result = missionFile.readIdLong( "ResourcePoints", readLong );
+		MPlayer->missionSettings.resourcePoints = readLong;
+		readLong = 0;
+		result = missionFile.readIdLong("AdditionalCBills", readLong );
+		MPlayer->missionSettings.defaultCBills = readLong;
 		if (MPlayer->isHost())
 			MPlayer->redistributeRP();
 		float fTmp;
@@ -931,7 +946,7 @@ void MPParameterScreen::update()
 
 				cLoadString( chatToSend, chatStr, 255 );
 				sprintf( final, chatStr, prefs.playerName[0] );
-				MPlayer->sendChat( NULL, -1, final );
+				MPlayer->sendChat( 0, -1, final );
 			}
 				bShowNoMapDlg = false;
 				bBootDlg = false;
@@ -1312,10 +1327,10 @@ void MPParameterScreen::update()
 //			cLoadString( IDS_MP_LM_TYPE0 + MPlayer->missionSettings.missionType, tmp2, 127 );
 //			sprintf( text, tmp, tmp2 );
 //			textObjects[7].setText( text );
-			sprintf( text, "%ldk", MPlayer->missionSettings.defaultCBills/1000 );
+			sprintf( text, "%dk", MPlayer->missionSettings.defaultCBills/1000 );
 			if ( !edits[1].hasFocus() )
 				edits[1].setEntry( text  );
-			sprintf( text, "%ld", MPlayer->missionSettings.resourcePoints );
+			sprintf( text, "%d", MPlayer->missionSettings.resourcePoints );
 			if ( !edits[3].hasFocus() )
 				edits[3].setEntry( text );
 			sprintf( text, "%.0lf", fabs(MPlayer->missionSettings.timeLimit/60.f) );
@@ -1326,7 +1341,7 @@ void MPParameterScreen::update()
 				edits[2].setEntry( text );
 			}
 
-			sprintf( text, "%ld", MPlayer->missionSettings.dropWeight );
+			sprintf( text, "%d", MPlayer->missionSettings.dropWeight );
 			if ( !edits[0].hasFocus() )
 				edits[0].setEntry( text );
 
@@ -2032,7 +2047,7 @@ void aPlayerParams::update()
 			MPlayer->sendPlayerUpdate( 0, 5, commanderID );
 				
 			char text[256];
-			sprintf(text, "%ld", pInfo->cBills/5000 * (5) ); // need to round to nearest 5000
+			sprintf(text, "%d", pInfo->cBills/5000 * (5) ); // need to round to nearest 5000
 			edit.setEntry( text );
 			MPParameterScreen::resetCheckBoxes();
 		}
@@ -2117,7 +2132,7 @@ void	aPlayerParams::setData( const _MC2Player* data)
 		textObjects[0].setColor( textColor );
 		textObjects[1].setColor( textColor );
 		char text[256];
-		sprintf(text, "%ld", data->cBills/5000 * 5 );
+		sprintf(text, "%d", data->cBills/5000 * 5 );
 		if ( !edit.hasFocus() )
 			edit.setEntry( text );
 	}
@@ -2199,7 +2214,7 @@ int aPlayerParams::handleMessage( unsigned long message, unsigned long who )
 				pInfo->cBills += increment;
 				
 				char text[256];
-				sprintf(text, "%ld", pInfo->cBills/5000 * (5) ); // need to round to nearest 5000
+				sprintf(text, "%d", pInfo->cBills/5000 * (5) ); // need to round to nearest 5000
 				edit.setEntry( text );
 				MPParameterScreen::resetCheckBoxes();
 				
@@ -2214,7 +2229,7 @@ int aPlayerParams::handleMessage( unsigned long message, unsigned long who )
 				pInfo->cBills -= increment;
 
 				char text[256];
-				sprintf(text, "%ld", pInfo->cBills/5000 * (5) );
+				sprintf(text, "%d", pInfo->cBills/5000 * (5) );
 				edit.setEntry( text );
 				MPParameterScreen::resetCheckBoxes();
 

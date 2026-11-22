@@ -70,7 +70,11 @@
 //#include<stdio.h>
 
 //***************************************************************************
-typedef void *NETPLAYER;
+// Network id of a player: 0 = nobody / everyone, 1 = the host, 2+n = the
+// client on host peer slot n. The same id is used on every machine. It is a
+// fixed 4-byte integer so the structures below have the same layout on
+// Windows, Linux and macOS (the messages are sent as raw packed bytes).
+typedef unsigned int NETPLAYER;
 
 enum NETMESSAGETYPE
 {
@@ -215,12 +219,13 @@ typedef struct _MC2Session {
 	char			maxPlayers;
 	char			numPlayers;
 	char			map[MAXLEN_MAP_NAME];
-	long			ping;
+	int			ping;
 	bool			locked;
 	bool			inProgress;
 	bool			cancelled;
 	char			versionStamp[15];
 	GUID			handle;
+	char			address[16];	// host IPv4 address (LAN scan / direct IP)
 } MC2Session;
 
 #pragma pack(1)
@@ -259,13 +264,13 @@ typedef struct _MC2Player {
 	char			stripeColor;
 	char			teamSelected;
 	char			team;
-	unsigned long	teamSeniority;
+	unsigned int	teamSeniority;
 	char			faction;
-	long			cBills;
-	long			resourcePointsAtStart;
-	long			resourcePointsGained;
-	long			resourcePoints;
-	long			rank;
+	int			cBills;
+	int			resourcePointsAtStart;
+	int			resourcePointsGained;
+	int			resourcePoints;
+	int			rank;
 	bool			ready;
 	int             score;
 	int             kills;
@@ -280,8 +285,8 @@ typedef struct _MissionSettings {
 	char			name[MAXLEN_MAP_DESC];	// displayNmae
 	GUID			mapGuid;				// Insures maps are the same version!!
 	char			url[256]; /// GLENN, you probably want this somewhere else....
-	long			defaultCBills;
-	long			resourcePoints;
+	int			defaultCBills;
+	int			resourcePoints;
 	float			timeLimit;
 	bool			unlimitedAmmo;
 	bool			variants;
@@ -300,26 +305,26 @@ typedef struct _MissionSettings {
 	char			maxTeams;
 	char			maxPlayers;
 	char			numPlayers;
-	long			dropWeight;
+	int			dropWeight;
 	bool			locked;
 	bool			inProgress;
 } MissionSettings;
 
 typedef struct _CompressedMech {
 	bool			lastMech;
-	long			objNumber;
+	int			objNumber;
 	char			commanderID;
-	unsigned long	baseColor;
-	unsigned long	highlightColor1;
-	unsigned long	highlightColor2;
+	unsigned int	baseColor;
+	unsigned int	highlightColor1;
+	unsigned int	highlightColor2;
 	char			pilotFile[50];
 	char			mechFile[50];
 	char			variantName[64];
 	char			variantNum;
 	float			pos[2];
-	long			cBills;
+	int			cBills;
 	bool			designerMech;
-	long			numComponents;
+	int			numComponents;
 	unsigned char	components[50];
 } CompressedMech;
 
@@ -638,6 +643,7 @@ class MCMSG_PlayerUpdate {
 		float				senderTime;
 		char				sessionIPAddress[16];
 		char				versionStamp[15];
+		unsigned int		dataHash;		// join request: hash of the game data files
 		MC2Player			info;
 
 	public:
@@ -680,7 +686,7 @@ class MCMSG_MissionSetup {
 	public:
 
 		unsigned char		type;
-		long				randomSeed;
+		int				randomSeed;
 		char				subType;
 		char				commandersToLoad[MAX_MC_PLAYERS][3];
 		CompressedMech		mechData;
@@ -730,6 +736,8 @@ class MCMSG_Chat {
 		bool				allPlayers;
 		bool				isDeadChat;
 		bool				hideName;
+		char				commanderID;	// sender
+		char				team;			// -1: everyone, else team only
 		char				string[];
 	
 	public:
@@ -743,6 +751,8 @@ class MCMSG_Chat {
 			allPlayers = false;
 			isDeadChat = false;
 			hideName = false;
+			commanderID = -1;
+			team = -1;
 			string[0] = '\0';
 		}
 };
@@ -789,7 +799,7 @@ class MCMSG_PlayerSetup {
 
 		void init (void) {
 			type = MCMSG_PLAYER_SETUP;
-			for (long i = 0; i < MAX_MULTIPLAYER_MOVERS; i++)
+			for (int i = 0; i < MAX_MULTIPLAYER_MOVERS; i++)
 				moverData[i] = 0;
 		}
 };
@@ -803,7 +813,7 @@ class MCMSG_PlayerInsignia {
 		unsigned char		type;
 		char				commanderID;
 		char				fileName[64];
-		long				dataSize;
+		int				dataSize;
 		unsigned char		data[];
 
 	public:
@@ -826,7 +836,7 @@ class MCMSG_StartMission {
 	public:
 
 		unsigned char	type;
-		long			huh;
+		int			huh;
 	
 
 	public:
@@ -901,7 +911,7 @@ class MCMSG_PlayerOrder {
 		char			commanderID;
 		unsigned char	flags;
 		float			location[2];
-		unsigned long	tacOrderChunk[2];
+		unsigned int	tacOrderChunk[2];
 
 	public:
 
@@ -986,7 +996,7 @@ class MCMSG_PlayerArtillery {
 
 		unsigned char		type;
 		float				location[2];
-		unsigned long		chunk;
+		unsigned int		chunk;
 
 		MCMSG_PlayerArtillery (void) {
 			init();
@@ -1009,7 +1019,7 @@ class MCMSG_MoverUpdate {
 		unsigned char		type;
 		int                 teamScore[MAX_MC_PLAYERS];
 		int                 playerScore[MAX_MC_PLAYERS];
-		//long				resourcePoints[MAX_MC_PLAYERS];
+		//int				resourcePoints[MAX_MC_PLAYERS];
 		unsigned short		updateId;
 		unsigned char		numRLEs;
 		unsigned char		moveData[];
@@ -1046,7 +1056,7 @@ class MCMSG_TurretUpdate {
 		void init (void) {
 			type = MCMSG_TURRET_UPDATE;
 			updateId = 0xFFFF;
-			for (long i = 0; i < MAX_MULTIPLAYER_TURRETS; i++)
+			for (int i = 0; i < MAX_MULTIPLAYER_TURRETS; i++)
 				targetList[i] = 0;
 		}
 };
@@ -1120,7 +1130,7 @@ class MCMSG_MoverCriticalUpdate {
 
 		void init (void) {
 			type = MCMSG_MOVER_CRITICAL_UPDATE;
-			for (long i = 0; i < MAX_MULTIPLAYER_MOVERS; i++) {
+			for (int i = 0; i < MAX_MULTIPLAYER_MOVERS; i++) {
 				numCritHitChunks[i] = 0;
 				numRadioChunks[i] = 0;
 			}
@@ -1137,7 +1147,7 @@ class MCMSG_WeaponHitUpdate {
 
 		unsigned char		type;
 		unsigned char		numWeaponHits;
-		unsigned long		weaponHitChunk[];
+		unsigned int		weaponHitChunk[];
 
 	public:
 
@@ -1162,7 +1172,7 @@ class MCMSG_WorldUpdate {
 		unsigned char		type;
 		unsigned char		numWorldChanges;
 		unsigned char		numArtilleryStrikes;
-		unsigned long		worldChunk[];
+		unsigned int		worldChunk[];
 
 	public:
 
@@ -1186,7 +1196,7 @@ class MCMSG_Reinforcement {
 		unsigned char	type;
 		unsigned char	stage;
 		unsigned char	rosterIndex;
-		long			vehicleID;
+		int			vehicleID;
 		char			pilotName[24];
 		char			commanderID;
 		float			location[2];
@@ -1240,7 +1250,7 @@ class MCMSG_FileReport {
 	public:
 
 		unsigned char		type;
-		unsigned long		checkSum;
+		unsigned int		checkSum;
 		GUID				fileGuid;
 		char				fileName[];
 
@@ -1263,7 +1273,7 @@ class MCMSG_PassValue {
 
 	public:
 
-		long			value[2];
+		int			value[2];
 
 	public:
 
@@ -1291,9 +1301,29 @@ typedef enum {
 	NUM_VERSION_STATUS_TYPES
 } VersionStatus;
 
+class GosNetSession;
+class GosNetScanner;
+
 class MultiPlayer {
 
 	public:
+
+		// LAN transport state (see multplyr.cpp)
+		GosNetSession*		net;
+		GosNetScanner*		scanner;
+		char				scanAddress[64];
+		bool				scanBroadcast;
+		double				scanQueryTime;
+		double				sessionSeenTime[MAX_SESSIONS];
+		long				joinResult;			// 0 pending, 1 accepted, <0 MPLAYER_ERR_*
+		unsigned int		dataHash;
+		MC2Player			lastSentPlayerInfo[MAX_MC_PLAYERS];
+		MissionSettings		lastSentMissionSettings;
+		double				lastSyncTime;
+		bool				missionSetupReceived;
+		bool				pumping;
+		long				pausesUsed[MAX_MC_PLAYERS];
+
 
 		bool				onLAN;
 		bool				hostLeft;
@@ -1474,7 +1504,7 @@ class MultiPlayer {
 		}
 
 		bool isServer (void) {
-				return(false);
+				return(iAmHost && inSession);
 		}
 
 		void setServer (NETPLAYER player, char playerIPAddress[16]);
@@ -1483,12 +1513,10 @@ class MultiPlayer {
 			return(isServer());
 		}
 
-		void setMode (long newMode) {
-			mode = newMode;
-		}
+		void setMode (long newMode);
 
 		VersionStatus getVersionStatus (void) {
-			return(VERSION_STATUS_GOOD);
+			return(versionStatus);
 		}
 
 		long update (void);
@@ -1498,7 +1526,7 @@ class MultiPlayer {
 		long endSessionScan (void);
 
 		bool getSessionScanFailed (void) {
-			return(false);
+			return(sessionScanningError);
 		}
 
 		MC2Session* getSessions (long& sessionCount);
@@ -1509,7 +1537,9 @@ class MultiPlayer {
 		// for write purposes....
 		MC2Player* getPlayerInfo( long commanderID )
 		{
-			return NULL;
+			if (commanderID < 0 || commanderID >= MAX_MC_PLAYERS)
+				return NULL;
+			return &playerInfo[commanderID];
 		}
 
 		bool hostSession(char* sessionName, char* playerName, long mxPlayers);
@@ -1585,8 +1615,7 @@ class MultiPlayer {
 		void initSpecialBuildings (char commandersToLoad[8][3]);
 
 		char* getPlayerName (void) {
-			static char noName[1] = "";	// network play is not implemented
-			return(noName);
+			return(playerName);
 		}
 
 		void addToLocalMovers (MoverPtr mover);
@@ -1597,6 +1626,9 @@ class MultiPlayer {
 
 		bool canAddToMoverRoster (void)
 		{
+			for (long i = 0; i < MAX_MULTIPLAYER_MOVERS; i++)
+				if (!moverRoster[i])
+					return true;
 			return false;
 		}
 
@@ -1679,8 +1711,31 @@ class MultiPlayer {
 		void processMessages (void);
 
 		long findPlayer (NETPLAYER player) {
+			if (!player)
+				return(-1);
+			for (long i = 0; i < MAX_MC_PLAYERS; i++)
+				if (playerInfo[i].player == player && playerInfo[i].commanderID > -1)
+					return(i);
 			return(-1);
 		}
+
+		// LAN transport helpers (multplyr.cpp)
+		void pumpNetwork (unsigned int waitMs = 0);
+		void processNetMessage (NETPLAYER sender, const unsigned char* data, int size);
+		void handlePeerConnected (int peer);
+		void handlePeerDisconnected (int peer);
+		void hostHandleJoinRequest (NETPLAYER sender, MCMSG_PlayerUpdate* msg);
+		void syncLobbyState (void);
+		void refreshDiscoveryInfo (void);
+		void updateSessionScan (void);
+		long numActivePlayers (void);
+		bool waitFor (bool (MultiPlayer::*done)(void), float timeoutSeconds);
+		bool startLoadingReady (void);
+		bool allMechDataReceived (void);
+		bool allMissionDataLoaded (void);
+		bool allMissionFullySetup (void);
+		void addLocalChat (long commanderID, const char* text, bool hideName, bool teamOnly);
+		void recalcTeamColors (void);
 
 		bool calcMissionStatus (void);
 

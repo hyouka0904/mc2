@@ -58,6 +58,29 @@ void gos_NetGlobalShutdown()
     }
 }
 
+std::string gos_NetLocalAddress()
+{
+    std::string result = "127.0.0.1";
+    if (!enetUp())
+        return result;
+    ENetSocket s = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
+    if (s == ENET_SOCKET_NULL)
+        return result;
+    // connect() on a UDP socket only picks the route and local address.
+    ENetAddress probe;
+    enet_address_set_host_ip(&probe, "192.0.2.1"); // TEST-NET-1, never reached
+    probe.port = 9;
+    ENetAddress local;
+    if (enet_socket_connect(s, &probe) == 0 && enet_socket_get_address(s, &local) == 0
+        && local.host != ENET_HOST_ANY) {
+        char buf[64] = {0};
+        if (enet_address_get_host_ip(&local, buf, sizeof(buf)) == 0)
+            result = buf;
+    }
+    enet_socket_destroy(s);
+    return result;
+}
+
 // ---------------------------------------------------------------------------
 
 GosNetSession::GosNetSession() { ++g_enetRefs; }

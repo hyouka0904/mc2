@@ -438,7 +438,9 @@ void MainMenu::update()
 	else
 		getButton( MM_MSG_SAVE )->disable( false );
 
-	getButton( MM_MSG_MULTIPLAYER )->disable( true );
+	// LAN multiplayer: available from the start menu (not from inside a
+	// single player mission).
+	getButton( MM_MSG_MULTIPLAYER )->disable( !bDrawBackground && !MPlayer );
 
 	if ( introMovie )
 	{

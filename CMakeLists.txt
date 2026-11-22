@@ -215,6 +215,7 @@ set(SOURCES
     "code/chatwindow.cpp"
     "code/mpstats.cpp"
     "code/multplyr.cpp"
+    "code/multplyr_sync.cpp"
     "code/mc2movie.cpp"
     )
 

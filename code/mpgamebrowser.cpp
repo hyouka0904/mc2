@@ -656,7 +656,7 @@ void aGameListItem::setSessionInfo( MC2Session* pSession )
 	char tmp[256];
 	sprintf( tmp, "%d/%d", pSession->numPlayers, pSession->maxPlayers );
 	numPlayers.setText( tmp );
-	sprintf( tmp, "%ld", pSession->ping );
+	sprintf( tmp, "%d", pSession->ping );
 	latency.setText( tmp );
 
 	if ( state == DISABLED )

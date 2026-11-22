@@ -1989,7 +1989,7 @@ void encryptFile (const char *inputFile, const char* outputFile)
 	free(LZData);
 }
 
-void decryptFile (char *inputFile, char *outputFile)
+void decryptFile (const char *inputFile, const char *outputFile)
 {
     PAUSE((""));
 
@@ -2314,10 +2314,6 @@ void LogisticsData::startMultiPlayer()
 	sprintf(findString,"data" PATH_SEPARATOR "multiplayer" PATH_SEPARATOR "*.var");
 
 
-#ifdef LINUX_BUILD
-    // sebi !NB
-    ENTER_DEBUGGER
-#else
 	WIN32_FIND_DATA	findResult;
 	HANDLE searchHandle = FindFirstFile(findString,&findResult); 
 	if (searchHandle != INVALID_HANDLE_VALUE)
@@ -2343,7 +2339,6 @@ void LogisticsData::startMultiPlayer()
 
 		FindClose(searchHandle);
 	}
-#endif
 
 	missionInfo->setMultiplayer();
 

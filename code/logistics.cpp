@@ -467,7 +467,7 @@ int _stdcall Logistics::beginMission(void*, int, void*[])
 					long oldCommanderID = CID;
 					MPlayer->playerInfo[CID].commanderID = curCommanderID;
 					memcpy(&MPlayer->playerInfo[curCommanderID], &MPlayer->playerInfo[CID], sizeof(MC2Player));
-					MPlayer->playerInfo[CID].player = NULL;
+					MPlayer->playerInfo[CID].player = 0;
 					MPlayer->playerInfo[CID].commanderID = -1;
 					for (long j = 0; j < MAX_MC_PLAYERS; j++)
 						if (MPlayer->playerList[j].player == MPlayer->playerInfo[curCommanderID].player)
@@ -593,12 +593,26 @@ int _stdcall Logistics::beginMission(void*, int, void*[])
 
 			long dropZoneIndex = 0;
 			long numMechs = 0;
+			// Only mechs with a pilot are sent; the last of those ends the list.
+			long numPilotedMechs = 0;
+			for (EList< LogisticsMech*, LogisticsMech* >::EIterator iter = list.Begin(); !iter.IsDone(); iter++)
+				if ( (*iter)->getPilot() )
+					numPilotedMechs++;
+			if (numPilotedMechs == 0) {
+				CompressedMech noMechs;
+				memset(&noMechs, 0, sizeof(noMechs));
+				noMechs.lastMech = true;
+				noMechs.objNumber = -1;
+				noMechs.commanderID = MPlayer->commanderID;
+				MPlayer->sendMissionSetup(0, 1, &noMechs);
+			}
 			for (EList< LogisticsMech*, LogisticsMech* >::EIterator iter = list.Begin(); !iter.IsDone(); iter++) {
-				numMechs++;
 				if ( !(*iter)->getPilot() )
 					continue;
+				numMechs++;
 				CompressedMech mechData;
-				mechData.lastMech = (list.Count() == numMechs);
+				memset(&mechData, 0, sizeof(mechData));
+				mechData.lastMech = (numPilotedMechs == numMechs);
 				mechData.objNumber =  (*iter)->getFitID();
 				mechData.commanderID = MPlayer->commanderID;
 				mechData.baseColor = MPlayer->colors[MPlayer->playerInfo[MPlayer->commanderID].baseColor[BASECOLOR_TEAM]];
@@ -613,6 +627,8 @@ int _stdcall Logistics::beginMission(void*, int, void*[])
 				mechData.pos[1] = dropZoneList[dropZoneIndex++].y;
 				mechData.designerMech = (*iter)->getVariant()->isDesignerMech();
 				mechData.numComponents = (*iter)->getComponentCount();
+				if (mechData.numComponents > 50)
+					mechData.numComponents = 50;
 				if (mechData.numComponents)	{
 					long* componentList = (long*)systemHeap->Malloc(sizeof(long) * mechData.numComponents);
 					long otherCount = mechData.numComponents;
@@ -621,6 +637,7 @@ int _stdcall Logistics::beginMission(void*, int, void*[])
 						STOP(("Heidi's getComponentCount does not agree with count returned from getComponents"));
 					for (long i = 0; i < mechData.numComponents; i++)
 						mechData.components[i] = (unsigned char)componentList[i];
+					systemHeap->Free(componentList);
 				}
 				MPlayer->sendMissionSetup(0, 1, &mechData);
 			}

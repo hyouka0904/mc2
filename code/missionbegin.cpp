@@ -1099,9 +1099,9 @@ void MissionBegin::beginMPlayer()
 	
 
 	{
-		for ( int i = 0; i < 4; i++ )
+		for ( int i = 0; i < DIM_SCREEN_X; i++ )
 		{
-			for ( int j = 0; j < 4; j++ )
+			for ( int j = 0; j < DIM_SCREEN_Y; j++ )
 			{
 				if ( multiplayerScreens[i][j] )
 				{

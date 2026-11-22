@@ -46,6 +46,10 @@ struct gosNetRoom {
 // ENet is initialised on first use; this is only needed to free it early.
 void gos_NetGlobalShutdown();
 
+// This machine's LAN IPv4 address (the one used for the default route), or
+// "127.0.0.1" when there is no network. Sends no packets.
+std::string gos_NetLocalAddress();
+
 class GosNetSession {
 public:
     GosNetSession();
