@@ -111,7 +111,11 @@ unsigned long aFont::height( const char* st, int areaWidth ) const
 				bHasSpaces = false;
 		}
 
-		while( *pTmp != '\0')
+		// Every character is copied at least once per line it ends up on;
+		// more steps than this means the wrapping is not moving forward
+		size_t steps = 0;
+		const size_t maxSteps = 4 * strlen( st ) + 16;
+		while( *pTmp != '\0' && ++steps < maxSteps )
 		{
 			if ( *pTmp == '\n' )
 			{
@@ -157,7 +161,11 @@ unsigned long aFont::height( const char* st, int areaWidth ) const
 					pLine[last_word_offset] = '\0';
 					//gos_TextStringLength( &curLineWidth, &height, pLastWord );
 					gos_TextStringLength( &curLineWidth, &height, pLine);
-					if ( numberOfWordsPerLine == 0 || curLineWidth > areaWidth )
+					// No whole word before this one on the line (last_word_offset
+					// <= 0): the word alone is wider than the area. Going back to
+					// pLastWord would restart at the same place forever (this hung
+					// the options screen on long graphics card names).
+					if ( numberOfWordsPerLine == 0 || last_word_offset <= 0 || curLineWidth > areaWidth )
 					{
 						static bool firstTime = true;
 						if (firstTime)

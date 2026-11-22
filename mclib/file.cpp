@@ -236,7 +236,7 @@ long File::open (const char* fName, FileMode _mode, long numChild, bool doNotLow
 	//_fmode = _O_BINARY;
 
     if(!doNotLower)
-	    S_strlwr(fileName);
+	    S_strlwr_path(fileName);
 
 	if (fileMode == CREATE)
 	{

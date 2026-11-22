@@ -465,13 +465,28 @@ scripts/run_screenshot_tests.py game shots
 畫面刻意變更（例如修改 shader）後，用 `--update` 重新產生基準圖並一起提交。
 單獨比較兩張圖或兩個資料夾可用 `scripts/compare_screenshots.py`。
 
+### UI 流程測試（曾經卡死或中止遊戲的操作）
+
+```bash
+scripts/run_flow_tests.py game --renderer gl
+```
+
+以腳本操作實際遊戲，每個流程都有逾時（預設 300 秒），超過就判定為卡死。使用者目錄的路徑刻意包含大寫字母與空格，和預設的 `~/.local/share/MechCommander2` 一樣：
+
+| 流程 | 檢查 |
+|---|---|
+| `options` | 主選單 → Options：畫面要能打開、遊戲繼續跑。顯示卡名稱很長時，文字換行曾經陷入無窮迴圈 |
+| `quick_save` | 任務中先在沒有存檔時 Quick Load（滑鼠不能被鎖住），再 Quick Save、Quick Load；記錄檔必須有 `Saved game` / `Loaded game`，且不能出現 STOP / FATAL。使用者目錄的路徑曾被整個轉成小寫，在 Linux 上指向不存在的目錄，導致每次存檔都失敗 |
+
 ### 持續整合
 
 `.github/workflows/ci.yml` 在每次 push / PR 時執行：
 
 1. 以 RelWithDebInfo 與 Debug 建置並執行全部 CTest 測試（Linux），另在 Windows（MSVC）與 macOS（Apple Silicon）建置並執行單元測試；
 2. 下載遊戲資料、建置資料，並以冒煙測試實際遊玩 `mc2_01` 60 秒；
-3. 執行截圖比對測試，上傳截圖、熱度圖與記錄檔。
+3. 執行截圖比對測試與 UI 流程測試（兩個繪圖後端），上傳截圖、熱度圖與記錄檔。
+
+每個 job 都設有 `timeout-minutes`，遊戲卡住時不會一直佔用 CI。
 
 `.github/workflows/release.yml` 建置並測試三個平台的安裝包，見[安裝包與發佈](#安裝包與發佈)。
 

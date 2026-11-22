@@ -529,7 +529,7 @@ bool GpuDevice::init()
     const uint8_t black[4] = {0, 0, 0, 255};
     submitUpload(black_, 1, 1, black, 4);
 
-    name_ = std::string("SDL3 GPU (") + SDL_GetGPUDeviceDriver(dev_) + ")";
+    name_ = std::string("SDL3 GPU ") + SDL_GetGPUDeviceDriver(dev_); // fits the options screen
     printf("Renderer   : %s%s\n", name_.c_str(), debug ? ", debug layers on" : "");
     ensureTargets();
     return true;

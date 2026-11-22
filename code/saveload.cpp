@@ -135,6 +135,30 @@ extern void (*AsynFunc)(RECT& WinRect,DDSURFACEDESC2& mouseSurfaceDesc );
 
 #define USE_ABL_LOAD
 
+// Ends the progress display that save() and load() start: async mouse and
+// mouse input back on (the caller restores the progress bar position).
+// Every way out of them calls it.
+static void endProgressDisplay (bool turnOffAsyncMouse)
+{
+	//YIKES!!  We could be checking the if before the null and executing after!!  Block the thread!
+	//Wait for thread to finish.
+	while (mc2IsInMouseTimer)
+		;
+
+	//ONLY set the mouse BLT data at the end of each update.  NO MORE FLICKERING THEN!!!
+	// BLOCK THREAD WHILE THIS IS HAPPENING
+	mc2IsInDisplayBackBuffer = true;
+
+	AsynFunc = NULL;
+	mc2UseAsyncMouse = turnOffAsyncMouse;
+	if ( !mc2UseAsyncMouse)
+		MouseTimerKill();
+
+	mc2IsInDisplayBackBuffer = false;
+
+	userInput->mouseOn();
+}
+
 void initABL (void);
 void closeABL (void);
 
@@ -248,9 +272,19 @@ void Part::Save (FitIniFilePtr file, long partNum)
 
 void Mission::save (const char *saveFileName)
 {
-	//Check for sufficient hard Drive space on drive game is running from
+	//Check for sufficient hard Drive space where the save goes (the user data
+	// directory; the game directory may be read-only, e.g. an AppImage)
 	char currentPath[1024];
-	gos_GetCurrentPath( currentPath, 1023 );
+	strncpy( currentPath, saveFileName, 1023 );
+	currentPath[1023] = 0;
+	char* lastSep = strrchr( currentPath, '/' );
+	char* lastBackslash = strrchr( currentPath, '\\' );
+	if ( lastBackslash > lastSep )
+		lastSep = lastBackslash;
+	if ( lastSep )
+		*lastSep = 0;
+	else
+		gos_GetCurrentPath( currentPath, 1023 );
 	__int64 driveSpace = gos_GetDriveFreeSpace(currentPath);
 	if (driveSpace < (5 * 1024 * 1024))
 	{
@@ -280,6 +314,16 @@ void Mission::save (const char *saveFileName)
 	// Assume path is correct when we get here.
 	PacketFile saveFile;
 	long result = saveFile.create((char *)saveFileName);
+	if (result != NO_ERR)
+	{
+		// Every packet write would fail (and stop the game) below
+		SPEW(("SAVELOAD", "cannot create %s: %s\n", saveFileName, strerror((int)result)));
+		LoadScreen::xProgressLoc = oldXLoc;
+		LoadScreen::yProgressLoc = oldYLoc;
+		endProgressDisplay(turnOffAsyncMouse);
+		soundSystem->playDigitalSample(INVALID_GUI);
+		return;
+	}
 
 	loadProgress = 1.0f;
 
@@ -489,26 +533,10 @@ void Mission::save (const char *saveFileName)
 
 	saveFile.close();
 
-	//YIKES!!  We could be checking the if before the null and executing after!!  Block the thread!
-	//Wait for thread to finish.
-	while (mc2IsInMouseTimer)
-		;
-
-	//ONLY set the mouse BLT data at the end of each update.  NO MORE FLICKERING THEN!!!
-	// BLOCK THREAD WHILE THIS IS HAPPENING
-	mc2IsInDisplayBackBuffer = true;
-
-	AsynFunc = NULL;
-	mc2UseAsyncMouse = turnOffAsyncMouse;
-	if ( !mc2UseAsyncMouse)
-		MouseTimerKill();
-
-	mc2IsInDisplayBackBuffer = false;
-
+	fprintf(stderr, "Saved game %s\n", saveFileName);
 	LoadScreen::xProgressLoc = oldXLoc;
 	LoadScreen::yProgressLoc = oldYLoc;
-
-	userInput->mouseOn();
+	endProgressDisplay(turnOffAsyncMouse);
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -645,7 +673,14 @@ void Mission::load (const char *loadFileName)
 	PacketFile loadFile;
 	long result = loadFile.open((char *)loadFileName);
 	if (result != NO_ERR)
-		return;		//Can't load.  No File.  Dialog?  Probably not.
+	{
+		// No quick save yet (or it cannot be read): put the mouse back
+		LoadScreen::xProgressLoc = oldXLoc;
+		LoadScreen::yProgressLoc = oldYLoc;
+		endProgressDisplay(turnOffAsyncMouse);
+		soundSystem->playDigitalSample(INVALID_GUI);
+		return;
+	}
 
 	DWORD currentPacket = 0;
 
@@ -658,6 +693,9 @@ void Mission::load (const char *loadFileName)
 		char msg[2048];
 		cLoadString(IDS_QUICKSAVE_VERSION_WRONG,msg,2047);
 		PAUSE((msg));
+		LoadScreen::xProgressLoc = oldXLoc;
+		LoadScreen::yProgressLoc = oldYLoc;
+		endProgressDisplay(turnOffAsyncMouse);
 		return;
 	}
 
@@ -1516,26 +1554,10 @@ void Mission::load (const char *loadFileName)
 
 	DebugGameObject[0] = DebugGameObject[1] = DebugGameObject[2] = NULL;
 
-	//YIKES!!  We could be checking the if before the null and executing after!!  Block the thread!
-	//Wait for thread to finish.
-	while (mc2IsInMouseTimer)
-		;
-
-	//ONLY set the mouse BLT data at the end of each update.  NO MORE FLICKERING THEN!!!
-	// BLOCK THREAD WHILE THIS IS HAPPENING
-	mc2IsInDisplayBackBuffer = true;
-
-	AsynFunc = NULL;
-	mc2UseAsyncMouse = turnOffAsyncMouse;
-	if ( !mc2UseAsyncMouse)
-		MouseTimerKill();
-
-	mc2IsInDisplayBackBuffer = false;
-
+	fprintf(stderr, "Loaded game %s\n", loadFileName);
 	LoadScreen::xProgressLoc = oldXLoc;
 	LoadScreen::yProgressLoc = oldYLoc;
-
-	userInput->mouseOn();
+	endProgressDisplay(turnOffAsyncMouse);
 
 	//Reset so the LastTimeGetTime is RIGHT NOW!!!
 	//  So quickLoad works!!

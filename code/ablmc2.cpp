@@ -6457,8 +6457,10 @@ long ablFileOpenCB (void** file, const char* fName) {
 		Fatal(0, " unable to create ABL file");
 
 	//Filenames MUST be all lowercase or Hash won't find 'em!
+	// (game data only: the in-mission save's temporary .abl file lives in
+	// the user data directory, whose absolute path keeps its case)
     char* tmpstr = strdup(fName);
-	CharLower(tmpstr);
+	S_strlwr_path(tmpstr);
 	if (((FilePtr)*file)->open(tmpstr) != NO_ERR)
 		STOP((" unable to open ABL File %s",fName));
     free(tmpstr);

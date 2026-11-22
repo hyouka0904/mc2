@@ -453,7 +453,24 @@ void OptionsGraphics::init(long xOffset, long yOffset)
 		if (gos_GetMachineInformation(gos_Info_GetDeviceLocalMemory, i) >= minTextureRam)
 		{
 			const char *deviceName = (const char*)gos_GetMachineInformation( gos_Info_GetDeviceName, i);
-		
+
+			// Renderer names can be long ("OpenGL 4.5 (Core Profile) Mesa
+			// 25.2 (llvmpipe ...)"); the list has room for one short line
+			// (about 16 characters): cut at a word boundary
+			char shortName[32];
+			const size_t maxLen = 16;
+			if ( strlen( deviceName ) > maxLen )
+			{
+				size_t cut = maxLen - 3;
+				while ( cut > 0 && deviceName[cut] != ' ' )
+					cut--;
+				if ( cut == 0 )
+					cut = maxLen - 3;
+				memcpy( shortName, deviceName, cut );
+				strcpy( shortName + cut, "..." );
+				deviceName = shortName;
+			}
+
 			//Save name to other string here.
 			cardList.AddItem( deviceName, 0xffffffff );
 

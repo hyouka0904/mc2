@@ -56,6 +56,22 @@ TEST(strupr_and_strlwr_convert_in_place)
     CHECK_EQ(std::string(b), std::string("data\\missions\\mc2_01.fit"));
 }
 
+TEST(strlwr_path_keeps_absolute_paths)
+{
+    char rel[] = "Data/Missions/MC2_01.FIT";
+    S_strlwr_path(rel);
+    CHECK(std::string(rel) == "data/missions/mc2_01.fit");
+    char unix_abs[] = "/home/Me/.local/share/MechCommander2/savegame/TestGame.ims";
+    S_strlwr_path(unix_abs);
+    CHECK(std::string(unix_abs) == "/home/Me/.local/share/MechCommander2/savegame/TestGame.ims");
+    char win_abs[] = "C:\\Users\\Me\\AppData\\Roaming\\MechCommander2\\options.cfg";
+    S_strlwr_path(win_abs);
+    CHECK(std::string(win_abs) == "C:\\Users\\Me\\AppData\\Roaming\\MechCommander2\\options.cfg");
+    CHECK(S_is_absolute_path("d:/x"));
+    CHECK(!S_is_absolute_path("data\\x"));
+    CHECK(!S_is_absolute_path(""));
+}
+
 TEST(strlwr_leaves_high_bytes_alone)
 {
     char s[] = "A\xC4Z";

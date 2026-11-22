@@ -47,7 +47,8 @@ export DISPLAY=$display SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1
 
 # A fresh user data directory: the game must start straight away and write
 # its settings there (not into the game directory)
-export MC2_USER_DIR="$out_dir/userdir"
+# (mixed case, like the real ~/.local/share/MechCommander2)
+export MC2_USER_DIR="$out_dir/UserDir"
 rm -rf "$MC2_USER_DIR"
 
 echo "Running mission $mission for ${seconds}s on $display"

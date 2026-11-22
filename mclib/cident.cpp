@@ -71,7 +71,7 @@ void FullPathFileName::init (const char * dir_path, const char * name, const cha
 	if (ext && S_stricmp( fullName + strlen( fullName ) - strlen( ext ), ext ) != 0)
 		strcat(fullName,ext);
 
-    if(!do_not_make_lower)
+    if(!do_not_make_lower && !S_is_absolute_path(fullName))
 	    CharLower(fullName);
 }
 

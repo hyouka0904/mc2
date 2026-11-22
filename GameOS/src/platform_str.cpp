@@ -55,6 +55,21 @@ char* S_strupr(char* s)
 #endif
 }
 
+bool S_is_absolute_path(const char* p)
+{
+	if (!p)
+		return false;
+	if (p[0] == '/' || p[0] == '\\')
+		return true;
+	// C:\ or C:/
+	return ((p[0] >= 'a' && p[0] <= 'z') || (p[0] >= 'A' && p[0] <= 'Z')) && p[1] == ':';
+}
+
+char* S_strlwr_path(char* path)
+{
+	return S_is_absolute_path(path) ? path : S_strlwr(path);
+}
+
 char* S_strlwr(char* s)
 {
 #ifdef PLATFORM_WINDOWS

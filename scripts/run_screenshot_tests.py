@@ -44,7 +44,8 @@ FIXED_ARGS = ["-fixedstep", "33", "-seed", "1", "-windowed"]
 def prepare_user_dir(game_dir, user_dir):
     """A fresh user data directory (MC2_USER_DIR) with the low settings
     preset, which the golden images were made with; a first launch without
-    options.cfg would start with the high preset."""
+    options.cfg would start with the high preset. Callers give it a name
+    with upper case letters, like the real ~/.local/share/MechCommander2."""
     shutil.rmtree(user_dir, ignore_errors=True)
     os.makedirs(user_dir)
     for name in ("options.cfg", "orgprefs.cfg"):
@@ -119,7 +120,7 @@ def main():
     xvfb, display = start_xvfb(args.screen)
     env = dict(os.environ, DISPLAY=display, SDL_AUDIODRIVER="dummy", LIBGL_ALWAYS_SOFTWARE="1",
                MC2_NO_DIALOGS="1", MC2_NO_MOVIES="1",  # frames independent of the movie files
-               MC2_USER_DIR=prepare_user_dir(game_dir, os.path.join(out_dir, "userdir")))
+               MC2_USER_DIR=prepare_user_dir(game_dir, os.path.join(out_dir, "UserDir")))
     if args.gpu_validation:
         env["MC2_GPU_DEBUG"] = "1"
     fixed_args = FIXED_ARGS + ["-renderer", args.renderer]
