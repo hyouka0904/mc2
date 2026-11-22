@@ -4519,7 +4519,7 @@ long MoveMap::setUp (long mapULr,
 	else
 		map[goalR * maxWidth + goalC].setFlag(MOVEFLAG_GOAL);
 
-	(void)(GetCycles());
+	__int64 startTime = GetCycles();
 
 	if (params & MOVEPARAM_STATIONARY_MOVERS)
 		if (placeStationaryMoversCallback)
@@ -4546,7 +4546,7 @@ long MoveMap::setUp (long level,
 					 long offsets,
 					 unsigned long params) {
 
-	(void)(GetCycles());
+	__int64 startTime = GetCycles();
 
 	//-----------------------------------------------------------------------------
 	// If the map has not been allocated yet, then the tile height and width passed
@@ -4806,7 +4806,7 @@ inline bool MoveMap::adjacentCellOpenJUMP (long r, long c, long dir) {
 //---------------------------------------------------------------------------
 
 inline int MoveMap::calcHPrime (int r, int c) {
-	(void)(GetCycles());
+	__int64 startTime = GetCycles();
 	long sum = 0;
 	if (r > goalR)
 		sum += (r - goalR);

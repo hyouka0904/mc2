@@ -4842,7 +4842,7 @@ long Mover::calcMoveGoal (GameObjectPtr target,
 				position = start;
 				cellPositionRow = curGoalCell[0];
 				cellPositionCol = curGoalCell[1];
-				(void)(GetCycles());
+				__int64 lstartTime = GetCycles();
                 // sebi
 				//if (goalList[i][1] > -10000) {
 				if (weight > -10000) {

@@ -1845,7 +1845,7 @@ extern __int64 MCTimeLOSUpdate;
 
 inline bool GameObject::lineOfSight (GameObjectPtr target, float startExtRad, bool checkVisibleBits) 
 {
-	(void)GetCycles();
+	__int64 timeStart = GetCycles(); 
 
 	//If we call this without a target, we have no LOS!!
 	// Keeps it from crashing, too.

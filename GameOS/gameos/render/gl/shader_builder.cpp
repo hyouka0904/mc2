@@ -152,8 +152,9 @@ const char* glsl_load(const char* fname, size_t* out_size = nullptr)
     pstream->seek(0, stream::S_SET);
 
     char* pdata = new char[size + 1];
-    (void)(pstream->read(pdata, 1, size));
+    size_t rv = pstream->read(pdata, 1, size);
     assert(rv==size);
+    (void)rv;
     pdata[size] = '\0';
     if(out_size)
         *out_size = size;

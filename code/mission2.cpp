@@ -108,6 +108,9 @@ extern float OneOverProcessorSpeed;
 void Mission::initBareMinimum()
 {
 
+	long result = 0;
+	(void)result;
+
 
 	if ( !mcTextureManager )
 	{

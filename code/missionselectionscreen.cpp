@@ -268,7 +268,8 @@ void MissionSelectionScreen::begin()
 	}
 
 	missionCount = MAX_MISSIONS_IN_GROUP;
-	(void)(LogisticsData::instance->getCurrentMissions( missionNames, missionCount ));
+	int result = LogisticsData::instance->getCurrentMissions( missionNames, missionCount );
+	(void)result;
 
 	EString selMissionName = LogisticsData::instance->getCurrentMission();
 	gosASSERT( result == NO_ERR );
