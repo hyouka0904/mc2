@@ -271,7 +271,7 @@ void SalvageMechScreen::update()
 
 
 	char cBillText[32];
-	sprintf( cBillText, "%ld", amount );
+	sprintf( cBillText, "%d", amount );
 	textObjects[RP_TEXTID].setText( cBillText );
 	textObjects[RP_TEXTID].setColor( color );
 
@@ -622,7 +622,7 @@ void SalvageMechArea::init( FitIniFile* file )
 	char blockName[64];
 	for ( int i = 0; i < 3; i++ )
 	{
-		sprintf( blockName, "AttributeMeter%ld", i );
+		sprintf( blockName, "AttributeMeter%d", i );
 		attributeMeters[i].init( file, blockName );
 	}
 
@@ -653,11 +653,11 @@ void SalvageMechArea::setMech( LogisticsVariant* pMech, long red, long green, lo
 		char text[256];
 		sprintf( text, "%f", pMech->getMaxWeight() );
 		textObjects[WEIGHT_TEXTID].setText( text );
-		sprintf( text, "%ld", pMech->getArmor() );
+		sprintf( text, "%d", pMech->getArmor() );
 		textObjects[ARMOR_TEXTID].setText( text );
-		sprintf( text, "%ld", pMech->getDisplaySpeed() );
+		sprintf( text, "%d", pMech->getDisplaySpeed() );
 		textObjects[SPEED_TEXTID].setText( text );
-		sprintf( text, "%ld", pMech->getJumpRange() * 25 );
+		sprintf( text, "%d", pMech->getJumpRange() * 25 );
 		textObjects[JUMP_TEXTID].setText( text );
 		uint32_t tmpColor;
 		textObjects[RANGE_TEXTID].setText( pMech->getOptimalRangeString( tmpColor ) );

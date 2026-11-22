@@ -57,7 +57,7 @@ void initColorTables (void)
 	for (long i=0;i<numColorRGBTables;i++)
 	{
 		char tableBlock[256];
-		sprintf(tableBlock,"Table%d",i);
+		sprintf(tableBlock,"Table%ld",i);
 
 		result = colorFile.seekBlock(tableBlock);
 		gosASSERT(result == NO_ERR);
@@ -70,7 +70,7 @@ void initColorTables (void)
 		for (long j=0;j<MAX_COLOR_ENTRIES;j++)
 		{
 			char colorBlock[256];
-			sprintf(colorBlock,"Color%d",j);
+			sprintf(colorBlock,"Color%ld",j);
 
             // sebi
             long unsigned int tmp;

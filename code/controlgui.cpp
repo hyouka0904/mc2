@@ -849,7 +849,7 @@ void ControlGui::renderObjective( CObjective* pObjective, long xPos, long yPos, 
 		
 		char total[64];
 		int amount = pObjective->Status(Team::home->objectives) == OS_SUCCESSFUL ? pObjective->ResourcePoints() : 0;
-		sprintf( total, "%ld", amount );
+		sprintf( total, "%d", amount );
 		width = guiFont.width( total );
 		
 		// draw total
@@ -2244,14 +2244,14 @@ void ControlButton::initButtons( FitIniFile& buttonFile, long buttonCount, Contr
 	char path[256];
 	for ( int i = 0; i < buttonCount; ++i )
 	{
-		sprintf( path, "%s%ld", str, i );
+		sprintf( path, "%s%d", str, i );
 		Data[i].textureHandle = 0;
 
 		long result = buttonFile.seekBlock( path );
 		if ( result != NO_ERR )
 		{
 			char errorStr[256];
-			sprintf(  errorStr, "couldn't find button %s", path );
+			snprintf(errorStr, sizeof(errorStr), "couldn't find button %s", path );
 			Assert( 0, 0, errorStr );
 			continue;
 		}
@@ -2408,7 +2408,7 @@ void ControlGui::initStatics( FitIniFile& file )
 	for ( int i = 0; i < staticCount; i++ )
 	{
 		char buffer[32];
-		sprintf( buffer, "Static%ld", i );
+		sprintf( buffer, "Static%d", i );
 
 		staticInfos[i].init( file, buffer ,hiResOffsetX, hiResOffsetY);
 	}
@@ -2466,7 +2466,7 @@ void ControlGui::initStatics( FitIniFile& file )
     int i = 0;
 	for (; i < objectiveInfoCount; i++ )
 	{
-		sprintf( blockName, "ObjStatic%ld", i );
+		sprintf( blockName, "ObjStatic%d", i );
 		objectiveInfos[i].init( file, blockName );
 	}
 
@@ -2504,7 +2504,7 @@ void ControlGui::initStatics( FitIniFile& file )
 		videoInfos = new StaticInfo[videoInfoCount];
 		for ( i = 0; i < videoInfoCount; i++ )
 		{
-			sprintf( blockName, "VideoStatic%ld", i );
+			sprintf( blockName, "VideoStatic%d", i );
 			videoInfos[i].init( file, blockName );
 		}
 	}
@@ -2524,7 +2524,7 @@ void ControlGui::initStatics( FitIniFile& file )
 		timerInfos = new StaticInfo[timerInfoCount];
 		for ( i = 0; i < timerInfoCount; i++ )
 		{
-			sprintf( blockName, "TimerStatic%ld", i ); 
+			sprintf( blockName, "TimerStatic%d", i ); 
 			timerInfos[i].init( file, blockName, hiResOffsetX, hiResOffsetY );
 		}
 	}
@@ -2536,7 +2536,7 @@ void ControlGui::initStatics( FitIniFile& file )
 		missionStatusInfos = new StaticInfo[missionStatusInfoCount ];
 		for ( i = 0; i < missionStatusInfoCount; i++ )
 		{
-			sprintf( blockName, "ResultsStatic%ld", i );
+			sprintf( blockName, "ResultsStatic%d", i );
 			missionStatusInfos[i].init( file, blockName );
 
 		}
@@ -2606,7 +2606,7 @@ void ControlGui::initRects( FitIniFile& file )
 		char buffer[32];
 		for ( int i = 0; i < rectCount; i++ )
 		{
-			sprintf( buffer, "Rect%ld", i );
+			sprintf( buffer, "Rect%d", i );
 			if ( NO_ERR != file.seekBlock( buffer ) )
 			{
 				Assert( 0, i, "couldn't find the rect block" );
@@ -2661,7 +2661,7 @@ void ControlGui::swapResolutions( int resolutionX, int resolutionY )
 	if ( NO_ERR != buttonFile.open( path ) )
 	{
 		char error[256];
-		sprintf( error, "couldn't find the file %s", path );
+		snprintf(error, sizeof(error), "couldn't find the file %s", path );
 		Assert( 0, 0, error );
 	}
 

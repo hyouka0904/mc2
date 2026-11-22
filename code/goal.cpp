@@ -98,7 +98,7 @@ void GoalObject::destroy (void) {
 
 void GoalObject::addLink (GoalObjectPtr gobject, GoalLinkType type) {
 
-	GoalLinkPtr newLink = (GoalLink*)missionHeap->Malloc(sizeof(GoalLink));
+	(void)((GoalLink*)missionHeap->Malloc(sizeof(GoalLink)));
 	
 }
 
@@ -437,7 +437,7 @@ void GoalManager::build (void) {
 	//--------------------------------
 	// First, get the list of walls...
 	GameObjectPtr wallObjects[MAX_WALL_OBJECTS];
-	long numWalls = ObjectManager->getSpecificObjects(BUILDING, BUILDING_SUBTYPE_WALL, wallObjects, MAX_WALL_OBJECTS);
+	(void)(ObjectManager->getSpecificObjects(BUILDING, BUILDING_SUBTYPE_WALL, wallObjects, MAX_WALL_OBJECTS));
 /*	short cellList[MAX_CELL_COORDS];
 	for (long i = 0; i < numWalls; i++) {
 		cellList[0] = MAX_CELL_COORDS;

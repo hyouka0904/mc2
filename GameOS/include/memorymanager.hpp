@@ -140,6 +140,11 @@ struct gos_Heap
 	int			DXAllocated;
 #endif
 	BYTE		HeapNumber;							// Heap number in HeapList[]  (<<24)
+	// Allocations made in this heap (gameos.cpp): an intrusive list, so that
+	// gos_DestroyMemoryHeap(heap, false) can release what is still there
+	void*		pFirstAllocation;
+	size_t		TrackedBytes;
+	DWORD		TrackedAllocations;
 };
 #pragma pack(pop)
 

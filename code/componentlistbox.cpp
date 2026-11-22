@@ -39,7 +39,7 @@ ComponentListItem::ComponentListItem( LogisticsComponent* pComp )
 	{
 		name.setText( pComponent->getName() );
 		char numericText[32];
-		sprintf( numericText, "%ld", pComponent->getCost() );
+		sprintf( numericText, "%d", pComponent->getCost() );
 		costText.setText(  numericText  );
 		sprintf( numericText, "%.0lf", pComponent->getHeat() );
 		heatText.setText( numericText );
@@ -110,7 +110,7 @@ int ComponentListItem::init( FitIniFile& file )
 		char animName[COMP_ANIMATION_COUNT][32];
 		for ( int i = 0; i < COMP_ANIMATION_COUNT; i++ )
 		{
-			sprintf( animName[i], "Animation%ld", i );
+			sprintf( animName[i], "Animation%d", i );
 			s_templateItem->animations[i].init( &file, animName[i] );
 		
 		}

@@ -90,7 +90,7 @@ int	LogisticsMechDisplay::init( )
 	char blockName[64];
 	for ( int i = 0; i < 3; i++ )
 	{
-		sprintf( blockName, "AttributeMeter%ld", i );
+		sprintf( blockName, "AttributeMeter%d", i );
 		attributeMeters[i].init( &file, blockName );
 	}
 
@@ -126,13 +126,13 @@ void LogisticsMechDisplay::setMech( LogisticsMech* pMech, bool bFromLB )
 				textObjects[2].setText( pCurMech->getVariant()->getOptimalRangeString( tmpColor ) );
 				textObjects[2].setColor( tmpColor );
 
-				sprintf( text, "%ld", pCurMech->getArmor() );
+				sprintf( text, "%d", pCurMech->getArmor() );
 				textObjects[4].setText( text );
 
-				sprintf( text, "%ld", pCurMech->getDisplaySpeed() );
+				sprintf( text, "%d", pCurMech->getDisplaySpeed() );
 				textObjects[5].setText( text );
 
-				sprintf( text, "%ld", pCurMech->getJumpRange() * 25);
+				sprintf( text, "%d", pCurMech->getJumpRange() * 25);
 				textObjects[6].setText( text );
 
 				attributeMeters[0].setValue( pCurMech->getArmor()/MAX_ARMOR_RANGE);

@@ -140,7 +140,6 @@ void DEBUGWINS_print (const char* s, long window);
 
 long getMoversWithinRadius (MoverPtr* moverList, Stuff::Vector3D center, float radius, long teamID, long commanderID, bool getEnemies, bool sortDescending, bool ignoreOrder) {
 
-	static float sortValues[MAX_MOVERS];
 	if (!Team::sortList) {
 		Team::sortList = new SortList;
 		if (!Team::sortList)
@@ -653,7 +652,7 @@ void execSelectContact (void) {
 	//
 	//-----------------------------------------------------
 
-	long type = ABLi_popInteger();
+	(void)(ABLi_popInteger());
 	long id = ABLi_popInteger();
 
 	long code = -1;
@@ -1957,7 +1956,7 @@ void execDamageObject (void) {
 	long weaponMasterId = ABLi_popInteger();
 	float damage = ABLi_popReal();
 	long hitLocation = ABLi_popInteger();
-	float hitRoll = ABLi_popReal();
+	(void)(ABLi_popReal());
 	float entryAngle = ABLi_peekReal();
 
 	GameObjectPtr attacker = getObject(attackerId);
@@ -2365,7 +2364,7 @@ void execObjectVisible (void) {
 			// Can anyone in the group see the object?
 			long numObjects = getMovers(objectId1, moverList);
 			for (long i = 0; i < numObjects; i++)
-				if (object1->lineOfSight(moverList[i])) {
+				if (moverList[i]->lineOfSight(object2)) { // was object1 (always NULL here)
 					result = 1;
 					break;
 				}
@@ -2496,7 +2495,7 @@ void execEndTimer (void) {
 	//
 	//		Returns: nothing
 	
-	long timerID = ABLi_popInteger();
+	(void)(ABLi_popInteger());
 
 // NOT REALLY NECESSARY ANYMORE--since the timers have no callback, they just
 // keep counting down... no harm...
@@ -2833,7 +2832,7 @@ void execSetObjectActive(void) {
 		long numObjects = getMovers(objectId1, moverList);
 		for (long i = 0; i < numObjects; i++)
 			if (moverList[i]->getAwake() != active) {
-				object1->setAwake(active);
+				moverList[i]->setAwake(active); // was object1 (always NULL here)
 #ifdef USE_IFACE
 				theInterface->ActivateMech(moverList[i]->getPartId());
 #endif
@@ -4687,7 +4686,7 @@ void execIsTeamCapturing (void) {
 
 	long teamId = ABLi_popInteger();
 	long targetId = ABLi_popInteger();
-	long exceptId = ABLi_popInteger();
+	(void)(ABLi_popInteger());
 
 	bool targeting = false;
 	GameObjectPtr target = getObject(targetId);
@@ -4849,7 +4848,7 @@ void execPathExists (void) {
 	//
 	//-----------------------------------------------------
 
-	int moverID = ABLi_popInteger();
+	(void)(ABLi_popInteger());
 	int startRow = ABLi_popInteger();
 	int startCol = ABLi_popInteger();
 	int goalRow = ABLi_popInteger();
@@ -6259,7 +6258,7 @@ void execClearTacOrder (void) {
 void execPlayWave (void) {
 
 	char* fileName = ABLi_popCharPtr();
-	long type = ABLi_popInteger();
+	(void)(ABLi_popInteger());
 
 	soundSystem->playSupportSample(-1, fileName);
 
@@ -6595,7 +6594,7 @@ extern GameObjectPtr LastCoreAttackTarget;
 void ablEndlessStateCallback (UserFile* log) {
 
 	char s[256];
-	sprintf(s, "Mover = %s (%d)", CurWarrior->getVehicle()->getName(), CurWarrior->getVehicle()->getPartId());
+	sprintf(s, "Mover = %s (%ld)", CurWarrior->getVehicle()->getName(), CurWarrior->getVehicle()->getPartId());
 	log->write(s);
 	sprintf(s, "     Status = %d", CurWarrior->getVehicle()->getStatus());
 	log->write(s);
@@ -6608,7 +6607,7 @@ void ablEndlessStateCallback (UserFile* log) {
 	log->write(s);
 	log->write(" ");
 	if (LastCoreAttackTarget) {
-		sprintf(s, "Target = %s (%d)", LastCoreAttackTarget->getName(), LastCoreAttackTarget->getPartId());
+		sprintf(s, "Target = %s (%ld)", LastCoreAttackTarget->getName(), LastCoreAttackTarget->getPartId());
 		log->write(s);
 		Stuff::Vector3D pos;
 		pos = LastCoreAttackTarget->getPosition();

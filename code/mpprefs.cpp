@@ -67,7 +67,7 @@ int MPPrefs::init( FitIniFile& file )
 	const char* headers[3] = {"PlayerNameComboBox", "UnitNameComboBox", "UnitInsigniaComboBox" };
 	for (int i = 0; i< count; i++ )
 	{
-		sprintf( blockName, "ComboBox%ld",  i );
+		sprintf( blockName, "ComboBox%d",  i );
 		file.seekBlock( blockName );
 		file.readIdString( "FileName", blockName, 255);
 
@@ -169,7 +169,7 @@ void MPPrefs::begin()
 		if ((findResult.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 )
 		{
 			aBmpListItem* pItem = new aBmpListItem;
-			sprintf(path, "%s%s", path2insignia, findResult.cFileName  );
+			snprintf(path, sizeof(path), "%s%s", path2insignia, findResult.cFileName  );
 			if ( !pItem->setBmp( findResult.cFileName ) )
 			{
 				delete pItem;

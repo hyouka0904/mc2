@@ -1518,7 +1518,7 @@ long Building::handleWeaponHit (WeaponShotInfoPtr shotInfo, bool addMultiplayChu
 #endif							
 				if (CombatLog) {
 					char s[1024];
-					sprintf(s, "[%.2f] building.destroyed: [%05d]%s", scenarioTime, this->getPartId(), this->getName());
+					sprintf(s, "[%.2f] building.destroyed: [%05ld]%s", scenarioTime, this->getPartId(), this->getName());
 					CombatLog->write(s);
 					CombatLog->write(" ");
 				}

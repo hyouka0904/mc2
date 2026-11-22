@@ -1014,7 +1014,7 @@ SensorSystemPtr TeamSensorSystem::findBestSpotter (MoverPtr contact, long* statu
 	ContactInfoPtr contactInfo = contact->getContactInfo();
 	if (!contactInfo) {
 		char s[256];
-		sprintf(s, "TeamSensorSystem.findBestSpotter: NULL contactInfo for objClass %d partID %d team %d", contact->getObjectClass(), contact->getPartId(), contact->getTeamId());
+		sprintf(s, "TeamSensorSystem.findBestSpotter: NULL contactInfo for objClass %d partID %ld team %ld", contact->getObjectClass(), contact->getPartId(), contact->getTeamId());
 		STOP((s));
 	}
 	SensorSystemPtr bestSensor = NULL;

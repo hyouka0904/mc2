@@ -187,13 +187,13 @@ long LogisticsPilot::save( FitIniFile& file, long which )
 	char buffer[64];
 	for ( int i = 0; i < MAX_MEDAL; i++ )
 	{
-		sprintf( buffer, "Medal%ld", i );
+		sprintf( buffer, "Medal%d", i );
 		file.writeIdBoolean( buffer, medals[i] );
 	}
 
 	for (int i = 0; i < NUM_SPECIALTY_SKILLS; i++ )
 	{
-		sprintf( buffer, "SpecialtySkill%ld", i );
+		sprintf( buffer, "SpecialtySkill%d", i );
 		file.writeIdBoolean( buffer, specialtySkills[i] );
 	}
 
@@ -224,13 +224,13 @@ long LogisticsPilot::load( FitIniFile& file )
 	char buffer[64];
 	for ( int i = 0; i < MAX_MEDAL; i++ )
 	{
-		sprintf( buffer, "Medal%ld", i );
+		sprintf( buffer, "Medal%d", i );
 		file.readIdBoolean( buffer, medals[i] );
 	}
 
 	for (int i = 0; i < NUM_SPECIALTY_SKILLS; i++ )
 	{
-		sprintf( buffer, "SpecialtySkill%ld", i );
+		sprintf( buffer, "SpecialtySkill%d", i );
 		file.readIdBoolean( buffer, specialtySkills[i] );
 	}
 

@@ -203,7 +203,7 @@ void Mech3DAppearanceType::init (const char * fileName)
 	for (long i=0;i<MaxGestures;i++)
 	{
 		char blockId[256];
-		sprintf(blockId,"Gestures%d",i);
+		sprintf(blockId,"Gestures%ld",i);
 
 		result = mechFile.seekBlock(blockId);
 		// sebi
@@ -256,8 +256,8 @@ void Mech3DAppearanceType::init (const char * fileName)
 		{
 			char baseName[256];
 			char baseLODDist[256];
-			sprintf(baseName,"FileName%d",i);
-			sprintf(baseLODDist,"Distance%d",i);
+			sprintf(baseName,"FileName%ld",i);
+			sprintf(baseLODDist,"Distance%ld",i);
 			
 			result = mechFile.readIdString(baseName,aseFileName,511);
 			if (result == NO_ERR)
@@ -1598,7 +1598,7 @@ void Mech3DAppearance::LoadPaintSchemata (void)
 	for (long i=0;i<numPaintSchemata;i++)
 	{
 		char blockId[512];
-		sprintf(blockId,"Scheme%d",i);
+		sprintf(blockId,"Scheme%ld",i);
 		result = paintFile.seekBlock(blockId);
 		gosASSERT(result == NO_ERR);
 

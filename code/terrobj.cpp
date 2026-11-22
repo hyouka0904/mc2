@@ -351,13 +351,13 @@ void TerrainObject::updateDebugWindow (GameDebugWindow* debugWindow) {
 		}
 	else
 		debugWindow->print("<no name>");
-	sprintf(s, "team: %d, handle: %d, partID: %d %s", getTeamId(), getHandle(), getPartId(), getFlag(OBJECT_FLAG_CAPTURABLE) ? "[C]" : " ");
+	sprintf(s, "team: %ld, handle: %d, partID: %ld %s", getTeamId(), getHandle(), getPartId(), getFlag(OBJECT_FLAG_CAPTURABLE) ? "[C]" : " ");
 	debugWindow->print(s);
-	sprintf(s, "objType: %d", getObjectType()->whatAmI());
+	sprintf(s, "objType: %ld", getObjectType()->whatAmI());
 	debugWindow->print(s);
 	sprintf(s, "damage: %.2f/%.2f", getDamage(), getDamageLevel());
 	debugWindow->print(s);
-	sprintf(s, "pos: [%d, %d](area = %d)", cellPositionRow, cellPositionCol, GlobalMoveMap[0]->calcArea(cellPositionRow, cellPositionCol));
+	sprintf(s, "pos: [%d, %d](area = %ld)", cellPositionRow, cellPositionCol, GlobalMoveMap[0]->calcArea(cellPositionRow, cellPositionCol));
 	debugWindow->print(s);
 	sprintf(s, "footprint:[%d,%d]:[%d,%d]", cellFootprint[0], cellFootprint[1], cellFootprint[2], cellFootprint[3]);
 	debugWindow->print(s);

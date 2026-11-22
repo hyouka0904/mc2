@@ -171,7 +171,7 @@ long MoverGroup::disband (void) {
 
 long MoverGroup::setPoint (MoverPtr mover) {
 
-	if (isMember(mover)) {
+	if (mover && isMember(mover)) {
 #ifdef USE_IFACE
 		if (pointHandle)
 			theInterface->setPoint(pointHandle, false);

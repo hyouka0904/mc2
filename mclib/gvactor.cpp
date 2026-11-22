@@ -126,8 +126,8 @@ void GVAppearanceType::init (const char * fileName)
 		{
 			char baseName[256];
 			char baseLODDist[256];
-			sprintf(baseName,"FileName%d",i);
-			sprintf(baseLODDist,"Distance%d",i);
+			sprintf(baseName,"FileName%ld",i);
+			sprintf(baseLODDist,"Distance%ld",i);
 			
 			result = iniFile.readIdString(baseName,aseFileName,511);
 			if (result == NO_ERR)
@@ -223,7 +223,7 @@ void GVAppearanceType::init (const char * fileName)
 	for (long i=0;i<MAX_GV_ANIMATIONS;i++)
 	{
 		char blockId[512];
-		sprintf(blockId,"Animation:%d",i);
+		sprintf(blockId,"Animation:%ld",i);
 		
 		result = iniFile.seekBlock(blockId);
 		if (result == NO_ERR)

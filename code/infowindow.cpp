@@ -283,7 +283,7 @@ void InfoWindow::init( FitIniFile& file )
 	char SkillText[32];
 	for (int i = 0; i < 7; i++ )
 	{
-		sprintf( SkillText, "Skill%ld", i );
+		sprintf( SkillText, "Skill%d", i );
 		skillInfos[i].init( file, SkillText ,ControlGui::hiResOffsetX, ControlGui::hiResOffsetY);
 	
 	}
@@ -995,7 +995,7 @@ void InfoWindow::drawSkillBar( int skill, float yVal, float height )
 	}
 
 	char buffer[32];
-	sprintf( buffer, "%ld", skill );
+	sprintf( buffer, "%d", skill );
 	componentFont.render( buffer, SKILLRIGHT+2, yVal, SCROLLLEFT - SKILLRIGHT - 2, SKILLHEIGHT, 0xff005392, 0, 0 );
 }
 

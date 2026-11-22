@@ -310,7 +310,7 @@ static bool areCloseEnough(float f1, float f2)
 void CBooleanArray::save (long alignment, FitIniFile *file)
 {
 	char blockID[256];
-	sprintf(blockID, "Team%dBooleanFlags",alignment);
+	sprintf(blockID, "Team%ldBooleanFlags",alignment);
 	long result = file->writeBlock(blockID); (void)result;
 
 	CEStringList::EIterator flagIDListIter;
@@ -318,11 +318,11 @@ void CBooleanArray::save (long alignment, FitIniFile *file)
 	for (flagIDListIter = m_FlagIDList.Begin(); !flagIDListIter.IsDone(); flagIDListIter++) 
 	{
 		char stringName[1024];
-		sprintf(stringName,"BooleanString%d",count);
+		sprintf(stringName,"BooleanString%ld",count);
 		sWriteIdString(file,stringName,(*flagIDListIter).Data());
 
 		char booleanName[1024];
-		sprintf(booleanName,"BooleanValue%d",count);
+		sprintf(booleanName,"BooleanValue%ld",count);
 		file->writeIdBoolean(booleanName,m_valueList[count]);
 
 		count++;
@@ -332,7 +332,7 @@ void CBooleanArray::save (long alignment, FitIniFile *file)
 void CBooleanArray::load (long alignment, FitIniFile *file)
 {
 	char blockID[256];
-	sprintf(blockID, "Team%dBooleanFlags",alignment);
+	sprintf(blockID, "Team%ldBooleanFlags",alignment);
 	long result = file->seekBlock(blockID);
 	if (result == NO_ERR)
 	{
@@ -342,12 +342,12 @@ void CBooleanArray::load (long alignment, FitIniFile *file)
 	
 		long count = 0;
 		char stringName[1024];
-		sprintf(stringName,"BooleanString%d",count);
+		sprintf(stringName,"BooleanString%ld",count);
 		result = sReadIdString(file,stringName,tmpECStr);
 		while (result == NO_ERR)
 		{
 			char booleanName[1024];
-			sprintf(booleanName,"BooleanValue%d",count);
+			sprintf(booleanName,"BooleanValue%ld",count);
 			result = file->readIdBoolean(booleanName,value);
 	
 			element = tmpECStr.Data();
@@ -355,7 +355,7 @@ void CBooleanArray::load (long alignment, FitIniFile *file)
 			m_valueList.Append(value);
 	
 			count++;
-			sprintf(stringName,"BooleanString%d",count);
+			sprintf(stringName,"BooleanString%ld",count);
 			result = sReadIdString(file,stringName,tmpECStr);
 		}
 	}
@@ -1711,7 +1711,7 @@ bool CObjective::Read( FitIniFile* missionFile, int objectiveNum, int version, i
 	{
 		m_displayMarker = NUMERIC;
 		if ( m_priority == 1)
-			sprintf( m_markerText, "%ld", MarkerNum );
+			sprintf( m_markerText, "%d", MarkerNum );
 		else
 			sprintf( m_markerText, "%c", secondary );
 	}

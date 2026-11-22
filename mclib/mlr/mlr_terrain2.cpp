@@ -161,7 +161,7 @@ MLR_Terrain2::MLR_Terrain2(
 		{
 			if(textureFlags & mask)
 			{
-				sprintf(name, "%s_%1d_%02x%02x", texRoot, i, (7-tileX)/(1<<(maxAllDepth-i)), (7-tileZ)/(1<<(maxAllDepth-i)));
+				snprintf(name, sizeof(name), "%s_%1d_%02x%02x", texRoot, i, (7-tileX)/(1<<(maxAllDepth-i)), (7-tileZ)/(1<<(maxAllDepth-i)));
 
 				texture = (*MLRTexturePool::Instance)(name, 0);
 				if (!texture)

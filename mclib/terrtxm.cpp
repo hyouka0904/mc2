@@ -499,7 +499,7 @@ long TerrainTextures::initDetail (long typeNum, long detailNum)
 		}
 
 		char tmpy[512];
-		sprintf(tmpy,"%s%04d",details[typeNum].detailName,detailNum);
+		sprintf(tmpy,"%s%04ld",details[typeNum].detailName,detailNum);
 
 		FullPathFileName fileName;
 		fileName.init(mipPath,tmpy,".tga");
@@ -627,7 +627,7 @@ void TerrainTextures::initMask (long typeNum)
 		for (long j=0;j<MC_MASK_NUM;j++)
 		{
 			char tmpy[512];
-			sprintf(tmpy,"%s%04d",types[typeNum].maskName,j);
+			sprintf(tmpy,"%s%04ld",types[typeNum].maskName,j);
 
 			FullPathFileName fileName;
 			fileName.init(mipPath,tmpy,".tga");
@@ -686,7 +686,7 @@ long TerrainTextures::initOverlay (long overlayNum, long txmNum, char *txmName)
 		}
 
 		char tmpy[512];
-		sprintf(tmpy,"%s%04d",txmName,txmNum);
+		sprintf(tmpy,"%s%04ld",txmName,txmNum);
 
 		FullPathFileName fileName;
 		fileName.init(mipPath,tmpy,".tga");

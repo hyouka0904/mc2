@@ -754,7 +754,7 @@ void aText::setText( long resID )
 	{
 		char tmpy[1280];
 		memset(tmpy,0,1280);
-		sprintf( tmpy,"NULL for ID: %d",resID );
+		sprintf( tmpy,"NULL for ID: %ld",resID );
 		text = tmpy;
 	}
 }

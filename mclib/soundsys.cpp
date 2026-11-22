@@ -145,7 +145,7 @@ long SoundSystem::init (const char *soundFileName)
 		for (long i=0;i<(long)numSoundBites;i++)
 		{
 			char biteBlock[20];
-			sprintf(biteBlock,"SoundBite%d",i);
+			snprintf(biteBlock, sizeof(biteBlock),"SoundBite%ld",i);
 			
 			result = soundFile.seekBlock(biteBlock);
 			gosASSERT(result == NO_ERR);

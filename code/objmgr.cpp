@@ -2823,7 +2823,7 @@ void GameObjectManager::updateAppearancesOnly( bool terrain, bool movers, bool o
 					Stuff::Vector3D pos = mechs[i]->getPosition();
 					float rot = mechs[i]->getRotation();
 					pos.z = land->getTerrainElevation(pos);
-					bool selected = mechs[i]->isSelected();
+					(void)(mechs[i]->isSelected());
 					int teamID = mechs[i]->getTeamId();
 					mechs[i]->getAppearance()->setObjectParameters(pos,rot,mechs[i]->drawFlags,teamID,Team::getRelation(teamID, Team::home->getId()));
 
@@ -2846,7 +2846,7 @@ void GameObjectManager::updateAppearancesOnly( bool terrain, bool movers, bool o
 					pos.z = land->getTerrainElevation(pos);
 					if ((pos.z < MapData::waterDepth))
 						pos.z = MapData::waterDepth;
-					bool selected = vehicles[i]->isSelected();
+					(void)(vehicles[i]->isSelected());
 					int teamID = vehicles[i]->getTeamId();
 					vehicles[i]->getAppearance()->setObjectParameters(pos, rot, vehicles[i]->drawFlags, teamID, Team::getRelation(teamID, Team::home->getId()));
 					vehicles[i]->getAppearance()->update( false );
@@ -3045,7 +3045,6 @@ long GameObjectManager::Load (PacketFilePtr file, long packetNum)
 	memset(watchList,0,sizeof(GameObjectPtr) * (getMaxObjects() + 1));
 
 	long i = 0;
-	long curHandle = 1;
 	maxMovers = maxMechs + maxVehicles + numElementals;
 	//--------------------------------------------------------------
 	// For now, we'll use an array of pointers due to the irritating

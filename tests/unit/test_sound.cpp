@@ -204,3 +204,97 @@ TEST(missing_file_gives_null_resource)
     gosAudio_CreateResource(&h, gosAudio_StreamedFile, "/nonexistent/sound.wav", nullptr, nullptr, 0, false);
     CHECK(h == nullptr);
 }
+
+// ------------------------------------------------------------------ 3D sound
+
+static gosAudio_ChannelInfo listener()
+{
+    gosAudio_ChannelInfo l = {};
+    l.fFrontZ = 1.0f;
+    l.fTopY = 1.0f;
+    l.fDoppler = l.fRolloff = l.fDistance = 1.0f;
+    return l;
+}
+
+static gosAudio_ChannelInfo source(float x, float y, float z)
+{
+    gosAudio_ChannelInfo s = {};
+    s.fPosX = x;
+    s.fPosY = y;
+    s.fPosZ = z;
+    s.fMinDistance = 1.0f;
+    s.fMaxDistance = 100.0f;
+    return s;
+}
+
+TEST(spatialize_distance_attenuation)
+{
+    const gosAudio_ChannelInfo l = listener();
+    CHECK_NEAR(gos_Spatialize(l, source(0, 0, 0.5f)).gain, 1.0f, 1e-6); // inside min distance
+    CHECK_NEAR(gos_Spatialize(l, source(0, 0, 2)).gain, 0.5f, 1e-6);    // 1 / (1 + (2 - 1))
+    CHECK_NEAR(gos_Spatialize(l, source(0, 0, 10)).gain, 0.1f, 1e-6);
+    CHECK_NEAR(gos_Spatialize(l, source(0, 0, 150)).gain, 0.0f, 1e-6);  // beyond max distance
+    gosAudio_ChannelInfo l2 = l;
+    l2.fRolloff = 2.0f; // twice the real world rolloff
+    CHECK_NEAR(gos_Spatialize(l2, source(0, 0, 2)).gain, 1.0f / 3.0f, 1e-6);
+}
+
+TEST(spatialize_panning_follows_the_listener_orientation)
+{
+    gosAudio_ChannelInfo l = listener();
+    CHECK_NEAR(gos_Spatialize(l, source(5, 0, 0)).pan, 1.0f, 1e-6);  // +x is right
+    CHECK_NEAR(gos_Spatialize(l, source(-5, 0, 0)).pan, -1.0f, 1e-6);
+    CHECK_NEAR(gos_Spatialize(l, source(0, 0, 5)).pan, 0.0f, 1e-6);  // straight ahead
+    CHECK_NEAR(gos_Spatialize(l, source(0, 0, 0)).pan, 0.0f, 1e-6);  // at the listener
+    l.fFrontX = 1.0f; // turned to face +x: +x is now ahead, -z on the right
+    l.fFrontZ = 0.0f;
+    CHECK_NEAR(gos_Spatialize(l, source(5, 0, 0)).pan, 0.0f, 1e-6);
+    CHECK_NEAR(gos_Spatialize(l, source(0, 0, -5)).pan, 1.0f, 1e-6);
+}
+
+TEST(spatialize_doppler)
+{
+    gosAudio_ChannelInfo l = listener();
+    gosAudio_ChannelInfo s = source(0, 0, 50);
+    CHECK_NEAR(gos_Spatialize(l, s).pitch, 1.0f, 1e-6);
+    s.fVelZ = -34.3f; // approaching at a tenth of the speed of sound
+    CHECK_NEAR(gos_Spatialize(l, s).pitch, 343.0f / (343.0f - 34.3f), 1e-4);
+    s.fVelZ = 34.3f; // receding
+    CHECK(gos_Spatialize(l, s).pitch < 1.0f);
+    l.fDoppler = 0.0f; // Doppler off
+    CHECK_NEAR(gos_Spatialize(l, s).pitch, 1.0f, 1e-6);
+}
+
+TEST(sound_3d_channel_is_attenuated_and_panned)
+{
+    AudioFixture f;
+    REQUIRE(f.ok);
+    HGOSAUDIO tone = makeTone(400);
+    gosAudio_AssignResourceToChannel(5, tone);
+    gosAudio_SetChannelSlider(5, gosAudio_MinMaxDistance, 1.0f, 1000.0f);
+    gosAudio_SetChannelSlider(5, gosAudio_Position, 0.0f, 0.0f, 1.0f); // ahead, full level
+    gosAudio_SetChannelPlayMode(5, gosAudio_Loop);
+    double l_near, r_near, l, r;
+    mix(50, &l_near, &r_near);
+    CHECK(l_near > 0.1);
+    CHECK_NEAR(l_near, r_near, 0.02);
+
+    gosAudio_SetChannelSlider(5, gosAudio_Position, 0.0f, 0.0f, 4.0f); // 1/4 the level
+    mix(50, &l, &r);
+    CHECK_NEAR(l / l_near, 0.25, 0.03);
+
+    gosAudio_SetChannelSlider(5, gosAudio_Position, 1.0f, 0.0f, 0.0f); // on the right
+    mix(50, &l, &r);
+    CHECK(r > 0.1 && l < 1e-3);
+
+    // moving the listener moves the image: now the source is on its left
+    gosAudio_SetChannelSlider(-1, gosAudio_Position, 2.0f, 0.0f, 0.0f);
+    mix(50, &l, &r);
+    CHECK(l > 0.1 && r < 1e-3);
+    float x = 0, y = 0, z = 0;
+    gosAudio_GetChannelSlider(-1, gosAudio_Position, &x, &y, &z);
+    CHECK_NEAR(x, 2.0f, 1e-6);
+
+    gosAudio_SetChannelPlayMode(5, gosAudio_Stop);
+    gosAudio_DestroyResource(&tone);
+}

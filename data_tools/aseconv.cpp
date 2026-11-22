@@ -32,8 +32,6 @@ float MaxMinUV = 8.0f;
 
 DWORD BaseVertexColor = 0x00000000;
 
-static LPCTSTR lpszAppName = "MechCmdr2";
-
 UserHeapPtr systemHeap = NULL;
 UserHeapPtr guiHeap = NULL;
 
@@ -172,7 +170,7 @@ long convertASE2TGL(char *file)
 	//char armFileName[1024];
 	if (file[0] == '\0')
 	{
-		sprintf(findString, "%s*.ini", prefixPath);
+		snprintf(findString, sizeof(findString), "%s*.ini", prefixPath);
 	}
 	else
 	{
@@ -219,7 +217,7 @@ long convertASE2TGL(char *file)
 					// We will get animation from LAST LOD loaded
 					long i = 0;
 					char fileCheck[1024];
-					sprintf(fileCheck, "FileName%d", i);
+					sprintf(fileCheck, "FileName%ld", i);
 					result = iniFile.readIdString(fileCheck, fileName, 1023);
 
 					while (result == NO_ERR)
@@ -233,7 +231,7 @@ long convertASE2TGL(char *file)
 						char aseName[1024];
 
 						//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
-						sprintf(aseName, "%s%s%s", prefixPath, fileName, ".ase");
+						snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                         S_strlwr(aseName);
 
 						//---------------------------------------------------------------------------------------------
@@ -252,14 +250,14 @@ long convertASE2TGL(char *file)
 						shape->LoadTGMultiShapeFromASE(aseName, true, armProvider);
 
 						i++;
-						sprintf(fileCheck, "FileName%d", i);
+						sprintf(fileCheck, "FileName%ld", i);
 						result = iniFile.readIdString(fileCheck, fileName, 1023);
 					}
 				}
 
 				char aseName[1024];
 				//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
-				sprintf(aseName, "%s%s%s", prefixPath, fileName, ".ase");
+				snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                 S_strlwr(aseName);
 
 
@@ -270,7 +268,7 @@ long convertASE2TGL(char *file)
 
 				printf("Processing Main Shape %s\n", aseName);
 
-				IProviderRelationshipPtr armLink = iniAsset->AddRelationship("Main Shape", aseName);
+				(void)(iniAsset->AddRelationship("Main Shape", aseName));
 
 				shape->LoadTGMultiShapeFromASE(aseName, true, armProvider);
 
@@ -283,7 +281,7 @@ long convertASE2TGL(char *file)
 				{
 					char aseName[1024];
 					//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
-					sprintf(aseName, "%s%s%s", prefixPath, fileName, ".ase");
+					snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                     S_strlwr(aseName);
 
 					//---------------------------------------------------------------------------------------------
@@ -293,7 +291,7 @@ long convertASE2TGL(char *file)
 
 					printf("Processing Shadow Shape %s\n", aseName);
 
-					IProviderRelationshipPtr armLink = iniAsset->AddRelationship("Shadow Shape", aseName);
+					(void)(iniAsset->AddRelationship("Shadow Shape", aseName));
 
 					shadowShape->LoadTGMultiShapeFromASE(aseName, true, armProvider);
 
@@ -303,7 +301,7 @@ long convertASE2TGL(char *file)
 
 				long i = 0;
 				char animCheck[1024];
-				sprintf(animCheck, "Animation:%d", i);
+				sprintf(animCheck, "Animation:%ld", i);
 				result = iniFile.seekBlock(animCheck);
 
 				while (result == NO_ERR)		//This thing has animations.  Process them!
@@ -324,7 +322,7 @@ long convertASE2TGL(char *file)
 						// Happens ALOT!
 						printf("Processing Animation %s\n", (const char*)aseName);
 
-						IProviderRelationshipPtr armLink = iniAsset->AddRelationship("Animation", aseName);
+						(void)(iniAsset->AddRelationship("Animation", aseName));
 
 						anim->LoadTGMultiShapeAnimationFromASE(aseName, shape, true);
 
@@ -333,7 +331,7 @@ long convertASE2TGL(char *file)
 					}
 
 					i++;
-					sprintf(animCheck, "Animation:%d", i);
+					sprintf(animCheck, "Animation:%ld", i);
 					result = iniFile.seekBlock(animCheck);
 				}
 
@@ -349,7 +347,7 @@ long convertASE2TGL(char *file)
 
 							char mechFileName[1024];
 							//sprintf(mechFileName, "%s%s%s.ase", tglPath, name, MechAnimationNames[i]);
-							sprintf(mechFileName, "%s%s%s.ase", prefixPath, name, MechAnimationNames[i]);
+							snprintf(mechFileName, sizeof(mechFileName), "%s%s%s.ase", prefixPath, name, MechAnimationNames[i]);
 							S_strlwr(mechFileName);
 
 							TG_AnimateShape *anim = new TG_AnimateShape;
@@ -360,7 +358,7 @@ long convertASE2TGL(char *file)
 							// Happens ALOT!
 							printf("Processing Animation %s\n", mechFileName);
 
-							IProviderRelationshipPtr armLink = iniAsset->AddRelationship("Animation", mechFileName);
+							(void)(iniAsset->AddRelationship("Animation", mechFileName));
 
 							anim->LoadTGMultiShapeAnimationFromASE(mechFileName, shape, true);
 
@@ -382,7 +380,7 @@ long convertASE2TGL(char *file)
 
 							char mechFileName[1024];
 							//sprintf(mechFileName, "%s%s%s.ase", tglPath, name, MechAnimationNames[i]);
-							sprintf(mechFileName, "%s%s%s.ase", prefixPath, name, MechAnimationNames[i]);
+							snprintf(mechFileName, sizeof(mechFileName), "%s%s%s.ase", prefixPath, name, MechAnimationNames[i]);
 							S_strlwr(mechFileName);
 
 							//-----------------------------------------------
@@ -391,7 +389,7 @@ long convertASE2TGL(char *file)
 
 							printf("Processing Animation %s\n", mechFileName);
 
-							IProviderRelationshipPtr armLink = iniAsset->AddRelationship("Destroyed Shape", mechFileName);
+							(void)(iniAsset->AddRelationship("Destroyed Shape", mechFileName));
 
 							shape->LoadTGMultiShapeFromASE(mechFileName, true, armProvider);
 
@@ -415,7 +413,7 @@ long convertASE2TGL(char *file)
 
 						char aseName[1024];
 						//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
-						sprintf(aseName, "%s%s%s", prefixPath, fileName, ".ase");
+						snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                         S_strlwr(aseName);
 
 						//---------------------------------------------------------------------------------------------
@@ -425,7 +423,7 @@ long convertASE2TGL(char *file)
 
 						printf("Processing Damage Shape %s\n", aseName);
 
-						IProviderRelationshipPtr armLink = iniAsset->AddRelationship("Damage Shape", aseName);
+						(void)(iniAsset->AddRelationship("Damage Shape", aseName));
 
 						shape->LoadTGMultiShapeFromASE(aseName, true, armProvider);
 					}
@@ -439,7 +437,7 @@ long convertASE2TGL(char *file)
 					{
 						char aseName[1024];
 						//sprintf(aseName, "%s%s%s", tglPath, fileName, ".ase");
-						sprintf(aseName, "%s%s%s", prefixPath, fileName, ".ase");
+						snprintf(aseName, sizeof(aseName), "%s%s%s", prefixPath, fileName, ".ase");
                         S_strlwr(aseName);
 
 						//---------------------------------------------------------------------------------------------
@@ -449,7 +447,7 @@ long convertASE2TGL(char *file)
 
 						printf("Processing Damage Shadow Shape %s\n", aseName);
 
-						IProviderRelationshipPtr armLink = iniAsset->AddRelationship("Damage Shadow Shape", aseName);
+						(void)(iniAsset->AddRelationship("Damage Shadow Shape", aseName));
 
 						shadowShape->LoadTGMultiShapeFromASE(aseName, true, armProvider);
 

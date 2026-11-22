@@ -20,4 +20,20 @@ bool gos_AudioHasDevice();
 inline float gos_PanLeftGain(float pan) { return pan > 0.0f ? 1.0f - pan : 1.0f; }
 inline float gos_PanRightGain(float pan) { return pan < 0.0f ? 1.0f + pan : 1.0f; }
 
+// 3D sound (gosAudio_Position, _Velocity, _MinMaxDistance on a channel; the
+// listener's position, velocity, orientation and the Doppler / rolloff /
+// distance factors on channel -1). Result for one source:
+//   gain   distance attenuation: 1 within MinDistance, then
+//          min / (min + rolloff * (r - min)), 0 beyond MaxDistance
+//   pan    -1 (left) .. +1 (right) from the listener's orientation
+//   pitch  Doppler frequency ratio (speed of sound 343 m/s; fDistance is
+//          metres per unit), clamped to 0.25 .. 4
+struct _gosAudio_ChannelInfo;
+struct gosSpatial {
+    float gain;
+    float pan;
+    float pitch;
+};
+gosSpatial gos_Spatialize(const struct _gosAudio_ChannelInfo& listener, const struct _gosAudio_ChannelInfo& source);
+
 #endif

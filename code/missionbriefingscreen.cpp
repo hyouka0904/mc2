@@ -473,7 +473,7 @@ void MissionBriefingScreen::begin()
 
 	int RP = LogisticsData::instance->getCBills();
 	char text[32];
-	sprintf( text, "%ld ", RP );
+	sprintf( text, "%d ", RP );
 	textObjects[RP_INDEX].setText( text );
 
 	// need to find a drop zone, because our designers were never convinced to place
@@ -482,7 +482,7 @@ void MissionBriefingScreen::begin()
 	while( true )
 	{
 		char blockName[32];
-		sprintf( blockName, "Part%ld", i );
+		sprintf( blockName, "Part%d", i );
 		i++;
 		if ( NO_ERR != fitFile.seekBlock( blockName ) )
 			break;

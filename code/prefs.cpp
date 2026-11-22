@@ -201,7 +201,7 @@ int CPrefs::load( const char* pFileName ) {
 			char blockName[64];
 			for ( int i = 0; i < 10; i++ )
 			{	
-				sprintf( blockName, "PlayerName%ld", i );
+				sprintf( blockName, "PlayerName%d", i );
 				result = prefsFile->readIdString( blockName, &playerName[i][0], 255 );
 
 				if ( result != NO_ERR && i == 0 )
@@ -211,11 +211,11 @@ int CPrefs::load( const char* pFileName ) {
 					break;
 				}
 
-				sprintf( blockName, "IPAddress%ld", i );
+				sprintf( blockName, "IPAddress%d", i );
 				result = prefsFile->readIdString( blockName, &ipAddresses[i][0], 255 );
 
 
-				sprintf( blockName, "UnitName%ld", i );
+				sprintf( blockName, "UnitName%d", i );
 				result = prefsFile->readIdString( blockName, &unitName[i][0], 255 );
 
 			}
@@ -332,13 +332,13 @@ int CPrefs::save() {
 			for ( int i = 0; i < 10; i++ )
 			{	
 				
-				sprintf( blockName, "PlayerName%ld", i );
+				sprintf( blockName, "PlayerName%d", i );
 				result = prefsFile->writeIdString( blockName, &playerName[i][0] );
 
-				sprintf( blockName, "UnitName%ld", i );
+				sprintf( blockName, "UnitName%d", i );
 				result = prefsFile->writeIdString( blockName, &unitName[i][0] );
 
-				sprintf( blockName, "IPAddress%ld", i );
+				sprintf( blockName, "IPAddress%d", i );
 				result = prefsFile->writeIdString( blockName, &ipAddresses[i][0] );
 
 			}

@@ -81,7 +81,7 @@ void MPSetupXScreen::init(FitIniFile* file)
 		if ( NO_ERR != PNfile.open( path ) )
 		{
 			char error[256];
-			sprintf( error, "couldn't open file %s", path );
+			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
 		}
@@ -105,7 +105,7 @@ void MPSetupXScreen::init(FitIniFile* file)
 		if ( NO_ERR != PNfile.open( path ) )
 		{
 			char error[256];
-			sprintf( error, "couldn't open file %s", path );
+			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
 		}
@@ -121,7 +121,7 @@ void MPSetupXScreen::init(FitIniFile* file)
 		if ( NO_ERR != PNfile.open( path ) )
 		{
 			char error[256];
-			sprintf( error, "couldn't open file %s", path );
+			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
 		}

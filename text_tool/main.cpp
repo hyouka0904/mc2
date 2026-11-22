@@ -26,7 +26,6 @@ bool gos_save_glyphs(const char* glyphFile, const gosGlyphInfo& gi)
 {
     FILE* glyph_info = fopen(glyphFile, "wb");
     if(!glyph_info) {
-        int last_err = errno;
         printf("fopen: %s\n", strerror(errno));
         return false;
     }

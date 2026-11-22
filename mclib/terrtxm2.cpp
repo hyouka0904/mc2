@@ -1075,7 +1075,7 @@ void TerrainColorMap::resetWaterDetailTextures (const char *fileName)
 		{
 			strcpy(waterFile, fileName);
 			char dName[1024];
-			sprintf(dName,"%04d.tga",i);
+			sprintf(dName,"%04ld.tga",i);
 			char *subStringToBeReplaced = &(waterFile[strlen(waterFile)-strlen("0000.tga")]);
 			strcpy(subStringToBeReplaced, dName);
 		}
@@ -1609,7 +1609,7 @@ long TerrainColorMap::init (char *fileName)
 		char waterDetailBaseName[1024];
 		sprintf(waterDetailBaseName,"%s.water",fileName);
 		{
-			sprintf(dName,"%s%04d",waterDetailBaseName,0);
+			snprintf(dName, sizeof(dName),"%s%04d",waterDetailBaseName,0);
 			
 			FullPathFileName waterFile;
 			waterFile.init(texturePath,dName,".tga");
@@ -1623,7 +1623,7 @@ long TerrainColorMap::init (char *fileName)
 		{
 			waterDetailNodeIndex[i] = 0xffffffff;
 		}
-		sprintf(dName,"%s%04d",waterDetailBaseName,0);
+		snprintf(dName, sizeof(dName),"%s%04d",waterDetailBaseName,0);
 		waterFile.init(texturePath,dName,".tga");
 		resetWaterDetailTextures((const char *)waterFile);
 

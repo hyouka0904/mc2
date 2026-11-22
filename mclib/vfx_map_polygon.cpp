@@ -71,7 +71,6 @@ void AG_StatusBar( PANE *pane, int X0, int Y0, int X1, int Y1, int Color, int Wi
 	if( X1-X0 < 3)
 		return;
 
-	UBYTE* DestPointer = pane->window->buffer + X0 + Y0*DestWidth;
 #ifdef LINUX_BUILD
 #else
 	_asm{
@@ -232,7 +231,6 @@ long DrawTransparent( PANE *pane, WINDOW *texture, int X, int Y, int Width, int 
 	if( Y+Height > (paneY1+1) )
 		Height= paneY1+1-Y;
 
-	UBYTE* DestPointer = pane->window->buffer + X + Y*DestWidth;
 
 	SourceWidth=texture->x_max+1;
 	tWidth=Width;

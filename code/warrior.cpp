@@ -3072,7 +3072,7 @@ long MechWarrior::calcMovePath (long selectionIndex, unsigned long moveParams) {
 				startTime = GetCycles();
 				if (GlobalMap::logEnabled) {
 					static char s[256];
-					sprintf(s, "[%.2f] calcPath: [%05d]%s", scenarioTime, myVehicle->getPartId(), myVehicle->getName());
+					sprintf(s, "[%.2f] calcPath: [%05ld]%s", scenarioTime, myVehicle->getPartId(), myVehicle->getName());
 					GlobalMap::writeLog(s);
 				}
 				numSteps = GlobalMoveMap[myVehicle->getMoveLevel()]->calcPath(startArea,
@@ -3476,7 +3476,7 @@ void MechWarrior::printWeaponsStatus (char* s) {
 			else if (weaponsStatus[curWeapon] > 0)
 				numWithChance++;
 		}
-		sprintf(s, "#=%02d(%02d),RD=%02d,RN=%02d,LK=%02d,CH=%02d,AM=%02d",
+		sprintf(s, "#=%02d(%02ld),RD=%02ld,RN=%02ld,LK=%02ld,CH=%02ld,AM=%02ld",
 			getVehicle()->numWeapons,
 			numWithChance,
 			tally[5],
@@ -3633,7 +3633,7 @@ long MechWarrior::combatDecisionTree (void) {
 							if (weaponsStatus[i] == WEAPON_STATUS_TOO_HOT)
 								numWeaponsTooHot++;
 						}
-						sprintf(s, "%s (%.2f) has no shot: %d !ready, %d !ammo, %d !inrange, %d !locked, %d !chance, %d hot\n", callsign, getSituationFireRange(), numWeaponsNotReady, numWeaponsOutOfAmmo, numWeaponsOutOfRange, numWeaponsNotLocked, numWeaponsNoChance, numWeaponsTooHot);
+						sprintf(s, "%s (%.2f) has no shot: %ld !ready, %ld !ammo, %ld !inrange, %ld !locked, %ld !chance, %ld hot\n", callsign, getSituationFireRange(), numWeaponsNotReady, numWeaponsOutOfAmmo, numWeaponsOutOfRange, numWeaponsNotLocked, numWeaponsNoChance, numWeaponsTooHot);
 						}
 						break;
 					default:
@@ -5158,7 +5158,7 @@ void MechWarrior::debugOrders (void) {
 			break;
 		case TACTICAL_ORDER_MOVETO_OBJECT: {
 			GameObjectPtr obj = ObjectManager->getByWatchID(curTacOrder.targetWID);
-			sprintf(s, "CURRENT ORDERS: Move To Object %d", obj ? obj->getPartId() : 0);
+			sprintf(s, "CURRENT ORDERS: Move To Object %ld", obj ? obj->getPartId() : 0);
 			}
 			break;
 		case TACTICAL_ORDER_JUMPTO_POINT:
@@ -5166,7 +5166,7 @@ void MechWarrior::debugOrders (void) {
 			break;
 		case TACTICAL_ORDER_JUMPTO_OBJECT: {
 			GameObjectPtr obj = ObjectManager->getByWatchID(curTacOrder.targetWID);
-			sprintf(s, "CURRENT ORDERS: Jump To Object %d", obj ? obj->getPartId() : 0);
+			sprintf(s, "CURRENT ORDERS: Jump To Object %ld", obj ? obj->getPartId() : 0);
 			}
 			break;
 		case TACTICAL_ORDER_TRAVERSE_PATH:
@@ -5201,7 +5201,7 @@ void MechWarrior::debugOrders (void) {
 			break;
 		case TACTICAL_ORDER_ATTACK_OBJECT: {
 			GameObjectPtr obj = ObjectManager->getByWatchID(curTacOrder.targetWID);
-			sprintf(s, "CURRENT ORDERS: Attack Object %d", obj ? obj->getPartId() : 0);
+			sprintf(s, "CURRENT ORDERS: Attack Object %ld", obj ? obj->getPartId() : 0);
 			}
 			break;
 		case TACTICAL_ORDER_HOLD_FIRE:
@@ -5216,7 +5216,7 @@ void MechWarrior::debugOrders (void) {
 	debugPrint(s);
 
 	GameObjectPtr target = getCurrentTarget();
-	sprintf(s, "     CURRENT TARGET: Object %d", target ? target->getPartId() : 0);
+	sprintf(s, "     CURRENT TARGET: Object %ld", target ? target->getPartId() : 0);
 	debugPrint(s);
 }
 
@@ -7276,7 +7276,7 @@ long MechWarrior::loadBrainParameters (FitIniFile* brainFile, long warriorId) {
 	//------------------
 	// Main Info section
 	char warriorName[32];
-	sprintf(warriorName, "Warrior%d", warriorId);
+	sprintf(warriorName, "Warrior%ld", warriorId);
 	long result = brainFile->seekBlock(warriorName);
 	if (result != NO_ERR)
 		return(result);
@@ -7293,7 +7293,7 @@ long MechWarrior::loadBrainParameters (FitIniFile* brainFile, long warriorId) {
 
 	for (long i = 0; i < numCells; i++) {
 		char blockName[64];
-		sprintf(blockName, "%sCell%d", warriorName, i);
+		sprintf(blockName, "%sCell%ld", warriorName, i);
 		long result = brainFile->seekBlock(blockName);
 		if (result != NO_ERR)
 			return(result);
@@ -8115,11 +8115,11 @@ void MechWarrior::logPilots (GameLogPtr log) {
 		MoverPtr mover = ObjectManager->getMover(i);
 		if (mover) {
 			char s[256];
-			sprintf(s, "pilot = (%d)%s",
+			sprintf(s, "pilot = (%ld)%s",
 				i,
 				mover->getPilot()->getName());
 			log->write(s);
-			sprintf(s, "     vehicle = (%d)%s",
+			sprintf(s, "     vehicle = (%ld)%s",
 				mover->getPartId(),
 				mover->getName());
 			log->write(s);

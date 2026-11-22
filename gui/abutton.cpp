@@ -440,7 +440,7 @@ void aButton::init( FitIniFile& buttonFile, const char* str, HGOSFONT3D font )
 	int counter = 0;
 	while(true)
 	{
-		sprintf( finalName, "%s%ld", bmpName, counter );
+		snprintf(finalName, sizeof(finalName), "%s%d", bmpName, counter );
 		if ( NO_ERR != buttonFile.seekBlock( finalName) )
 			break;
 

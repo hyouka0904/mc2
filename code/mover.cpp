@@ -484,7 +484,7 @@ void DebugMoveChunk (MoverPtr mover, MoveChunkPtr chunk1, MoveChunkPtr chunk2) {
 	char outString[512];
 
 	if (mover) {
-		sprintf(outString, "Mover = %s (%d)\n",
+		sprintf(outString, "Mover = %s (%ld)\n",
 			mover->getName(),
 			mover->getPartId());
 		strcat(ChunkDebugMsg, outString);
@@ -514,20 +514,20 @@ void DebugMoveChunk (MoverPtr mover, MoveChunkPtr chunk1, MoveChunkPtr chunk2) {
 		strcat(ChunkDebugMsg, "CHUNK1\n");
 
 		for (int i = 0; i < 4; i++) {
-			sprintf(outString, "stepPos[%d] = (%d, %d)\n",
+			sprintf(outString, "stepPos[%d] = (%ld, %ld)\n",
 				i,
 				chunk1->stepPos[i][0],
 				chunk1->stepPos[i][1]);
 			strcat(ChunkDebugMsg, outString);
 		}
 
-		sprintf(outString, "stepRelPos = %d, %d, %d\n",
+		sprintf(outString, "stepRelPos = %ld, %ld, %ld\n",
 			chunk1->stepRelPos[0],
 			chunk1->stepRelPos[1],
 			chunk1->stepRelPos[2]);
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "numSteps = %d\n", chunk1->numSteps);
+		sprintf(outString, "numSteps = %ld\n", chunk1->numSteps);
 		strcat(ChunkDebugMsg, outString);
 
 		sprintf(outString, "run = %c\n", chunk1->run ? 'T' : 'F');
@@ -541,20 +541,20 @@ void DebugMoveChunk (MoverPtr mover, MoveChunkPtr chunk1, MoveChunkPtr chunk2) {
 		strcat(ChunkDebugMsg, "\nCHUNK2\n");
 
 		for (int i = 0; i < 4; i++) {
-			sprintf(outString, "stepPos[%d] = (%d, %d)\n",
+			sprintf(outString, "stepPos[%d] = (%ld, %ld)\n",
 				i,
 				chunk2->stepPos[i][0],
 				chunk2->stepPos[i][1]);
 			strcat(ChunkDebugMsg, outString);
 		}
 
-		sprintf(outString, "stepRelPos = %d, %d, %d\n",
+		sprintf(outString, "stepRelPos = %ld, %ld, %ld\n",
 			chunk2->stepRelPos[0],
 			chunk2->stepRelPos[1],
 			chunk2->stepRelPos[2]);
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "numSteps = %d\n", chunk2->numSteps);
+		sprintf(outString, "numSteps = %ld\n", chunk2->numSteps);
 		strcat(ChunkDebugMsg, outString);
 
 		sprintf(outString, "moving = %c\n", chunk2->moving ? 'T' : 'F');
@@ -851,7 +851,7 @@ void MoveChunk::pack (MoverPtr mover) {
 	if ((numSteps < 1) || (numSteps > 4)) {
 		DebugMoveChunk(mover, this, NULL);
 		char errMsg[1024];
-		sprintf(errMsg, " MoveChunk.pack: bad numSteps %d (save mvchunk.dbg file) ", numSteps);
+		sprintf(errMsg, " MoveChunk.pack: bad numSteps %ld (save mvchunk.dbg file) ", numSteps);
 		Assert(false, numSteps, errMsg);
 	}
 #endif
@@ -921,7 +921,7 @@ void MoveChunk::unpack (MoverPtr mover) {
 	if ((numSteps < 1) || (numSteps > 4)) {
 		DebugMoveChunk(mover, this, NULL);
 		char errMsg[1024];
-		sprintf(errMsg, " MoveChunk.unpack: bad numSteps %d (save mvchunk.dbg file) ", numSteps);
+		sprintf(errMsg, " MoveChunk.unpack: bad numSteps %ld (save mvchunk.dbg file) ", numSteps);
 		Assert(false, numSteps, errMsg);
 	}
 #endif
@@ -993,7 +993,7 @@ void DebugStatusChunk (MoverPtr mover, StatusChunkPtr chunk1, StatusChunkPtr chu
 	char outString[512];
 
 	if (mover) {
-		sprintf(outString, "\nmover = %s (%d)\n", mover->name, mover->getPartId());
+		sprintf(outString, "\nmover = %s (%ld)\n", mover->name, mover->getPartId());
 		strcat(ChunkDebugMsg, outString);
 		}
 	else
@@ -1021,11 +1021,11 @@ void DebugStatusChunk (MoverPtr mover, StatusChunkPtr chunk1, StatusChunkPtr chu
 
 		if (target) {
 			if (target->isMover()) {
-				sprintf(outString, "target = %s (%d)\n", ((MoverPtr)target)->name, target->getPartId());
+				sprintf(outString, "target = %s (%ld)\n", ((MoverPtr)target)->name, target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 				}
 			else {
-				sprintf(outString, "target = objClass %d (%d)\n", target->getObjectClass(), target->getPartId());
+				sprintf(outString, "target = objClass %d (%ld)\n", target->getObjectClass(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 			}
 			}
@@ -1049,30 +1049,30 @@ void DebugStatusChunk (MoverPtr mover, StatusChunkPtr chunk1, StatusChunkPtr chu
 					GameObjectPtr curTarget = ObjectManager->findByPartId(partId + i);
 					if (curTarget) {
 						numObjsInTile++;
-						sprintf(outString, "    %d: objClass %d (%d)\n", i, curTarget->getObjectClass(), curTarget->getPartId());
+						sprintf(outString, "    %ld: objClass %d (%ld)\n", i, curTarget->getObjectClass(), curTarget->getPartId());
 						strcat(ChunkDebugMsg, outString);
 					}
 				}
 				if (numObjsInTile > 0) {
-					sprintf(outString, "    There are %d terrain objects in this tile.\n", numObjsInTile);
+					sprintf(outString, "    There are %ld terrain objects in this tile.\n", numObjsInTile);
 					strcat(ChunkDebugMsg, outString);
 				}
 			}
 		}
 
-		sprintf(outString, "bodyState = %d\n", chunk1->bodyState);
+		sprintf(outString, "bodyState = %ld\n", chunk1->bodyState);
 		strcat(ChunkDebugMsg, outString);
 			
 		sprintf(outString, "targetType = %d\n", chunk1->targetType);
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "targetId = %d\n", chunk1->targetId);
+		sprintf(outString, "targetId = %ld\n", chunk1->targetId);
 		strcat(ChunkDebugMsg, outString);
 			
-		sprintf(outString, "targetBlockOrTrainNumber = %d\n", chunk1->targetBlockOrTrainNumber);
+		sprintf(outString, "targetBlockOrTrainNumber = %ld\n", chunk1->targetBlockOrTrainNumber);
 		strcat(ChunkDebugMsg, outString);
 			
-		sprintf(outString, "targetVertexOrCarNumber = %d\n", chunk1->targetVertexOrCarNumber);
+		sprintf(outString, "targetVertexOrCarNumber = %ld\n", chunk1->targetVertexOrCarNumber);
 		strcat(ChunkDebugMsg, outString);
 			
 		sprintf(outString, "targetItemNumber = %d\n", chunk1->targetItemNumber);
@@ -1087,7 +1087,7 @@ void DebugStatusChunk (MoverPtr mover, StatusChunkPtr chunk1, StatusChunkPtr chu
 		sprintf(outString, "jumpOrder = %c\n", chunk1->jumpOrder ? 'T' : 'F');
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "data = %x\n", chunk1->data);
+		sprintf(outString, "data = %lx\n", chunk1->data);
 		strcat(ChunkDebugMsg, outString);
 	}
 
@@ -1113,11 +1113,11 @@ void DebugStatusChunk (MoverPtr mover, StatusChunkPtr chunk1, StatusChunkPtr chu
 
 		if (target) {
 			if (target->isMover()) {
-				sprintf(outString, "target = %s (%d)\n", ((MoverPtr)target)->name, target->getPartId());
+				sprintf(outString, "target = %s (%ld)\n", ((MoverPtr)target)->name, target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 				}
 			else {
-				sprintf(outString, "target = objClass %d (%d)\n", target->getObjectClass(), target->getPartId());
+				sprintf(outString, "target = objClass %d (%ld)\n", target->getObjectClass(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 			}
 			}
@@ -1141,30 +1141,30 @@ void DebugStatusChunk (MoverPtr mover, StatusChunkPtr chunk1, StatusChunkPtr chu
 					GameObjectPtr curTarget = ObjectManager->findByPartId(partId + i);
 					if (curTarget) {
 						numObjsInTile++;
-						sprintf(outString, "    %d: objClass %d (%d)\n", i, curTarget->getObjectClass(), curTarget->getPartId());
+						sprintf(outString, "    %ld: objClass %d (%ld)\n", i, curTarget->getObjectClass(), curTarget->getPartId());
 						strcat(ChunkDebugMsg, outString);
 					}
 				}
 				if (numObjsInTile > 0) {
-					sprintf(outString, "    There are %d terrain objects in this tile.\n", numObjsInTile);
+					sprintf(outString, "    There are %ld terrain objects in this tile.\n", numObjsInTile);
 					strcat(ChunkDebugMsg, outString);
 				}
 			}
 		}
 
-		sprintf(outString, "bodyState = %d\n", chunk2->bodyState);
+		sprintf(outString, "bodyState = %ld\n", chunk2->bodyState);
 		strcat(ChunkDebugMsg, outString);
 			
 		sprintf(outString, "targetType = %d\n", chunk2->targetType);
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "targetId = %d\n", chunk2->targetId);
+		sprintf(outString, "targetId = %ld\n", chunk2->targetId);
 		strcat(ChunkDebugMsg, outString);
 			
-		sprintf(outString, "targetBlockOrTrainNumber = %d\n", chunk2->targetBlockOrTrainNumber);
+		sprintf(outString, "targetBlockOrTrainNumber = %ld\n", chunk2->targetBlockOrTrainNumber);
 		strcat(ChunkDebugMsg, outString);
 			
-		sprintf(outString, "targetVertexOrCarNumber = %d\n", chunk2->targetVertexOrCarNumber);
+		sprintf(outString, "targetVertexOrCarNumber = %ld\n", chunk2->targetVertexOrCarNumber);
 		strcat(ChunkDebugMsg, outString);
 			
 		sprintf(outString, "targetItemNumber = %d\n", chunk2->targetItemNumber);
@@ -1179,7 +1179,7 @@ void DebugStatusChunk (MoverPtr mover, StatusChunkPtr chunk1, StatusChunkPtr chu
 		sprintf(outString, "jumpOrder = %c\n", chunk2->jumpOrder ? 'T' : 'F');
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "data = %x\n", chunk2->data);
+		sprintf(outString, "data = %lx\n", chunk2->data);
 		strcat(ChunkDebugMsg, outString);
 	}
 
@@ -1297,7 +1297,7 @@ void StatusChunk::pack (MoverPtr mover) {
 					StatusChunkUnpackErr = 1;
 				#endif
 			}
-			GameObjectPtr target = (GameObjectPtr)MPlayer->moverRoster[targetId];
+			(void)((GameObjectPtr)MPlayer->moverRoster[targetId]);
 			//----------------------------------------------------------------------------
 			// Mover targets could be NULL now, since we free them when they're destroyed.
 			//if (!target) {
@@ -1443,7 +1443,7 @@ void StatusChunk::unpack (MoverPtr mover) {
 					StatusChunkUnpackErr = 1;
 				#endif
 			}
-			GameObjectPtr target = (GameObjectPtr)MPlayer->moverRoster[targetId];
+			(void)((GameObjectPtr)MPlayer->moverRoster[targetId]);
 			//----------------------------------------------------------------------------
 			// Mover targets could be NULL now, since we free them when they're destroyed.
 			//if (!target) {
@@ -2414,22 +2414,22 @@ void Mover::updateDebugWindow (GameDebugWindow* debugWindow) {
 	};
 
 	if (debugPage == 0) {
-		sprintf(s, "%s (%s %02d)", getName(), getPilot()->getName(), getPilot()->getIndex());
+		snprintf(s, sizeof(s), "%s (%s %02ld)", getName(), getPilot()->getName(), getPilot()->getIndex());
 		debugWindow->print(s);
 		long gestID = -1;
 		if (getObjectClass() == BATTLEMECH)
 			gestID = ((Mech3DAppearance*)appearance)->getCurrentGestureId();
-		sprintf(s, "cmdr: %d, team: %d, gestID: %d, partID: %d", getCommanderId(), getTeamId(), gestID, getPartId());
+		sprintf(s, "cmdr: %ld, team: %ld, gestID: %ld, partID: %ld", getCommanderId(), getTeamId(), gestID, getPartId());
 		debugWindow->print(s);
 		if (path->curStep < path->numStepsWhenNotPaused) {
 			long curDir = path->stepList[path->curStep].direction;
 			if (curDir > 7)
-				sprintf(s, "pos: [%d, %d](%d) snsr: %d[%s] JMP", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
+				sprintf(s, "pos: [%d, %d](%ld) snsr: %ld[%s] JMP", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
 			else
-				sprintf(s, "pos: [%d, %d](%d) snsr: %d[%s] MOV", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
+				sprintf(s, "pos: [%d, %d](%ld) snsr: %ld[%s] MOV", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
 			}
 		else
-			sprintf(s, "pos: [%d, %d](%d) snsr: %d[%s]", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
+			sprintf(s, "pos: [%d, %d](%ld) snsr: %ld[%s]", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
 		debugWindow->print(s);
 	#if 0
 		if (getObjectClass() == BATTLEMECH) {
@@ -2453,12 +2453,12 @@ void Mover::updateDebugWindow (GameDebugWindow* debugWindow) {
 		if (getPilot()->getNumTacOrdersQueued()) {
 			if (getPilot()->getExecutingTacOrderQueue()) {
 				char ts[40];
-				sprintf(ts, "[%d%c] ", getPilot()->getNumTacOrdersQueued(), getPilot()->getTacOrderQueueLooping() ? '@' : '.');
+				sprintf(ts, "[%ld%c] ", getPilot()->getNumTacOrdersQueued(), getPilot()->getTacOrderQueueLooping() ? '@' : '.');
 				strcat(s, ts);
 			}
 			else {
 				char ts[40];
-				sprintf(ts, "[%d] ", getPilot()->getNumTacOrdersQueued());
+				sprintf(ts, "[%ld] ", getPilot()->getNumTacOrdersQueued());
 				strcat(s, ts);
 			}
 		}
@@ -2470,11 +2470,11 @@ void Mover::updateDebugWindow (GameDebugWindow* debugWindow) {
 			ModuleInfo brainInfo;
 			getPilot()->getBrain()->getInfo(&brainInfo);
 			debugWindow->print(" ");
-			sprintf(s, "brain: %s", brainInfo.name);
+			snprintf(s, sizeof(s), "brain: %s", brainInfo.name);
 			debugWindow->print(s);
 			//-----------------------------------------------------------------
 			// Skip the "data\missions\warriors" text when printing filename...
-			sprintf(s, "file: %s", &brainInfo.fileName[23]);
+			snprintf(s, sizeof(s), "file: %s", &brainInfo.fileName[23]);
 			debugWindow->print(s);
 		}
 		
@@ -2487,8 +2487,8 @@ void Mover::updateDebugWindow (GameDebugWindow* debugWindow) {
 			for (long i = 0; i < numConts; i++) {
 				MoverPtr contact = (MoverPtr)ObjectManager->get(sensorSystem->contacts[i] & 0x7FFF);
 				Assert(contact != NULL, sensorSystem->contacts[i] & 0x7FFF, " null contact ");
-				char s2[10];
-				sprintf(s2, " %d.%d", sensorSystem->contacts[i] & 0x7FFF, contact->getContactStatus(teamId, true));
+				char s2[32];
+				snprintf(s2, sizeof(s2), " %d.%ld", sensorSystem->contacts[i] & 0x7FFF, contact->getContactStatus(teamId, true));
 				strcat(s, s2);
 			}
 			if (sensorSystem->numContacts > 4)
@@ -2510,21 +2510,21 @@ void Mover::updateDebugWindow (GameDebugWindow* debugWindow) {
 		}
 		}
 	else if (debugPage == 1) {
-		sprintf(s, "%s (%s %02d)", getName(), getPilot()->getName(), getPilot()->getIndex());
+		snprintf(s, sizeof(s), "%s (%s %02ld)", getName(), getPilot()->getName(), getPilot()->getIndex());
 		debugWindow->print(s);
-		sprintf(s, "team: %d, handle: %d, partID: %d, rank: %d", getTeamId(), getHandle(), getPartId(), getPilot()->getRank());
+		sprintf(s, "team: %ld, handle: %d, partID: %ld, rank: %d", getTeamId(), getHandle(), getPartId(), getPilot()->getRank());
 		debugWindow->print(s);
 		if (path->curStep < path->numStepsWhenNotPaused) {
 			long curDir = path->stepList[path->curStep].direction;
 			if (curDir > 7)
-				sprintf(s, "pos: [%d, %d](%d) snsr: %d[%s] JMP", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
+				sprintf(s, "pos: [%d, %d](%ld) snsr: %ld[%s] JMP", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
 			else
-				sprintf(s, "pos: [%d, %d](%d) snsr: %d[%s] MOV", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
+				sprintf(s, "pos: [%d, %d](%ld) snsr: %ld[%s] MOV", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
 			}
 		else
-			sprintf(s, "pos: [%d, %d](%d) snsr: %d[%s]", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
+			sprintf(s, "pos: [%d, %d](%ld) snsr: %ld[%s]", cellPositionRow, cellPositionCol, distToObj1, sensorRange, contactStr[contStat]);
 		debugWindow->print(s);
-		sprintf(s, "cur step = [%d, %d], area = %d", 0, 0, GlobalMoveMap[0]->calcArea(cellPositionRow, cellPositionCol));
+		sprintf(s, "cur step = [%d, %d], area = %ld", 0, 0, GlobalMoveMap[0]->calcArea(cellPositionRow, cellPositionCol));
 		debugWindow->print(s);
 		MoveOrders* moveOrders = getPilot()->getMoveOrders();
 		if (moveOrders->numGlobalSteps > 0) {
@@ -2607,9 +2607,9 @@ void Mover::updateDebugWindow (GameDebugWindow* debugWindow) {
 			"DAM",
 			"DEST"
 		};
-		sprintf(s, "%s (%s %02d)", getName(), getPilot()->getName(), getPilot()->getIndex());
+		snprintf(s, sizeof(s), "%s (%s %02ld)", getName(), getPilot()->getName(), getPilot()->getIndex());
 		debugWindow->print(s);
-		sprintf(s, "team: %d, partID: %d, threat: %d", getTeamId(), getPartId(), getThreatRating());
+		sprintf(s, "team: %ld, partID: %ld, threat: %ld", getTeamId(), getPartId(), getThreatRating());
 		debugWindow->print(s);
 		debugWindow->print(" ");
 		if (getObjectClass() == BATTLEMECH) {
@@ -3542,23 +3542,23 @@ void Mover::printFireWeaponDebugInfo (GameObjectPtr target, Stuff::Vector3D* tar
 			char* targetName = target->getName();
 			char s[1024];
 			if (getObjectClass() == BATTLEMECH)
-				sprintf(s, "[%.2f] mech.fireWeapon HIT: (%05d)%s @ (%05d)%s", scenarioTime, getPartId(), name, target->getPartId(), targetName ? targetName : "unknown");
+				sprintf(s, "[%.2f] mech.fireWeapon HIT: (%05ld)%s @ (%05ld)%s", scenarioTime, getPartId(), name, target->getPartId(), targetName ? targetName : "unknown");
 			else
-				sprintf(s, "[%.2f] vehicle.fireWeapon HIT: (%05d)%s @ (%05d)%s", scenarioTime, getPartId(), name, target->getPartId(), targetName ? targetName : "unknown");
+				sprintf(s, "[%.2f] vehicle.fireWeapon HIT: (%05ld)%s @ (%05ld)%s", scenarioTime, getPartId(), name, target->getPartId(), targetName ? targetName : "unknown");
 			CombatLog->write(s);
-			sprintf(s, "     chance = %03d, roll = %03d", chance, roll);
+			sprintf(s, "     chance = %03ld, roll = %03ld", chance, roll);
 			CombatLog->write(s);
-			sprintf(s, "     weapon = (%03d)%s, hitLocation = (%d)%s, damage = %.2f, angle = %.2f",
+			sprintf(s, "     weapon = (%03ld)%s, hitLocation = (%ld)%s, damage = %.2f, angle = %.2f",
 				shotInfo->masterId, MasterComponent::masterList[shotInfo->masterId].getName(),
 				shotInfo->hitLocation, (shotInfo->hitLocation > -1) ? locationStrings[shotInfo->hitLocation] : "none",
 				shotInfo->damage,
 				shotInfo->entryAngle);
 			CombatLog->write(s);
 			if (aimLocation != -1) {
-				sprintf(s, "     aimed shot = (%d)%s", aimLocation, locationStrings[aimLocation]);
+				sprintf(s, "     aimed shot = (%ld)%s", aimLocation, locationStrings[aimLocation]);
 				CombatLog->write(s);
 			}
-			sprintf(s, "     attacker pilot = %s (team id = %d)", getPilot()->getName(), getTeamId());
+			sprintf(s, "     attacker pilot = %s (team id = %ld)", getPilot()->getName(), getTeamId());
 			CombatLog->write(s);
 			CombatLog->write(" ");
 			}
@@ -3570,23 +3570,23 @@ void Mover::printFireWeaponDebugInfo (GameObjectPtr target, Stuff::Vector3D* tar
 			char* targetName = target->getName();
 			char s[1024];
 			if (getObjectClass() == BATTLEMECH)
-				sprintf(s, "[%.2f] mech.fireWeapon MISS: (%05d)%s @ (%05d)%s", scenarioTime, getPartId(), name, target->getPartId(), targetName ? targetName : "unknown");
+				sprintf(s, "[%.2f] mech.fireWeapon MISS: (%05ld)%s @ (%05ld)%s", scenarioTime, getPartId(), name, target->getPartId(), targetName ? targetName : "unknown");
 			else
-				sprintf(s, "[%.2f] vehicle.fireWeapon HIT: (%05d)%s @ (%05d)%s", scenarioTime, getPartId(), name, target->getPartId(), targetName ? targetName : "unknown");
+				sprintf(s, "[%.2f] vehicle.fireWeapon HIT: (%05ld)%s @ (%05ld)%s", scenarioTime, getPartId(), name, target->getPartId(), targetName ? targetName : "unknown");
 			CombatLog->write(s);
-			sprintf(s, "     chance = %03d, roll = %03d", chance, roll);
+			sprintf(s, "     chance = %03ld, roll = %03ld", chance, roll);
 			CombatLog->write(s);
-			sprintf(s, "     weapon = (%03d)%s, hitLocation = (%d)%s, damage = %.2f, angle = %.2f",
+			sprintf(s, "     weapon = (%03ld)%s, hitLocation = (%ld)%s, damage = %.2f, angle = %.2f",
 				shotInfo->masterId, MasterComponent::masterList[shotInfo->masterId].getName(),
 				shotInfo->hitLocation, (shotInfo->hitLocation > -1) ? locationStrings[shotInfo->hitLocation] : "none",
 				shotInfo->damage,
 				shotInfo->entryAngle);
 			CombatLog->write(s);
 			if (aimLocation != -1) {
-				sprintf(s, "     aimed shot = (%d)%s", aimLocation, locationStrings[aimLocation]);
+				sprintf(s, "     aimed shot = (%ld)%s", aimLocation, locationStrings[aimLocation]);
 				CombatLog->write(s);
 			}
-			sprintf(s, "     attacker pilot = %s (team id = %d)", getPilot()->getName(), getTeamId());
+			sprintf(s, "     attacker pilot = %s (team id = %ld)", getPilot()->getName(), getTeamId());
 			CombatLog->write(s);
 			CombatLog->write(" ");
 			}
@@ -3619,7 +3619,7 @@ void Mover::printHandleWeaponHitDebugInfo (WeaponShotInfo* shotInfo) {
 	};
 
 	char s[1024];
-	char statusStr[15];
+	char statusStr[32];
 	if (FromMP) {
 		if (isDestroyed())
 			sprintf(statusStr, " DESTROYED:");
@@ -3630,20 +3630,20 @@ void Mover::printHandleWeaponHitDebugInfo (WeaponShotInfo* shotInfo) {
 	}
 	else {
 		if (isDestroyed())
-			sprintf(statusStr, " *** DESTROYED:");
+			snprintf(statusStr, sizeof(statusStr), " *** DESTROYED:");
 		else if (getTeam() && Team::noPain[getTeamId()])
 			sprintf(statusStr, " *** NO PAIN:");
 		else
 			sprintf(statusStr, " ***:");
 	}
 	if (getObjectClass() == BATTLEMECH)
-		sprintf(s, "[%.2f] mech.handleWeaponHit%s (%05d)%s ",
+		sprintf(s, "[%.2f] mech.handleWeaponHit%s (%05ld)%s ",
 			scenarioTime,
 			statusStr,
 			getPartId(),
 			name);
 	else
-		sprintf(s, "[%.2f] vehicle.handleWeaponHit%s (%05d)%s ",
+		sprintf(s, "[%.2f] vehicle.handleWeaponHit%s (%05ld)%s ",
 			scenarioTime,
 			statusStr,
 			getPartId(),
@@ -3651,11 +3651,11 @@ void Mover::printHandleWeaponHitDebugInfo (WeaponShotInfo* shotInfo) {
 	CombatLog->write(s);
 	GameObjectPtr attacker = ObjectManager->getByWatchID(shotInfo->attackerWID);
 	if (attacker)
-		sprintf(s, "     attacker = (%05d)%s", attacker->getPartId(), attacker->getName());
+		sprintf(s, "     attacker = (%05ld)%s", attacker->getPartId(), attacker->getName());
 	else
 		sprintf(s, "     attacker = (%05d)<unknown WID>", shotInfo->attackerWID);
 	CombatLog->write(s);
-	sprintf(s, "     weapon = (%03d)%s, hitLocation = (%d)%s, damage = %.2f, angle = %.2f",
+	sprintf(s, "     weapon = (%03ld)%s, hitLocation = (%ld)%s, damage = %.2f, angle = %.2f",
 		shotInfo->masterId, MasterComponent::masterList[shotInfo->masterId].getName(),
 		shotInfo->hitLocation, (shotInfo->hitLocation > -1) ? locationStrings[shotInfo->hitLocation] : "none",
 		shotInfo->damage,
@@ -4842,7 +4842,7 @@ long Mover::calcMoveGoal (GameObjectPtr target,
 				position = start;
 				cellPositionRow = curGoalCell[0];
 				cellPositionCol = curGoalCell[1];
-				__int64 lstartTime = GetCycles();
+				(void)(GetCycles());
                 // sebi
 				//if (goalList[i][1] > -10000) {
 				if (weight > -10000) {

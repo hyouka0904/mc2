@@ -328,7 +328,7 @@ void PauseWindow::init( FitIniFile& file )
 		char buffer[256];
 		for ( int i = 0; i < staticCount; i++ )
 		{
-			sprintf( buffer, "PauseStatic%ld", i );
+			sprintf( buffer, "PauseStatic%d", i );
 			statics[i].init( file, buffer, ControlGui::hiResOffsetX, 0);
 		}
 	}

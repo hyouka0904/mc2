@@ -693,7 +693,7 @@ long aDropList::init( FitIniFile* file, const char* blockName )
 		rects = new aRect[rectCount];
 		for ( int i = 0; i < rectCount; i++ )
 		{
-			sprintf( tmpBlockName, "Rect%ld", i );
+			sprintf( tmpBlockName, "Rect%d", i );
 			rects[i].init( file, tmpBlockName );
 		}
 	}
@@ -1031,7 +1031,7 @@ long aComboBox::init( FitIniFile* file, const char* blockName )
 			rects = new aRect[rectCount];
 			for ( int i = 0; i < rectCount; i++ )
 			{
-				sprintf( blockName, "Rect%ld", i );
+				sprintf( blockName, "Rect%d", i );
 				rects[i].init( file, blockName );
 			}
 		}
@@ -1453,7 +1453,7 @@ long aLocalizedListItem::init( FitIniFile* file, const char* blockName )
 void aLocalizedListItem::render()
 {
 	long color = 0xffffffff;
-	if ( animInfo.getState() != getState() )
+	if ( (int)animInfo.getState() != (int)getState() ) // the two enums share their values
 		animInfo.setState( (aAnimGroup::STATE)(long)getState() );
 	color = animInfo.getCurrentColor( animInfo.getState() );
 	aTextListItem::setColor((unsigned long)color);

@@ -9,7 +9,7 @@
 
 - 單人戰役、任務、存讀檔、機甲實驗室等功能皆可運作。
 - **網路對戰未實作。**
-- 音效已可播放（含左右聲道定位 panning），但都卜勒等 3D 音效尚未支援。
+- 音效已可播放（含左右聲道定位 panning），並支援 3D 音效 API（位置、速度、距離衰減、都卜勒；遊戲本身目前自行計算音量與聲道，未使用這組 API）。
 
 > 原作者的話：因烏克蘭戰爭，作者目前無暇維護本專案，歡迎社群協助。
 
@@ -363,7 +363,8 @@ ctest --test-dir build --output-on-failure
 | `unit_image_tga` | TGA 貼圖解碼：未壓縮與 RLE 壓縮、24/32/16 位元、損壞資料 |
 | `unit_pqueue` | 路徑搜尋優先佇列，包含與參考模型比對的隨機測試 |
 | `unit_run_options` | 決定性模式參數、PNG 截圖編碼、固定步長時鐘、輸入腳本解析 |
-| `unit_sound` | 音效 API（SDL3_mixer）：播放一次 / 迴圈 / 暫停 / 停止、音量線性、左右聲道定位、釋放資源；不需要音效卡 |
+| `unit_sound` | 音效 API（SDL3_mixer）：播放一次 / 迴圈 / 暫停 / 停止、音量線性、左右聲道定位、釋放資源；3D 音效的距離衰減、依聽者方向定位、都卜勒、移動聽者；不需要音效卡 |
+| `unit_heap` | GameOS 記憶體堆積：`gos_Malloc` / `new` 依目前 heap 記錄、`gos_DestroyMemoryHeap(heap, false)` 釋放剩餘配置、`(heap, true)` 只回報洩漏且區塊仍可用 |
 | `unit_render_state` | 由 GameOS 渲染狀態推出的管線描述、32 位元管線鍵（可逆、互不重複）、管線快取 |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
 | `shader_validation` | 以 glslangValidator 離線編譯並連結所有著色器變體（與執行時相同的 `#version 420`、`ALPHA_TEST` 定義與 `#include` 展開），不需要 GPU；未安裝 `glslang-tools` 時略過 |
@@ -552,7 +553,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 4 著色器 | 完成（DXIL 待 CI 安裝 dxc） | Vulkan 風格 GLSL（`PerDraw` / `LightsData` / `SceneData` 三個 uniform block、明確的 set / binding / location）；建置時編成 SPIR-V（通過 `spirv-val`）、MSL、HLSL；OpenGL 後端改用 uniform block 後 18 張截圖逐像素相同；熱重載改為 `-shader-reload` 開發選項 |
 | 5 SDL3 GPU 後端 | 完成 | `render/gpu/`（Vulkan via SDL3 GPU）、`-renderer gl\|gpu`、記錄重播式的即時模式模擬、管線快取、每幀上傳環狀緩衝區；兩個後端共用的繪製合併讓 mc2_01 第 600 幀 draw call 從 242 降到 156；CI 對兩個後端各跑冒煙測試與 18 張截圖比對（GPU 後端開啟 Vulkan 驗證層，零訊息）；兩後端差異最多 0.25%，門檻維持 0.5% |
 | 6 移除 OpenGL / GLEW | 進行中（依決策保留 OpenGL 一個版本週期） | 預設改為 SDL3 GPU，無法啟動時自動退回 OpenGL；OpenGL 後端移到獨立的 `gameos_gl` 函式庫，資料工具（含 `aseconv`）與測試不再連結 libGL / GLEW（CI 以 `ldd` 檢查）；移除 Viewer；修正 OpenGL 結束時重複 `glDetachShader` 的錯誤。待備援期結束後刪除 `render/gl/` 與 GLEW |
-| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併）並把 3D 模型繪製遷移過去；多貼圖模型在載入時依貼圖分段，每段以自己的貼圖繪製（原本整個模型都用第一張貼圖）；繪製合併與小貼圖圖集；mc2_01 第 600 幀 draw call 242 → 72、平均幀時間 26.7 → 12.5 ms（GL）；截圖比對不變 |
+| 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併）並把 3D 模型繪製遷移過去；繪製合併與小貼圖圖集；mc2_01 第 600 幀 draw call 242 → 72、平均幀時間 26.7 → 12.5 ms（GL）；截圖比對不變 |
 | 8 平台層精簡 | 未開始 | |
 
 ### 決策紀錄
@@ -574,10 +575,11 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 
 - **網路對戰**未實作。
 - **光照完全移到著色器**：目前部分光照仍在 CPU 計算（`mclib/msl.cpp`、`shaders/gos_tex_vertex_lighted.vert`）。
-- **記憶體堆積追蹤**：`gos_Malloc` 尚未依 heap 記錄配置，因此 heap 銷毀時不會釋放其記憶體（`GameOS/gameos/gameos.cpp`）。
 - GameOS 其餘繪圖 API 的型別安全（3D 模型已改用 `gos_RenderShape`）。
-- 都卜勒等 3D 音效。
-- 編譯警告仍多（舊程式碼約數百則）。
+- **多貼圖模型的 GPU 繪製**：`mclib/tgl.cpp` 的硬體路徑以模型第一個三角形的貼圖繪製整個模型。
+  試過「載入時依貼圖分段、每段各自繪製」（commit 35f3a7e），但完整重建後 mc2_03 中央的建築物消失、
+  截圖比對失敗，已還原；原因尚待調查（推測與硬體路徑和軟體頂點清單的交互有關）。
+- 編譯警告：從 643 則降到 141 則。已修正全部 `printf` / `scanf` 型別不符（64 位元下 `long` 配 `%d`）、所有可能的 `sprintf` 緩衝區溢位（改為 `snprintf` 或加大緩衝區）、ABL 腳本 `objectVisible` / `objectActivate` 對群組使用時的空指標存取。剩下的主要是 `snprintf` 可能截斷的提示（64 則）、未使用的變數（52 則）與忽略 `fread` 等回傳值（23 則）。
 - 尚未在 Windows、實體 GPU、長時間遊玩下重新驗證（CI 只在 Linux + Mesa 軟體繪圖上執行）。
 - `GameOS/include/platform_*.h` 中的 `FIXME` 來自 Wine 的 Win32 標頭，屬於上游註解。
 

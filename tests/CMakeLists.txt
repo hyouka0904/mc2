@@ -80,6 +80,11 @@ mc2_add_unit_test(unit_sound
     LIBS gameos windows MC2::SDL MC2::Mixer ZLIB::ZLIB ${ADDITIONAL_LIBS})
 set_tests_properties(unit_sound PROPERTIES ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
+mc2_add_unit_test(unit_heap
+    SOURCES unit/test_heap.cpp
+    INCLUDES ${COMMON_INCLUDE_DIRS}
+    LIBS gameos windows MC2::SDL MC2::Mixer ZLIB::ZLIB ${ADDITIONAL_LIBS})
+
 mc2_add_unit_test(unit_render_state
     SOURCES unit/test_render_state.cpp ${MC2_GAMEOS_DIR}/render/render_state.cpp
     INCLUDES ${COMMON_INCLUDE_DIRS})

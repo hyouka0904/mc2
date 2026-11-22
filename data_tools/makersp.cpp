@@ -35,7 +35,6 @@ int gen_rsp(const char* prefix_path, std::queue<const char*>& wildcards, const c
 		strncpy(prefix, prefix_path, prefix_len);
 	}
 
-	char* findString = nullptr;
 
 	FILE* fh = fopen(rsp_file, "w");
 	if (!fh) {

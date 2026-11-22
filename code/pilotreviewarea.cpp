@@ -109,9 +109,7 @@ PilotReviewScreen::~PilotReviewScreen()
 	LogisticsData::instance->getPilots( pPilots, count );
 
 
-	bool bDeadTextAdded = 0;
 
-	bool bFirst = 0;
 	for ( int i = 0; i < count; i++ )
 	{
 		pPilots[i]->clearIcons();
@@ -1043,7 +1041,7 @@ void	ActivePilotListItem::init( FitIniFile* file )
 	// last three are missing, remove this
 	for (int i = 0; i < MAX_MEDAL; i++ )
 	{
-		sprintf( name, "MedalIcon%ld", i );
+		sprintf( name, "MedalIcon%d", i );
 		s_medals[i]->init( file, name );
 	}
 
@@ -1052,17 +1050,17 @@ void	ActivePilotListItem::init( FitIniFile* file )
 	for (int i = 0; i < 5; i++ )
 	{
 		s_outline[i] = new aRect;
-		sprintf( buffer, "ActiveDutyBoxRect%ld", i );
+		sprintf( buffer, "ActiveDutyBoxRect%d", i );
 		s_outline[i]->init( file, buffer );
 	}
 
 	for (int i = 0; i < 2; i++ )
 	{
 		s_icons[i] = new aObject;
-		sprintf( buffer, "ActiveDutyBoxSkill%ld", i );
+		sprintf( buffer, "ActiveDutyBoxSkill%d", i );
 		s_icons[i]->init( file, buffer );
 
-		sprintf( buffer, "ActiveDutyBoxSkillMeter%ld", i );
+		sprintf( buffer, "ActiveDutyBoxSkillMeter%d", i );
 		s_attributeMeters[i] = new AttributeMeter();
 		s_attributeMeters[i]->init( file, buffer );
 		s_attributeMeters[i]->setAddedColorMax( 0xffffffff );
@@ -1072,7 +1070,7 @@ void	ActivePilotListItem::init( FitIniFile* file )
 	for (int i = 0; i < 5; i++ )
 	{
 		s_icons[i+3] = new aObject;
-		sprintf( buffer, "ActiveDutyBoxRankIcon%ld", i );
+		sprintf( buffer, "ActiveDutyBoxRankIcon%d", i );
 		s_icons[i+3]->init( file, buffer );
 	}
 
@@ -1296,7 +1294,7 @@ void PilotPromotionArea::init( FitIniFile& file )
 	char buffer[32];
 	for ( int i = 0; i < 2; i++ )
 	{
-		sprintf( buffer, "PromoteGadgetLeftSkillMeter%ld", i );
+		sprintf( buffer, "PromoteGadgetLeftSkillMeter%d", i );
 		attributeMeters[i].init( &file, buffer );
 		attributeMeters[i].setAddedColorMax( 0xffffffff );
 		attributeMeters[i].setAddedColorMin( 0xffffffff );
@@ -1717,7 +1715,7 @@ void			SpecialtyListItem::init( FitIniFile* file )
 	for ( int i =0; i < 4; i++ )
 	{
 		s_skillIcons[i] = new aObject;
-		sprintf( buffer, "SkillTypeIcon%ld", i );
+		sprintf( buffer, "SkillTypeIcon%d", i );
 		s_skillIcons[i]->init( file, buffer );
 	}
 	s_description->init( file, "SkillDescriptionText" );

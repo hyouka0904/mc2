@@ -2062,7 +2062,7 @@ void TacticalOrder::debugString (MechWarriorPtr pilot, char* s) {
 			}
 			break;
 		case TACTICAL_ORDER_MOVETO_OBJECT:
-			sprintf(s, "move to obj (%d)", target ? target->getPartId() : 0);
+			sprintf(s, "move to obj (%ld)", target ? target->getPartId() : 0);
 			break;
 		case TACTICAL_ORDER_JUMPTO_POINT: {
 			Stuff::Vector3D curPos;
@@ -2078,7 +2078,7 @@ void TacticalOrder::debugString (MechWarriorPtr pilot, char* s) {
 			}
 			break;
 		case TACTICAL_ORDER_JUMPTO_OBJECT:
-			sprintf(s, "jump to obj (%d)", target ? target->getPartId() : 0);
+			sprintf(s, "jump to obj (%ld)", target ? target->getPartId() : 0);
 			break;
 		case TACTICAL_ORDER_TRAVERSE_PATH:
 			strcpy(s, "traverse path");
@@ -2112,7 +2112,7 @@ void TacticalOrder::debugString (MechWarriorPtr pilot, char* s) {
 			break;
 		case TACTICAL_ORDER_ATTACK_OBJECT: {
 			const char* tacticCode[] = {"  ", "RT", "LT", "RR", "SF", "TT", "JS"};
-			sprintf(s, "attack obj (%d) %s", target ? target->getPartId() : 0, tacticCode[attackParams.tactic]);
+			sprintf(s, "attack obj (%ld) %s", target ? target->getPartId() : 0, tacticCode[attackParams.tactic]);
 			}
 			break;
 		case TACTICAL_ORDER_ATTACK_POINT: {
@@ -2137,17 +2137,17 @@ void TacticalOrder::debugString (MechWarriorPtr pilot, char* s) {
 			GameObjectPtr obj;
 			long goalType = pilot->getMoveGoal(&goalPos, &obj);
 			if ((goalType > 0) && obj) {
-				sprintf(s, "capture obj (%d) [%d]", target ? target->getPartId() : 0, obj->getPartId());
+				sprintf(s, "capture obj (%ld) [%ld]", target ? target->getPartId() : 0, obj->getPartId());
 				}
 			else
-				sprintf(s, "capture obj (%d) [GOAL?]", target ? target->getPartId() : 0);
+				sprintf(s, "capture obj (%ld) [GOAL?]", target ? target->getPartId() : 0);
 			}
 			break;
 		case TACTICAL_ORDER_REFIT:
-			sprintf(s, "refit obj (%d)", target ? target->getPartId() : 0);
+			sprintf(s, "refit obj (%ld)", target ? target->getPartId() : 0);
 			break;
 		case TACTICAL_ORDER_GETFIXED:
-			sprintf(s, "get fixed (%d)", target ? target->getPartId() : 0);
+			sprintf(s, "get fixed (%ld)", target ? target->getPartId() : 0);
 			break;
 		case TACTICAL_ORDER_LOAD_INTO_CARRIER:
 			strcpy(s, "load carrier");

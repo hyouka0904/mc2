@@ -308,7 +308,7 @@ long MasterComponent::saveEXCEL (FilePtr componentFile, unsigned char masterId, 
 	strcat(dataLine,piece);
 	strcat(dataLine,comma);
 
-	sprintf(piece,"%d",resourcePoints);
+	sprintf(piece,"%ld",resourcePoints);
 	strcat(dataLine,piece);
 	strcat(dataLine,comma);
 
@@ -512,7 +512,7 @@ long MasterComponent::saveEXCEL (FilePtr componentFile, unsigned char masterId, 
 			strcat(dataLine,piece);
 			strcat(dataLine,comma);
 
-			sprintf(piece,"%d",stats.weapon.ammoAmount);
+			sprintf(piece,"%ld",stats.weapon.ammoAmount);
 			strcat(dataLine,piece);
 			strcat(dataLine,comma);
 
@@ -550,7 +550,7 @@ long MasterComponent::saveEXCEL (FilePtr componentFile, unsigned char masterId, 
 			strcat(dataLine,piece);
 			strcat(dataLine,comma);
 
-			sprintf(piece,"%d",stats.weapon.ammoAmount);
+			sprintf(piece,"%ld",stats.weapon.ammoAmount);
 			strcat(dataLine,piece);
 			strcat(dataLine,comma);
 
@@ -576,7 +576,7 @@ long MasterComponent::saveEXCEL (FilePtr componentFile, unsigned char masterId, 
 			break;
 
 		case COMPONENT_FORM_AMMO:
-			sprintf(piece,"%d",stats.ammo.ammoPerTon);
+			sprintf(piece,"%ld",stats.ammo.ammoPerTon);
 			strcat(dataLine,piece);
 			strcat(dataLine,comma);
 
@@ -589,7 +589,7 @@ long MasterComponent::saveEXCEL (FilePtr componentFile, unsigned char masterId, 
 			break;
 
 		case COMPONENT_FORM_JUMPJET:
-			sprintf(piece,"%d",stats.jumpjet.rangeMod);
+			sprintf(piece,"%ld",stats.jumpjet.rangeMod);
 			strcat(dataLine,piece);
 			strcat(dataLine,comma);
 			sprintf(piece,"na,na,na,na,na,na,na,na,,,,,");
@@ -698,10 +698,10 @@ long MasterComponent::saveMasterList (const char* fileName, long listSize, float
 
 	//-----------------------
 	// Special Component Data
-	sprintf(dataLine,"MasterArmActuatorID = %d,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",armActuatorID);
+	sprintf(dataLine,"MasterArmActuatorID = %ld,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",armActuatorID);
 	componentFile.writeLine(dataLine);
 
-	sprintf(dataLine,"MasterLegActuatorID = %d,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",legActuatorID);
+	sprintf(dataLine,"MasterLegActuatorID = %ld,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",legActuatorID);
 	componentFile.writeLine(dataLine);
 
 	//sebi: what is more correct here? always pass155 or actual clanAntiMissileSystemID ?

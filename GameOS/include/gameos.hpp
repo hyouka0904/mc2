@@ -1164,6 +1164,10 @@ void __stdcall gos_PopCurrentHeap();
 //
 void __stdcall gos_WalkMemoryHeap(HGOSHEAP pHeap, bool vociferous = false);
 
+// Live allocations made from a heap with gos_Malloc / new while it was the
+// current heap (or passed explicitly), and their total size in bytes.
+void __stdcall gos_GetHeapUsage(HGOSHEAP Heap, size_t* bytes, DWORD* allocations);
+
 
 
 

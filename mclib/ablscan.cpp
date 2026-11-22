@@ -1270,7 +1270,7 @@ bool getSourceLine (void) {
 		if (printFlag) 
 		{
 			char printBuffer[MAXLEN_SOURCELINE + 9];
-			sprintf(printBuffer, "%4d %d: %s", lineNumber, level, sourceBuffer);
+			snprintf(printBuffer, sizeof(printBuffer), "%4d %d: %s", lineNumber, level, sourceBuffer);
 			printLine(printBuffer);
 		}
 		return(true);

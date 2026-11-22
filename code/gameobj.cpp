@@ -237,11 +237,11 @@ void DebugWeaponFireChunk (WeaponFireChunkPtr chunk1, WeaponFireChunkPtr chunk2,
 
 	if (attacker) {
 		if (attacker->isMover()) {
-			sprintf(outString, "attacker = %s (%d)\n", attacker->getName(), attacker->getPartId());
+			sprintf(outString, "attacker = %s (%ld)\n", attacker->getName(), attacker->getPartId());
 			strcat(ChunkDebugMsg, outString);
 			}
 		else {
-			sprintf(outString, "attacker = objClass %d (%d)\n", attacker->getObjectClass(), attacker->getPartId());
+			sprintf(outString, "attacker = objClass %d (%ld)\n", attacker->getObjectClass(), attacker->getPartId());
 			strcat(ChunkDebugMsg, outString);
 		}
 		}
@@ -270,11 +270,11 @@ void DebugWeaponFireChunk (WeaponFireChunkPtr chunk1, WeaponFireChunkPtr chunk2,
 
 		if (target) {
 			if (target->isMover()) {
-				sprintf(outString, "target = %s (%d)\n", target->getName(), target->getPartId());
+				sprintf(outString, "target = %s (%ld)\n", target->getName(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 				}
 			else {
-				sprintf(outString, "target = objClass %d (%d)\n", target->getObjectClass(), target->getPartId());
+				sprintf(outString, "target = objClass %d (%ld)\n", target->getObjectClass(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 			}
 			}
@@ -342,11 +342,11 @@ void DebugWeaponFireChunk (WeaponFireChunkPtr chunk1, WeaponFireChunkPtr chunk2,
 
 		if (target) {
 			if (target->isMover()) {
-				sprintf(outString, "target = %s (%d)\n", target->getName(), target->getPartId());
+				sprintf(outString, "target = %s (%ld)\n", target->getName(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 				}
 			else {
-				sprintf(outString, "target = objClass %d (%d)\n", target->getObjectClass(), target->getPartId());
+				sprintf(outString, "target = objClass %d (%ld)\n", target->getObjectClass(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 			}
 			}
@@ -981,11 +981,11 @@ void DebugWeaponHitChunk (WeaponHitChunkPtr chunk1, WeaponHitChunkPtr chunk2) {
 
 		if (target) {
 			if (target->isMover()) {
-				sprintf(outString, "target = %s (%d)\n", target->getName(), target->getPartId());
+				sprintf(outString, "target = %s (%ld)\n", target->getName(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 				}
 			else {
-				sprintf(outString, "target = objClass %d (%d)\n", target->getObjectClass(), target->getPartId());
+				sprintf(outString, "target = objClass %d (%ld)\n", target->getObjectClass(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 			}
 			}
@@ -997,13 +997,13 @@ void DebugWeaponHitChunk (WeaponHitChunkPtr chunk1, WeaponHitChunkPtr chunk2) {
 		sprintf(outString, "targetType = %d\n", chunk1->targetType);
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "targetId = %d\n", chunk1->targetId);
+		sprintf(outString, "targetId = %ld\n", chunk1->targetId);
 		strcat(ChunkDebugMsg, outString);
 
 		sprintf(outString, "specialType = %d\n", chunk1->specialType);
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "specialId = %d\n", chunk1->specialId);
+		sprintf(outString, "specialId = %ld\n", chunk1->specialId);
 		strcat(ChunkDebugMsg, outString);
 
 		sprintf(outString, "cause = %d\n", chunk1->cause);
@@ -1038,11 +1038,11 @@ void DebugWeaponHitChunk (WeaponHitChunkPtr chunk1, WeaponHitChunkPtr chunk2) {
 
 		if (target) {
 			if (target->isMover()) {
-				sprintf(outString, "target = %s (%d)\n", target->getName(), target->getPartId());
+				sprintf(outString, "target = %s (%ld)\n", target->getName(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 				}
 			else {
-				sprintf(outString, "target = objClass %d (%d)\n", target->getObjectClass(), target->getPartId());
+				sprintf(outString, "target = objClass %d (%ld)\n", target->getObjectClass(), target->getPartId());
 				strcat(ChunkDebugMsg, outString);
 			}
 			}
@@ -1054,13 +1054,13 @@ void DebugWeaponHitChunk (WeaponHitChunkPtr chunk1, WeaponHitChunkPtr chunk2) {
 		sprintf(outString, "targetType = %d\n", chunk2->targetType);
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "targetId = %d\n", chunk2->targetId);
+		sprintf(outString, "targetId = %ld\n", chunk2->targetId);
 		strcat(ChunkDebugMsg, outString);
 
 		sprintf(outString, "specialType = %d\n", chunk2->specialType);
 		strcat(ChunkDebugMsg, outString);
 
-		sprintf(outString, "specialId = %d\n", chunk2->specialId);
+		sprintf(outString, "specialId = %ld\n", chunk2->specialId);
 		strcat(ChunkDebugMsg, outString);
 
 		sprintf(outString, "cause = %d\n", chunk2->cause);
@@ -1428,7 +1428,7 @@ bool WeaponHitChunk::valid (long from) {
 					char s[512];
 					long r = (targetId - MIN_TERRAIN_PART_ID) / MAX_MAP_CELL_WIDTH;
 					long c = targetId - MIN_TERRAIN_PART_ID - (MAX_MAP_CELL_WIDTH * r);
-					sprintf(s, "WeaponHitChunk INVALID: NULL terrain target (%d), rc = %d,%d, type = %d, damage = %.2f, data=%d", targetId, r, c, targetType, damage, data);
+					sprintf(s, "WeaponHitChunk INVALID: NULL terrain target (%ld), rc = %ld,%ld, type = %d, damage = %.2f, data=%ld", targetId, r, c, targetType, damage, data);
 					if (CombatLog) {
 						CombatLog->write(s);
 						CombatLog->dump();
@@ -1845,7 +1845,7 @@ extern __int64 MCTimeLOSUpdate;
 
 inline bool GameObject::lineOfSight (GameObjectPtr target, float startExtRad, bool checkVisibleBits) 
 {
-	__int64 timeStart = GetCycles(); 
+	(void)GetCycles();
 
 	//If we call this without a target, we have no LOS!!
 	// Keeps it from crashing, too.
@@ -1967,7 +1967,7 @@ inline bool GameObject::lineOfSight (GameObjectPtr target, float startExtRad, bo
 //		if (land->IsGameSelectTerrainPosition(getLOSPosition()))
 //		{
 			float elev = land->getTerrainElevation(getLOSPosition());
-			float localStart = getLOSPosition().z - elev;
+			(void)(getLOSPosition().z - elev);
 
 			Stuff::Vector3D targetPosition = target->getLOSPosition();
 		

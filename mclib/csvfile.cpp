@@ -546,7 +546,7 @@ long CSVFile::floatToText (char *result, float num, unsigned long bufLen)
 long CSVFile::longToTextDec (char *result, long num, unsigned long bufLen)
 {
 	char temp[250];
-	sprintf(temp,"%d",num);
+	sprintf(temp,"%ld",num);
 
 	unsigned long numLength = strlen(temp);
 	if (numLength >= bufLen)
@@ -562,7 +562,7 @@ long CSVFile::longToTextDec (char *result, long num, unsigned long bufLen)
 long CSVFile::longToTextHex (char *result, long num, unsigned long bufLen)
 {
 	char temp[250];
-	sprintf(temp,"0x%x",num);
+	sprintf(temp,"0x%lx",num);
 
 	unsigned long numLength = strlen(temp);
 	if (numLength >= bufLen)

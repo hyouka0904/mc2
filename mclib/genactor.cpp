@@ -496,7 +496,7 @@ void GenericAppearance::changeSkyToSkyNum (char *txmName, char *newName)
 	else
 	{
 		strcpy(newName,"Sky");
-		sprintf(newName,"Sky%02d%s",skyNumber,&txmName[3]);
+		sprintf(newName,"Sky%02ld%s",skyNumber,&txmName[3]);
 	}
 	
 	return;

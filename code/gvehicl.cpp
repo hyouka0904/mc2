@@ -571,7 +571,7 @@ bool GroundVehicleType::handleDestruction (GameObjectPtr collidee, GameObjectPtr
 		// What heroic music should be played?
 		if (CombatLog) {
 			char s[1024];
-			sprintf(s, "[%.2f] vehicle.destroyed: (%05d)%s", scenarioTime, vehicle->getPartId(), vehicle->getName());
+			sprintf(s, "[%.2f] vehicle.destroyed: (%05ld)%s", scenarioTime, vehicle->getPartId(), vehicle->getName());
 			CombatLog->write(s);
 			CombatLog->write(" ");
 		}
@@ -1065,7 +1065,7 @@ long GroundVehicle::init (FitIniFile* vehicleFile)
 	while (curItem < numOther) 
 	{
 		char itemString[128];
-		sprintf(itemString, "Item:%d", curItem);
+		sprintf(itemString, "Item:%ld", curItem);
 		result = vehicleFile->seekBlock(itemString);
 		if (result != NO_ERR)
 			return(result);
@@ -1117,7 +1117,7 @@ long GroundVehicle::init (FitIniFile* vehicleFile)
 	while (curItem < (numOther + numWeapons)) 
 	{
 		char itemString[128];
-		sprintf(itemString, "Item:%d", curItem);
+		sprintf(itemString, "Item:%ld", curItem);
 		result = vehicleFile->seekBlock(itemString);
 		if (result != NO_ERR)
 			return(result);
@@ -1145,7 +1145,7 @@ long GroundVehicle::init (FitIniFile* vehicleFile)
 	while (curItem < (numOther + numWeapons + numAmmos)) 
 	{
 		char itemString[128];
-		sprintf(itemString, "Item:%d", curItem);
+		sprintf(itemString, "Item:%ld", curItem);
 		result = vehicleFile->seekBlock(itemString);
 		if (result != NO_ERR)
 			return(result);
@@ -4327,12 +4327,12 @@ long GroundVehicle::handleWeaponHit (WeaponShotInfoPtr shotInfo, bool addMultipl
 			if (attacker->isMover())
 				strcpy(attackerStr, attacker->getName());
 			else
-				sprintf(attackerStr, "ID:%d", attacker->getPartId());
+				sprintf(attackerStr, "ID:%ld", attacker->getPartId());
 			}
 		else
 			strcpy(attackerStr, "attacker?");
 		char err[128];
-		sprintf(err, "GVehicle.handleWeaponHit: [%s]%d for %.2f at %d",
+		sprintf(err, "GVehicle.handleWeaponHit: [%s]%ld for %.2f at %ld",
 			attackerStr,
 			shotInfo->masterId,
 			shotInfo->damage,

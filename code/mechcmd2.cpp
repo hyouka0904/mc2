@@ -1139,7 +1139,7 @@ void __stdcall InitializeGameEngine()
 							STOP(("Unable to startup fastfiles.  Probably an old one in the directory!!"));
 	
 						fileNum++;
-						sprintf(fastFileId,"File%d",fileNum);
+						snprintf(fastFileId, sizeof(fastFileId),"File%d",fileNum);
 					}
 				}
 			}

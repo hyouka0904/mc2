@@ -587,7 +587,6 @@ void OptionsGraphics::end()
 	int sel = resolutionList.GetSelectedItem();
 	if ( sel > -1 )
 	{
-		long actualSel = -1;
         gosASSERT(numResolutionModes > sel);
         prefs.resolutionX = resolutionModes[sel].xRes;
         prefs.resolutionY = resolutionModes[sel].yRes;

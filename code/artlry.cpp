@@ -484,17 +484,17 @@ long ArtilleryType::init (FilePtr objFile, unsigned long fileSize) {
 		{
 			char explosionId[50];
 
-			sprintf(explosionId,"ExplosionDelay%d",i);
+			sprintf(explosionId,"ExplosionDelay%ld",i);
 			result = miFile.readIdFloat(explosionId,explosionDelay[i]);
 			if (result != NO_ERR)
 				return(result);
 				
-			sprintf(explosionId,"ExplosionOffsetX%d",i);
+			sprintf(explosionId,"ExplosionOffsetX%ld",i);
 			result = miFile.readIdFloat(explosionId,explosionOffsetX[i]);
 			if (result != NO_ERR)
 				return(result);
 
-			sprintf(explosionId,"ExplosionOffsetY%d",i);
+			sprintf(explosionId,"ExplosionOffsetY%ld",i);
 			result = miFile.readIdFloat(explosionId,explosionOffsetY[i]);
 			if (result != NO_ERR)
 				return(result);

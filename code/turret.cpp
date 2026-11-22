@@ -623,7 +623,7 @@ long Turret::update (void)
 		 !ObjectManager->getByWatchID(parent)->getAwake()))
 	{
 
-		ObjectType* parentClass = ObjectManager->getByWatchID(parent)->getObjectType();
+		(void)(ObjectManager->getByWatchID(parent)->getObjectType());
 		if ( active ) // play this sound regardless of wether its a turret control or generator
 		{
 			soundSystem->playBettySample( BETTY_GENERATOR_DESTROYED );
@@ -1265,11 +1265,11 @@ void Turret::printFireWeaponDebugInfo (GameObjectPtr target, Stuff::Vector3D* ta
 		if (target) {
 			char* targetName = target->getName();
 			char s[1024];
-			sprintf(s, "[%.2f] turret.fireWeapon HIT: (%05d)%s @ (%05d)%s", scenarioTime, getPartId(), getName(), target->getPartId(), targetName ? targetName : "unknown");
+			sprintf(s, "[%.2f] turret.fireWeapon HIT: (%05ld)%s @ (%05ld)%s", scenarioTime, getPartId(), getName(), target->getPartId(), targetName ? targetName : "unknown");
 			CombatLog->write(s);
-			sprintf(s, "     chance = %03d, roll = %03d", chance, roll);
+			sprintf(s, "     chance = %03ld, roll = %03ld", chance, roll);
 			CombatLog->write(s);
-			sprintf(s, "     weapon = (%03d)%s, hitLocation = (%d)%s, damage = %.2f, angle = %.2f",
+			sprintf(s, "     weapon = (%03ld)%s, hitLocation = (%ld)%s, damage = %.2f, angle = %.2f",
 				shotInfo->masterId, MasterComponent::masterList[shotInfo->masterId].getName(),
 				shotInfo->hitLocation, (shotInfo->hitLocation > -1) ? locationStrings[shotInfo->hitLocation] : "none",
 				shotInfo->damage,
@@ -1284,11 +1284,11 @@ void Turret::printFireWeaponDebugInfo (GameObjectPtr target, Stuff::Vector3D* ta
 		if (target) {
 			char* targetName = target->getName();
 			char s[1024];
-			sprintf(s, "[%.2f] turret.fireWeapon MISS: (%05d)%s @ (%05d)%s", scenarioTime, getPartId(), getName(), target->getPartId(), targetName ? targetName : "unknown");
+			sprintf(s, "[%.2f] turret.fireWeapon MISS: (%05ld)%s @ (%05ld)%s", scenarioTime, getPartId(), getName(), target->getPartId(), targetName ? targetName : "unknown");
 			CombatLog->write(s);
-			sprintf(s, "     chance = %03d, roll = %03d", chance, roll);
+			sprintf(s, "     chance = %03ld, roll = %03ld", chance, roll);
 			CombatLog->write(s);
-			sprintf(s, "     weapon = (%03d)%s, hitLocation = (%d)%s, damage = %.2f, angle = %.2f",
+			sprintf(s, "     weapon = (%03ld)%s, hitLocation = (%ld)%s, damage = %.2f, angle = %.2f",
 				shotInfo->masterId, MasterComponent::masterList[shotInfo->masterId].getName(),
 				shotInfo->hitLocation, (shotInfo->hitLocation > -1) ? locationStrings[shotInfo->hitLocation] : "none",
 				shotInfo->damage,
@@ -1330,15 +1330,15 @@ void Turret::printHandleWeaponHitDebugInfo (WeaponShotInfo* shotInfo) {
 	//	sprintf(statusStr, " NO PAIN:");
 	else
 		sprintf(statusStr, ":");
-	sprintf(s, "[%.2f] turret.handleWeaponHit%s (%05d)%s ", scenarioTime, statusStr, getPartId(), getName());
+	sprintf(s, "[%.2f] turret.handleWeaponHit%s (%05ld)%s ", scenarioTime, statusStr, getPartId(), getName());
 	CombatLog->write(s);
 	GameObjectPtr attacker = ObjectManager->getByWatchID(shotInfo->attackerWID);
 	if (attacker)
-		sprintf(s, "     attacker = (%05d)%s", attacker->getPartId(), attacker->getName());
+		sprintf(s, "     attacker = (%05ld)%s", attacker->getPartId(), attacker->getName());
 	else
 		sprintf(s, "     attacker = (%05d)<unknown WID>", shotInfo->attackerWID);
 	CombatLog->write(s);
-	sprintf(s, "     weapon = (%03d)%s, hitLocation = (%d)%s, damage = %.2f, angle = %.2f",
+	sprintf(s, "     weapon = (%03ld)%s, hitLocation = (%ld)%s, damage = %.2f, angle = %.2f",
 		shotInfo->masterId, MasterComponent::masterList[shotInfo->masterId].getName(),
 		shotInfo->hitLocation, (shotInfo->hitLocation > -1) ? locationStrings[shotInfo->hitLocation] : "none",
 		shotInfo->damage,
@@ -2201,7 +2201,7 @@ long Turret::handleWeaponHit (WeaponShotInfoPtr shotInfo, bool addMultiplayChunk
 		ObjectManager->createExplosion(TURRET_EXPLOSION_ID,NULL,position,explDamage,explRadius);
 		if (CombatLog) {
 			char s[1024];
-			sprintf(s, "[%.2f] turret.destroyed: (%05d)%s", scenarioTime, getPartId(), getName());
+			sprintf(s, "[%.2f] turret.destroyed: (%05ld)%s", scenarioTime, getPartId(), getName());
 			CombatLog->write(s);
 			CombatLog->write(" ");
 		}
@@ -2270,10 +2270,10 @@ void Turret::updateDebugWindow (GameDebugWindow* debugWindow) {
 		}
 	else
 		debugWindow->print("<no name>");
-	sprintf(s, "team: %d, partID: %d, objT: %d", getTeamId(), getPartId(), getObjectType()->whatAmI());
+	sprintf(s, "team: %ld, partID: %ld, objT: %ld", getTeamId(), getPartId(), getObjectType()->whatAmI());
 	debugWindow->print(s);
 	GameObjectPtr target = ObjectManager->getByWatchID(targetWID);
-	sprintf(s, "target: %d", target ? target->getPartId() : 0);
+	sprintf(s, "target: %ld", target ? target->getPartId() : 0);
 	debugWindow->print(s);
 	sprintf(s, "damage: %.2f/%.2f", getDamage(), getDamageLevel());
 	debugWindow->print(s);

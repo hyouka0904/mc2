@@ -47,7 +47,7 @@ int unpack(const char* pak_file, const char* out_path)
     for(int i=0; i<num_packets;++i) {
         if(NO_ERR == pakFile->seekPacket(i)) {
             const int messageSize = pakFile->getPacketSize();
-            int storage_type = pakFile->getStorageType();
+            (void)(pakFile->getStorageType());
             if(!packet_buffer || packet_buffer_len<messageSize) {
                 if(packet_buffer)
                     delete[] packet_buffer;
@@ -89,7 +89,6 @@ int pack(const char* pak_file, const char* rsp_file, bool b_compress) {
 
 
     std::queue<char*> files2pack;
-    size_t num_files2pack = 0;
 
 	const char* rsp_path_prefix = ".";
 

@@ -8,6 +8,8 @@
 #include "utils/kv_registry.h"
 #include "platform_clock.h"
 #include <string>
+#include <mutex>
+#include <vector>
 
 #ifndef PLATFORM_WINDOWS
 #include <sys/statvfs.h> // statvfs
@@ -120,9 +122,46 @@ static gos_Heap* g_heapsStack[g_hepsStackSize];
 static int g_heapStackPointer = -1;
 
 ////////////////////////////////////////////////////////////////////////////////
+// Every gos_Malloc / operator new block starts with this header. Blocks
+// made while a heap is current (or for an explicit heap) are linked into
+// that heap, which can then report them or release them when destroyed.
+struct gosAllocHeader {
+    gos_Heap* heap;
+    gosAllocHeader* prev;
+    gosAllocHeader* next;
+    size_t size;
+};
+static_assert(sizeof(gosAllocHeader) % 16 == 0, "keeps malloc's 16-byte alignment");
+static std::mutex g_heap_mutex; // constant initialised: usable before main
+
+static void heapLink(gos_Heap* heap, gosAllocHeader* h) {
+    h->heap = heap;
+    h->prev = NULL;
+    h->next = (gosAllocHeader*)heap->pFirstAllocation;
+    if(h->next)
+        h->next->prev = h;
+    heap->pFirstAllocation = h;
+    heap->TrackedBytes += h->size;
+    heap->TrackedAllocations++;
+}
+
+static void heapUnlink(gosAllocHeader* h) {
+    gos_Heap* heap = h->heap;
+    if(h->prev)
+        h->prev->next = h->next;
+    else
+        heap->pFirstAllocation = h->next;
+    if(h->next)
+        h->next->prev = h->prev;
+    heap->TrackedBytes -= h->size;
+    heap->TrackedAllocations--;
+    h->heap = NULL;
+}
+
 HGOSHEAP __stdcall gos_CreateMemoryHeap(char const* HeapName, DWORD MaximumSize/* = 0*/, HGOSHEAP parentHeap/* = ParentClientHeap*/)
 {
-    gos_Heap* pheap = new gos_Heap();
+    // plain malloc: the heap itself belongs to no heap
+    gos_Heap* pheap = (gos_Heap*)malloc(sizeof(gos_Heap));
     memset(pheap, 0, sizeof(gos_Heap));
     pheap->pParent = parentHeap;
     pheap->Magic = (DWORD)(reinterpret_cast<size_t>(HeapName) & 0xffffffff);
@@ -135,18 +174,51 @@ HGOSHEAP __stdcall gos_CreateMemoryHeap(char const* HeapName, DWORD MaximumSize/
     pheap->BytesAllocated = 0;
     pheap->MaximumSize = MaximumSize;
 #endif
+    (void)MaximumSize;
 
     return pheap;
 }
+
+// shouldBeEmpty = false: the caller expects the heap's remaining blocks to
+// be released with it. true: they are reported as leaks and stay valid
+// (they may still be in use; gos_Free works on them later).
 void __stdcall gos_DestroyMemoryHeap(HGOSHEAP Heap, bool shouldBeEmpty/* = true*/)
 {
-    // shouldBeEmpty ?? should Instances be zero or what?
-    delete Heap;
-    Heap = nullptr;
+    if(!Heap)
+        return;
+    std::vector<gosAllocHeader*> release;
+    {
+        std::lock_guard<std::mutex> lock(g_heap_mutex);
+        if(Heap->TrackedAllocations && shouldBeEmpty)
+            SPEW(("MEMORY", "heap '%s' destroyed with %u blocks (%zu bytes) still allocated\n",
+                  Heap->Name, (unsigned)Heap->TrackedAllocations, Heap->TrackedBytes));
+        while(Heap->pFirstAllocation) {
+            gosAllocHeader* h = (gosAllocHeader*)Heap->pFirstAllocation;
+            heapUnlink(h);
+            if(!shouldBeEmpty)
+                release.push_back(h);
+        }
+    }
+    for(gosAllocHeader* h : release)
+        free(h);
+    for(int i = 0; i <= g_heapStackPointer; ++i)
+        if(g_heapsStack[i] == Heap)
+            g_heapsStack[i] = NULL;
+    free(Heap);
 }
+
+void __stdcall gos_GetHeapUsage(HGOSHEAP Heap, size_t* bytes, DWORD* allocations)
+{
+    std::lock_guard<std::mutex> lock(g_heap_mutex);
+    if(bytes)
+        *bytes = Heap ? Heap->TrackedBytes : 0;
+    if(allocations)
+        *allocations = Heap ? Heap->TrackedAllocations : 0;
+}
+
 void __stdcall gos_PushCurrentHeap(HGOSHEAP Heap)
 {
-    gosASSERT(g_heapStackPointer < g_hepsStackSize);
+    gosASSERT(g_heapStackPointer < g_hepsStackSize - 1);
     g_heapsStack[++g_heapStackPointer] = Heap;
 }
 void __stdcall gos_PopCurrentHeap()
@@ -164,7 +236,22 @@ HGOSHEAP __stdcall gos_GetCurrentHeap()
 
 void __stdcall gos_WalkMemoryHeap(HGOSHEAP pHeap, bool vociferous/* = false*/)
 {
-
+    if(!pHeap)
+        return;
+    size_t bytes = 0;
+    DWORD count = 0;
+    {
+        // checks the list links while counting
+        std::lock_guard<std::mutex> lock(g_heap_mutex);
+        for(gosAllocHeader* h = (gosAllocHeader*)pHeap->pFirstAllocation; h; h = h->next) {
+            gosASSERT(h->heap == pHeap && (!h->next || h->next->prev == h));
+            bytes += h->size;
+            ++count;
+        }
+        gosASSERT(bytes == pHeap->TrackedBytes && count == pHeap->TrackedAllocations);
+    }
+    if(vociferous)
+        SPEW(("MEMORY", "heap '%s': %u blocks, %zu bytes\n", pHeap->Name, (unsigned)count, bytes));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -179,46 +266,49 @@ noexcept
     gos_Free(ptr);
 }
 
+void* operator new[](size_t sz) {
+    return gos_Malloc(sz, NULL);
+}
+void operator delete[](void* ptr)
+#ifndef PLATFORM_WINDOWS
+noexcept
+#endif
+{
+    gos_Free(ptr);
+}
+
 void* __cdecl operator new[](size_t size, HGOSHEAP Heap)
 {
-    return malloc(size);
+    return gos_Malloc(size, Heap); // freed by delete[] -> gos_Free
 }
 
 void* __stdcall gos_Malloc(size_t bytes, HGOSHEAP Heap/* = 0*/)
 {
-    // FIXME: TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // FIXME: TODO: each malloc should record memory allocation for current heap on a stack
-    // FIXME: TODO: so that when Heap destroy() is called all memory will be freed
-
-    /*
-    gosHeap* heap = NULL;
-
-    if(Heap) {
-        heap = (gosHeap*)Heap;
-    } else { 
-        heap = gos_GetCurrentHeap();
+    gosAllocHeader* h = (gosAllocHeader*)malloc(sizeof(gosAllocHeader) + bytes);
+    if(!h)
+        return NULL;
+    h->size = bytes;
+    h->heap = NULL;
+    h->prev = h->next = NULL;
+    gos_Heap* heap = Heap ? Heap : gos_GetCurrentHeap();
+    if(heap) {
+        std::lock_guard<std::mutex> lock(g_heap_mutex);
+        heapLink(heap, h);
     }
-
-    if(heap)
-        heap->BytesAllocated += bytes;
-
-    if(bytes > 1024*1024)
-    {
-        PAUSE((""));
-    }
-    */
-    return malloc(bytes);
+    return h + 1;
 }
+
 void __stdcall gos_Free(void* ptr)
 {
-    /*
-    gosHeap* heap = (gosHeap*)gos_GetCurrentHeap();
-    if(Heap) {
-        gosHeap* heap = (gosHeap*)Heap;
-        heap->BytesAllocated -= // ??? ;
+    if(!ptr)
+        return;
+    gosAllocHeader* h = (gosAllocHeader*)ptr - 1;
+    if(h->heap) {
+        std::lock_guard<std::mutex> lock(g_heap_mutex);
+        if(h->heap) // the heap may have been destroyed meanwhile
+            heapUnlink(h);
     }
-    */
-    free(ptr);
+    free(h);
 }
 ////////////////////////////////////////////////////////////////////////////////
 

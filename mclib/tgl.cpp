@@ -508,60 +508,41 @@ void TG_TypeShape::LoadBinaryCopy (File &binFile)
 		listOfTextures = NULL;
 	}
 
-	if (numTypeVertices && numTypeTriangles)
+	if (numTypeVertices)
 	{
-		// One segment per texture (in order of first use), so that each
-		// part of a multi-textured shape is drawn with its own texture.
-		// No real index buffer for now: three vertices per triangle.
-		DWORD* textures = new DWORD[numTypeTriangles];
-		numHWSegments_ = 0;
-		for (long i = 0; i < numTypeTriangles; i++)
-		{
-			const DWORD tex = listOfTypeTriangles[i].localTextureHandle;
-			DWORD k = 0;
-			while (k < numHWSegments_ && textures[k] != tex)
-				k++;
-			if (k == numHWSegments_)
-				textures[numHWSegments_++] = tex;
-		}
-		hwSegments_ = new HWSegment[numHWSegments_];
+		// no real index buffer for now...
+		uint32_t num_vertices = numTypeTriangles * 3;
+		uint32_t num_indices = numTypeTriangles * 3;
 
-		uint16_t* ib = new uint16_t[numTypeTriangles * 3];
-		TG_HWTypeVertex* vb = new TG_HWTypeVertex[numTypeTriangles * 3];
-		for (DWORD s = 0; s < numHWSegments_; s++)
+		uint16_t* ib = new uint16_t[num_indices];
+		TG_HWTypeVertex* vb = new TG_HWTypeVertex[num_vertices];
+
+		for (uint32_t i = 0; i < numTypeTriangles; i++)
 		{
-			uint32_t n = 0; // vertices in this segment
-			for (long i = 0; i < numTypeTriangles; i++)
+			TG_TypeTriangle triType = listOfTypeTriangles[i];
+
+			for (uint32_t j = 0; j < 3; ++j)
 			{
-				TG_TypeTriangle triType = listOfTypeTriangles[i];
-				if (triType.localTextureHandle != textures[s])
-					continue;
+				vb[3 * i + j].aRGBLight = listOfTypeVertices[triType.Vertices[j]].aRGBLight;
+				vb[3 * i + j].normal = listOfTypeVertices[triType.Vertices[j]].normal;
+				vb[3 * i + j].position = listOfTypeVertices[triType.Vertices[j]].position;
 
-				for (uint32_t j = 0; j < 3; ++j)
-				{
-					vb[n + j].aRGBLight = listOfTypeVertices[triType.Vertices[j]].aRGBLight;
-					vb[n + j].normal = listOfTypeVertices[triType.Vertices[j]].normal;
-					vb[n + j].position = listOfTypeVertices[triType.Vertices[j]].position;
-					ib[n + j] = (uint16_t)(n + j);
-				}
-
-				vb[n + 0].u = triType.uvdata.u0;
-				vb[n + 0].v = triType.uvdata.v0;
-				vb[n + 1].u = triType.uvdata.u1;
-				vb[n + 1].v = triType.uvdata.v1;
-				vb[n + 2].u = triType.uvdata.u2;
-				vb[n + 2].v = triType.uvdata.v2;
-				n += 3;
+				ib[3 * i + j] = 3 * i + j;
 			}
 
-			hwSegments_[s].localTextureHandle = textures[s];
-			hwSegments_[s].ib = gos_CreateBuffer(gosBUFFER_TYPE::INDEX, gosBUFFER_USAGE::STATIC_DRAW, sizeof(uint16_t), n, ib);
-			hwSegments_[s].vb = gos_CreateBuffer(gosBUFFER_TYPE::VERTEX, gosBUFFER_USAGE::STATIC_DRAW, sizeof(TG_HWTypeVertex), n, vb);
+			vb[3*i + 0].u = triType.uvdata.u0;
+			vb[3*i + 0].v = triType.uvdata.v0;
+			vb[3*i + 1].u = triType.uvdata.u1;
+			vb[3*i + 1].v = triType.uvdata.v1;
+			vb[3*i + 2].u = triType.uvdata.u2;
+			vb[3*i + 2].v = triType.uvdata.v2;
 		}
+
+		ib_ = gos_CreateBuffer(gosBUFFER_TYPE::INDEX, gosBUFFER_USAGE::STATIC_DRAW, sizeof(uint16_t), num_indices, ib);
+		vb_ = gos_CreateBuffer(gosBUFFER_TYPE::VERTEX, gosBUFFER_USAGE::STATIC_DRAW, sizeof(TG_HWTypeVertex), num_vertices, vb);
 
 		delete[] ib;
 		delete[] vb;
-		delete[] textures;
 	}
 
 
@@ -639,14 +620,15 @@ void TG_TypeShape::destroy (void)
 
 	numTypeVertices = numTypeTriangles = numTextures = 0;
 
-	for (DWORD s = 0; s < numHWSegments_; s++)
-	{
-		gos_DestroyBuffer(hwSegments_[s].vb);
-		gos_DestroyBuffer(hwSegments_[s].ib);
+	if (vb_) {
+		gos_DestroyBuffer(vb_);
+		vb_ = 0;
 	}
-	delete[] hwSegments_;
-	hwSegments_ = NULL;
-	numHWSegments_ = 0;
+
+	if (ib_) {
+		gos_DestroyBuffer(ib_);
+		ib_ = 0;
+	}
 
 	if (vdecl_) {
 		gos_DestroyVertexDeclaration(vdecl_);
@@ -2475,9 +2457,8 @@ long TG_Shape::MultiTransformShape (Stuff::Matrix4D *shapeToClip, Stuff::Point3D
 		}
 	}
 
-	// The GPU path draws the segments with solid textures (alpha ones go
-	// through the vertex lists above)
-	if (!isSpotlight && !isWindow && (alphaValue == 0xff) && theShape->numHWSegments_)
+	// FIXME: this (listOfTypeTriangles[0]) is not correct if model has more than 1 texture! 
+	if (!isSpotlight && !isWindow && !theShape->listOfTextures[theShape->listOfTypeTriangles[0].localTextureHandle].textureAlpha && (alphaValue == 0xff))
 	{
 		DWORD addFlags = 0;
 		if (isHudElement)
@@ -2495,7 +2476,7 @@ long TG_Shape::MultiTransformShape (Stuff::Matrix4D *shapeToClip, Stuff::Point3D
 			addFlags |= MC2_ALPHATEST;
 		}
 
-		{
+		if (theShape->ib_ && theShape->vb_) {
 
             size_t numLights = MAX_HW_LIGHTS_IN_WORLD;
             GatherLightsParameters(&lightData_);
@@ -2507,12 +2488,8 @@ long TG_Shape::MultiTransformShape (Stuff::Matrix4D *shapeToClip, Stuff::Point3D
 			cur_viewport[3] = viewAddY;
 			cur_shape2clip = *shapeToClip;
 
-			for (DWORD s = 0; s < theShape->numHWSegments_; s++)
-			{
-				const TG_TinyTexture& tex = theShape->listOfTextures[theShape->hwSegments_[s].localTextureHandle];
-				if (!tex.textureAlpha)
-					mcTextureManager->addRenderShape(tex.mcTextureNodeIndex, MC2_DRAWSOLID | addFlags);
-			}
+			// FIXME: this (listOfTypeTriangles[0]) is not correct if model has more than 1 texture! 
+			mcTextureManager->addRenderShape(theShape->listOfTextures[theShape->listOfTypeTriangles[0].localTextureHandle].mcTextureNodeIndex, MC2_DRAWSOLID | addFlags);
 		}
 	}
 
@@ -2709,7 +2686,8 @@ void TG_Shape::Render (float forceZ, bool isHudElement, BYTE alphaValue, bool is
 	}
 
 
-	if (!isSpotlight && !isWindow && (alphaValue == 0xff) && theShape->numHWSegments_)
+	// FIXME: this (listOfTypeTriangles[0]) is not correct if model has more than 1 texture! 
+	if (!isSpotlight && !isWindow && !theShape->listOfTextures[theShape->listOfTypeTriangles[0].localTextureHandle].textureAlpha && (alphaValue == 0xff))
 	{
 		DWORD addFlags = 0;
 		if (isHudElement)
@@ -2727,7 +2705,12 @@ void TG_Shape::Render (float forceZ, bool isHudElement, BYTE alphaValue, bool is
 			addFlags |= MC2_ALPHATEST;
 		}
 
-		{
+		if (theShape->ib_ && theShape->vb_) {
+
+			// FIXME: this is not correct if model has more than 1 texture! 
+			// TODO: split on per texture batches basis
+			TG_TypeTriangle triType = theShape->listOfTypeTriangles[0];
+
 			Stuff::Matrix4D mvp;
 			if ((forceZ >= 0.0f) && (forceZ < 1.0f))
 			{
@@ -2742,22 +2725,18 @@ void TG_Shape::Render (float forceZ, bool isHudElement, BYTE alphaValue, bool is
 			}
 
 			TG_RenderShape rs;
+			rs.ib_ = theShape->ib_;
+			rs.vb_ = theShape->vb_;
 			rs.vdecl_ = theShape->vdecl_;
 			rs.mvp_ = mvp;
 			rs.mw_ = *shapeToWorld;
 			memcpy(rs.viewport_, cur_viewport, 4 * sizeof(float));
             rs.light_data_buffer_index_ = mcTextureManager->addLightDataStructure(&lightData_);
 
-			// one render shape per segment, with that segment's texture
-			for (DWORD s = 0; s < theShape->numHWSegments_; s++)
-			{
-				const TG_TinyTexture& tex = theShape->listOfTextures[theShape->hwSegments_[s].localTextureHandle];
-				if (tex.textureAlpha)
-					continue;
-				rs.ib_ = theShape->hwSegments_[s].ib;
-				rs.vb_ = theShape->hwSegments_[s].vb;
-				mcTextureManager->addRenderShape(tex.mcTextureNodeIndex, &rs, MC2_DRAWSOLID | addFlags);
-			}
+			mcTextureManager->addRenderShape(
+				theShape->listOfTextures[triType.localTextureHandle].mcTextureNodeIndex,
+				&rs,
+				MC2_DRAWSOLID | addFlags);
 		}
 	}
 

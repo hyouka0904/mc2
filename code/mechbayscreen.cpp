@@ -375,7 +375,7 @@ void MechBayScreen::update()
 	char str[64];
 
 	// RP
-	sprintf( str, "%ld ", LogisticsData::instance->getCBills() );
+	sprintf( str, "%d ", LogisticsData::instance->getCBills() );
 	textObjects[1].setText( str );
 
 	long mouseX = userInput->getMouseX();
@@ -804,20 +804,20 @@ void MechBayScreen::setMech( LogisticsMech* pMech,  bool bCommandFromLB )
 
 		// armor
 		int armor = pCurMech->getArmor();
-		sprintf( str, "%ld", armor );
+		sprintf( str, "%d", armor );
 		textObjects[8].setText( str );
 		attributeMeters[0].setValue( armor/MAX_ARMOR_RANGE );
 
 		// speed
 		int speed = pCurMech->getDisplaySpeed();
-		sprintf( str, "%ld", speed );
+		sprintf( str, "%d", speed );
 		textObjects[9].setText( str );
 		attributeMeters[1].setValue( pCurMech->getSpeed()/MAX_SPEED_RANGE );
 
 
 		// jump
 		int jumpRange = pCurMech->getJumpRange();
-		sprintf( str, "%ld", jumpRange * 25 );
+		sprintf( str, "%d", jumpRange * 25 );
 		textObjects[10].setText( str );
 		attributeMeters[2].setValue( jumpRange * 25 / MAX_JUMP_RANGE );
 

@@ -163,7 +163,7 @@ void ABL_Assert (bool test, long errCode, const char* s) {
 void syntaxError (int errCode) {
 
 	char errMessage[MAXLEN_ERROR_MESSAGE];
-	sprintf(errMessage, "SYNTAX ERROR %s [line %d] - (type %d) %s \"%s\"\n", SourceFiles[FileNumber], lineNumber, errCode, syntaxErrorMessages[errCode], wordString);
+	snprintf(errMessage, sizeof(errMessage), "SYNTAX ERROR %s [line %d] - (type %d) %s \"%s\"\n", SourceFiles[FileNumber], lineNumber, errCode, syntaxErrorMessages[errCode], wordString);
 	ABL_Fatal(0, errMessage);
 	
 	*tokenp = '\0';

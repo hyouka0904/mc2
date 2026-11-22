@@ -122,13 +122,13 @@ void PilotReadyScreen::init(FitIniFile* file)
 	char blockName[32];
 	for (int i = 0; i < 4; i++ )
 	{
-		sprintf( blockName, "PilotSpecialtySkillIcon%ld", i );
+		sprintf( blockName, "PilotSpecialtySkillIcon%d", i );
 		specialtySkillIcons[i].init( file, blockName );
 	}
 
 	for (int i = 0; i < 4; i++ )
 	{
-		sprintf( blockName, "PilotSpecialtySkill%ld", i );
+		sprintf( blockName, "PilotSpecialtySkill%d", i );
 		file->seekBlock( blockName );
 		file->readIdLong( "left", skillLocations[i].left );
 		file->readIdLong( "top", skillLocations[i].top );
@@ -138,19 +138,19 @@ void PilotReadyScreen::init(FitIniFile* file)
 
 	for (int i = 0; i < 5; i++ )
 	{
-		sprintf( blockName, "PilotReadyRankIcon%ld", i );
+		sprintf( blockName, "PilotReadyRankIcon%d", i );
 		rankIcons[i].init( file, blockName );
 	}
 
 	for (int i = 0; i < 16; i++ )
 	{
-		sprintf( blockName, "PilotMedal%ld", i );
+		sprintf( blockName, "PilotMedal%d", i );
 		medalIcons[i].init( file, blockName );
 	}
 
 	for (int i = 0; i < 16; i++ )
 	{
-		sprintf( blockName, "PilotMedalPlacement%ld", i );
+		sprintf( blockName, "PilotMedalPlacement%d", i );
 		file->seekBlock( blockName );
 		file->readIdLong( "left", medalLocations[i].left );
 		file->readIdLong( "right", medalLocations[i].right );
@@ -356,7 +356,7 @@ void PilotReadyScreen::update()
 		char str[64];
 
 		// RP
-		sprintf( str, "%ld ", LogisticsData::instance->getCBills() );
+		sprintf( str, "%d ", LogisticsData::instance->getCBills() );
 		textObjects[1].setText( str );
 
 		for ( int i = 0; i < 4; i++ )
@@ -778,7 +778,7 @@ void PilotReadyScreen::setPilot( LogisticsPilot* pPilot )
 		textObjects[6].setText( number );
 		attributeMeters[1].setValue( pCurPilot->getPiloting()/80.f );
 
-		sprintf( number, "%ld", pCurPilot->getMechKills() );
+		sprintf( number, "%d", pCurPilot->getMechKills() );
 		textObjects[7].setText( number );
 
 		EString name = pCurPilot->getName();

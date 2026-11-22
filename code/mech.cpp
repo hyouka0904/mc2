@@ -1062,7 +1062,7 @@ bool BattleMechType::handleDestruction (GameObjectPtr collidee, GameObjectPtr co
 #endif
 		if (CombatLog) {
 			char s[1024];
-			sprintf(s, "[%.2f] mech.destroyed HD: [%05d]%s", scenarioTime, mech->getPartId(), mech->getName());
+			sprintf(s, "[%.2f] mech.destroyed HD: [%05ld]%s", scenarioTime, mech->getPartId(), mech->getName());
 			CombatLog->write(s);
 			CombatLog->write(" ");
 		}
@@ -2967,7 +2967,7 @@ long BattleMech::init (FitIniFile* mechFile) {
 	long curItem = 0;
 	while (curItem < numOther) {
 		char itemString[128];
-		sprintf(itemString, "Item:%d", curItem);
+		sprintf(itemString, "Item:%ld", curItem);
 		result = mechFile->seekBlock(itemString);
 		if (result != NO_ERR)
 			return(result);
@@ -3002,7 +3002,7 @@ long BattleMech::init (FitIniFile* mechFile) {
 	// Read in the mech's weapons...
 	while (curItem < (numOther + numWeapons)) {
 		char itemString[128];
-		sprintf(itemString, "Item:%d", curItem);
+		sprintf(itemString, "Item:%ld", curItem);
 		result = mechFile->seekBlock(itemString);
 		if (result != NO_ERR)
 			return(result);
@@ -3035,7 +3035,7 @@ long BattleMech::init (FitIniFile* mechFile) {
 	// Read in the mech's ammo...
 	while (curItem < (numOther + numWeapons + numAmmos)) {
 		char itemString[128];
-		sprintf(itemString, "Item:%d", curItem);
+		sprintf(itemString, "Item:%ld", curItem);
 		result = mechFile->seekBlock(itemString);
 		if (result != NO_ERR)
 			return(result);
@@ -3120,7 +3120,7 @@ long BattleMech::init (FitIniFile* mechFile) {
 		for (long curSpace = 0; curSpace < numSpaces; curSpace++)
 		{
 			char componentString[128];
-			sprintf(componentString, "Component:%d", curSpace);
+			sprintf(componentString, "Component:%ld", curSpace);
 			unsigned char spaceData[2];
 			result = mechFile->readIdUCharArray(componentString, spaceData, 2);
 
@@ -6771,7 +6771,7 @@ bool BattleMech::handleEjection (void) {
    		if (CombatLog) 
    		{
    			char s[1024];
-   			sprintf(s, "[%.2f] mech.Ejected HE: [%05d]%s", scenarioTime, getPartId(), getName());
+   			sprintf(s, "[%.2f] mech.Ejected HE: [%05ld]%s", scenarioTime, getPartId(), getName());
    			CombatLog->write(s);
    			CombatLog->write(" ");
    		}
@@ -7466,7 +7466,7 @@ long BattleMech::handleWeaponHit (WeaponShotInfoPtr shotInfo, bool addMultiplayC
 		
 					if (CombatLog) {
 						char s[1024];
-						sprintf(s, "[%.2f] mech.destroyed HWH: [%05d]%s", scenarioTime, getPartId(), getName());
+						sprintf(s, "[%.2f] mech.destroyed HWH: [%05ld]%s", scenarioTime, getPartId(), getName());
 						CombatLog->write(s);
 						CombatLog->write(" ");
 					}
@@ -7492,7 +7492,7 @@ long BattleMech::handleWeaponHit (WeaponShotInfoPtr shotInfo, bool addMultiplayC
 	#endif
 			if (CombatLog) {
 				char s[1024];
-				sprintf(s, "[%.2f] helicopter.destroyed: [%05d]%s", scenarioTime, getPartId(), getName());
+				sprintf(s, "[%.2f] helicopter.destroyed: [%05ld]%s", scenarioTime, getPartId(), getName());
 				CombatLog->write(s);
 				CombatLog->write(" ");
 			}

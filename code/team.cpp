@@ -1079,8 +1079,6 @@ bool Team::lineOfSight (float startLocal, long mCellRow, long mCellCol, float en
 	// etc.), simply set all nec. team bits in this mask...
 
 	//TILE HACK...
-	long tileRow = tCellRow / 3;
-	long tileCol = tCellCol / 3;
 
 	if ((teamId < 0) || (teamId >= MAX_TEAMS))	//Not on any team.  It can see everything!
 		return true;

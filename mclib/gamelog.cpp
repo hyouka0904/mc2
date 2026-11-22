@@ -66,7 +66,7 @@ void GameLog::close (void) {
 	if (filePtr && inUse) {
 		dump();
 		char s[512];
-		sprintf(s, "\nNum Total Lines = %d\n", totalLines);
+		sprintf(s, "\nNum Total Lines = %ld\n", totalLines);
 		filePtr->writeString(s);
 		filePtr->close();
 		inUse = false;

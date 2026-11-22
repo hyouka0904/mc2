@@ -59,7 +59,7 @@ void MissionResults::begin()
 			if ( NO_ERR != file.open( path ) )
 			{
 				char error[256];
-				sprintf( error, "couldn't open file %s", path );
+				snprintf(error, sizeof(error), "couldn't open file %s", path );
 				Assert( 0, 0, error );
 				return;
 			}
@@ -78,7 +78,7 @@ void MissionResults::begin()
 			if ( NO_ERR != file.open( path ) )
 			{
 				char error[256];
-				sprintf( error, "couldn't open file %s", path );
+				snprintf(error, sizeof(error), "couldn't open file %s", path );
 				Assert( 0, 0, error );
 				return;
 			}

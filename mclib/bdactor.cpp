@@ -3064,8 +3064,8 @@ void TreeAppearanceType::init (const char * fileName)
 		{
 			char baseName[256];
 			char baseLODDist[256];
-			sprintf(baseName,"FileName%d",i);
-			sprintf(baseLODDist,"Distance%d",i);
+			sprintf(baseName,"FileName%ld",i);
+			sprintf(baseLODDist,"Distance%ld",i);
 			
 			result = iniFile.readIdString(baseName,aseFileName,511);
 			if (result == NO_ERR)

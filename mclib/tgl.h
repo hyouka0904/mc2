@@ -555,15 +555,8 @@ class TG_TypeShape : public TG_TypeNode
 		bool					alphaTestOn;				//Decides if we should draw alphaTest On or not!
 		bool					filterOn;					//Decides if we should filter the shape or not!
 
-		// GPU copy of the shape, one segment per texture it uses (each drawn
-		// with its own texture; triangles keep their order within a segment)
-		struct HWSegment {
-			HGOSBUFFER		vb;
-			HGOSBUFFER		ib;
-			DWORD			localTextureHandle;	// index into listOfTextures
-		};
-		HWSegment*				hwSegments_;
-		DWORD					numHWSegments_;
+		HGOSBUFFER				vb_;
+		HGOSBUFFER				ib_;
 		HGOSVERTEXDECLARATION	vdecl_;
 
 	//-----------------
@@ -590,8 +583,7 @@ class TG_TypeShape : public TG_TypeNode
 			hotYellowRGB = 0x00FEfF91;
 			hotGreenRGB = 0x000081b6;
 
-			hwSegments_ = NULL;
-			numHWSegments_ = 0;
+			vb_ = ib_ = 0;
 			vdecl_ = 0;
 		}
 		

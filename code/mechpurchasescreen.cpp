@@ -140,7 +140,7 @@ void MechPurchaseScreen::update()
 	
 
 	char tmp[64];
-	sprintf( tmp, "%ld ", amount);
+	sprintf( tmp, "%d ", amount);
 	textObjects[1].setText( tmp );
 	textObjects[1].setColor( color );
 

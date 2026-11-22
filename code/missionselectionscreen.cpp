@@ -268,7 +268,7 @@ void MissionSelectionScreen::begin()
 	}
 
 	missionCount = MAX_MISSIONS_IN_GROUP;
-	int result = LogisticsData::instance->getCurrentMissions( missionNames, missionCount );
+	(void)(LogisticsData::instance->getCurrentMissions( missionNames, missionCount ));
 
 	EString selMissionName = LogisticsData::instance->getCurrentMission();
 	gosASSERT( result == NO_ERR );
@@ -393,7 +393,7 @@ void MissionSelectionScreen::setMission( int whichOne )
 	LogisticsData::instance->setCurrentMission( missionNames[whichOne] );
 
 	char text[64];
-	sprintf( text, "%ld ", LogisticsData::instance->getCBills() );
+	sprintf( text, "%d ", LogisticsData::instance->getCBills() );
 	textObjects[RP_TEXT].setText( text );
 
 

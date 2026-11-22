@@ -99,7 +99,7 @@ void MPConnectionType::init(FitIniFile* file)
 		if ( NO_ERR != PNfile.open( path ) )
 		{
 			char error[256];
-			sprintf( error, "couldn't open file %s", path );
+			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
 		}
@@ -115,7 +115,7 @@ void MPConnectionType::init(FitIniFile* file)
 		if ( NO_ERR != PNfile.open( path ) )
 		{
 			char error[256];
-			sprintf( error, "couldn't open file %s", path );
+			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
 		}
@@ -131,7 +131,7 @@ void MPConnectionType::init(FitIniFile* file)
 		if ( NO_ERR != PNfile.open( path ) )
 		{
 			char error[256];
-			sprintf( error, "couldn't open file %s", path );
+			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
 		}
@@ -667,7 +667,7 @@ void aTcpipPanel::update()
 			connectingTime += frameLength;
 
 			long sessionCount;
-			MC2Session* pSessions =  MPlayer->getSessions( sessionCount );
+			(void)(MPlayer->getSessions( sessionCount ));
 			if ( sessionCount )
 			{
 				bFoundConnection = true;
@@ -839,7 +839,6 @@ void		aTcpipPanel::render()
 
 long aTcpipPanel::getNum( char* pStr, long index1, long index2 )
 {
-	char tmp = pStr[index2];
 	pStr[index2] = 0;
 
 	return atoi( &pStr[index1] );

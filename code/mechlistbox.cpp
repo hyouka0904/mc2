@@ -122,7 +122,7 @@ int MechListBox::init()
 	if ( NO_ERR != file.open( path ) )
 	{
 		char errorStr[256];
-		sprintf( errorStr, "couldn't open file %s", path );
+		snprintf(errorStr, sizeof(errorStr), "couldn't open file %s", path );
 		Assert( 0, 0, errorStr );
 		return -1;
 	}
@@ -171,7 +171,7 @@ MechListBoxItem::MechListBoxItem( LogisticsMech* pRefMech, long count )
 	chassisName.setText( pMech->getChassisName() );
 	
 	char text[32];
-	sprintf( text, "%ld", pMech->getCost() );
+	sprintf( text, "%d", pMech->getCost() );
 	costText.setText( text );
 
 	mechCount = LogisticsData::instance->getVariantsInInventory( pRefMech->getVariant(), bIncludeForceGroup );
@@ -253,9 +253,9 @@ void MechListBoxItem::init( FitIniFile& file )
 		char blockName[64];
 		for ( int i = 0; i < 4; i++ )
 		{
-			sprintf( blockName, "OrangeAnimation%ld", i );
+			sprintf( blockName, "OrangeAnimation%d", i );
 			s_templateItem->animations[1][i].init( &file, blockName );
-			sprintf( blockName, "Animation%ld", i );
+			sprintf( blockName, "Animation%d", i );
 			s_templateItem->animations[0][i].init( &file, blockName );
 		}
 		

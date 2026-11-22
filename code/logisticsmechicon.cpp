@@ -93,7 +93,7 @@ int LogisticsMechIcon::init( FitIniFile& file )
 		char blockName[64];
 		for ( int i = 0; i < ICON_ANIM_COUNT; i++ )
 		{
-			sprintf( blockName, "Animation%ld", i );
+			sprintf( blockName, "Animation%d", i );
 			s_pTemplateIcon->animations[i].init( &file, blockName );
 		}
 	}

@@ -95,7 +95,7 @@ void MPGameBrowser::init(FitIniFile* file)
 		if ( NO_ERR != PNfile.open( path ) )
 		{
 			char error[256];
-			sprintf( error, "couldn't open file %s", path );
+			snprintf(error, sizeof(error), "couldn't open file %s", path );
 			Assert( 0, 0, error );
 			return;
 		}
@@ -655,7 +655,7 @@ void aGameListItem::setSessionInfo( MC2Session* pSession )
 	mapName.setText( pSession->map );
 	
 	char tmp[256];
-	sprintf( tmp, "%ld/%ld", pSession->numPlayers, pSession->maxPlayers );
+	sprintf( tmp, "%d/%d", pSession->numPlayers, pSession->maxPlayers );
 	numPlayers.setText( tmp );
 	sprintf( tmp, "%ld", pSession->ping );
 	latency.setText( tmp );

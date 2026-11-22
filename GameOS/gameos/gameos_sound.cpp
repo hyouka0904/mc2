@@ -12,6 +12,7 @@
 #include <SDL3_mixer/SDL_mixer.h>
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 // HGOSAUDIO (gameos.hpp) is a pointer to this
@@ -35,9 +36,19 @@ public:
     gosAudio* createFromMemory(const gosAudio_Format& fmt, const void* data, int size);
     void destroyAudio(gosAudio* audio);
 
+    // channel -1 is the mixer: master volume / balance and the 3D listener
     gosAudio_ChannelInfo* channel(int i) {
-        return (i >= 0 && i < NUM_CHANNELS) ? &channel_info_[i] : nullptr;
+        return (i >= 0 && i < NUM_CHANNELS) ? &channel_info_[i] : (i == -1 ? &mixer_info_ : nullptr);
     }
+    // Applies volume, panning, frequency and 3D settings of a channel
+    void apply(int i);
+    void applyAll3D() {
+        for (int i = 0; i < NUM_CHANNELS; ++i)
+            if (is3d_[i])
+                apply(i);
+    }
+    void set3D(int i) { is3d_[i] = true; }
+    bool is3D(int i) const { return is3d_[i]; }
     MIX_Track* track(int i) { return (i >= 0 && i < NUM_CHANNELS) ? tracks_[i] : nullptr; }
 
 private:
@@ -45,6 +56,8 @@ private:
     bool has_device_ = false;
     MIX_Track* tracks_[NUM_CHANNELS] = {};
     gosAudio_ChannelInfo channel_info_[NUM_CHANNELS];
+    gosAudio_ChannelInfo mixer_info_;
+    bool is3d_[NUM_CHANNELS] = {};
     std::vector<gosAudio*> audio_list_;
 };
 
@@ -91,7 +104,17 @@ bool SoundEngine::init(int frequency, bool stereo, bool open_device)
         memset(&channel_info_[i], 0, sizeof(channel_info_[i]));
         channel_info_[i].ePlayMode = gosAudio_Stop;
         channel_info_[i].fVolume = 1.0f;
+        channel_info_[i].fFrequency = 1.0f;
+        channel_info_[i].fMinDistance = 1.0f;
+        channel_info_[i].fMaxDistance = 1e9f; // DirectSound's default
+        is3d_[i] = false;
     }
+    // listener at the origin looking down +z, real world factors
+    memset(&mixer_info_, 0, sizeof(mixer_info_));
+    mixer_info_.fVolume = 1.0f;
+    mixer_info_.fFrontZ = 1.0f;
+    mixer_info_.fTopY = 1.0f;
+    mixer_info_.fDoppler = mixer_info_.fRolloff = mixer_info_.fDistance = 1.0f;
     return true;
 }
 
@@ -165,6 +188,32 @@ void SoundEngine::destroyAudio(gosAudio* audio)
     delete audio;
 }
 
+void SoundEngine::apply(int i)
+{
+    const gosAudio_ChannelInfo& ci = channel_info_[i];
+    MIX_Track* track = tracks_[i];
+    float gain = ci.fVolume;
+    float pan = ci.fPanning;
+    float pitch = ci.fFrequency > 0.0f ? ci.fFrequency : 1.0f;
+    if (is3d_[i]) {
+        const gosSpatial s = gos_Spatialize(mixer_info_, ci);
+        gain *= s.gain;
+        pan = s.pan;
+        pitch *= s.pitch;
+    }
+    MIX_SetTrackGain(track, gain);
+    // Panning only attenuates the opposite side; centre is full level.
+    if (pan == 0.0f) {
+        MIX_SetTrackStereo(track, nullptr);
+    } else {
+        MIX_StereoGains gains;
+        gains.left = gos_PanLeftGain(pan);
+        gains.right = gos_PanRightGain(pan);
+        MIX_SetTrackStereo(track, &gains);
+    }
+    MIX_SetTrackFrequencyRatio(track, pitch);
+}
+
 SoundEngine* g_sound_engine = nullptr;
 
 SoundEngine* engine()
@@ -207,6 +256,46 @@ MIX_Mixer* gos_GetAudioMixer()
 bool gos_AudioHasDevice()
 {
     return g_sound_engine && g_sound_engine->hasDevice();
+}
+
+gosSpatial gos_Spatialize(const gosAudio_ChannelInfo& lis, const gosAudio_ChannelInfo& src)
+{
+    gosSpatial out = {1.0f, 0.0f, 1.0f};
+    const float units = lis.fDistance > 0.0f ? lis.fDistance : 1.0f; // metres per unit
+    const float dx = src.fPosX - lis.fPosX, dy = src.fPosY - lis.fPosY, dz = src.fPosZ - lis.fPosZ;
+    const float len = std::sqrt(dx * dx + dy * dy + dz * dz);
+    const float r = len * units;
+
+    // distance attenuation (distances in metres)
+    const float minr = std::max(src.fMinDistance * units, 1e-6f);
+    const float maxr = src.fMaxDistance * units;
+    if (r >= maxr)
+        out.gain = 0.0f;
+    else if (r > minr)
+        out.gain = minr / (minr + lis.fRolloff * (r - minr));
+    if (len <= 1e-6f)
+        return out; // at the listener: centred, no Doppler
+
+    const float ux = dx / len, uy = dy / len, uz = dz / len; // listener -> source
+
+    // right = top x front (left-handed, as DirectSound: front +z, top +y -> right +x)
+    float rx = lis.fTopY * lis.fFrontZ - lis.fTopZ * lis.fFrontY;
+    float ry = lis.fTopZ * lis.fFrontX - lis.fTopX * lis.fFrontZ;
+    float rz = lis.fTopX * lis.fFrontY - lis.fTopY * lis.fFrontX;
+    const float rl = std::sqrt(rx * rx + ry * ry + rz * rz);
+    if (rl > 1e-6f)
+        out.pan = std::max(-1.0f, std::min(1.0f, (ux * rx + uy * ry + uz * rz) / rl));
+
+    // Doppler: listener moving towards the source / source towards the listener
+    const float c = 343.0f / units; // speed of sound in units per second
+    const float v_lis = lis.fVelX * ux + lis.fVelY * uy + lis.fVelZ * uz;
+    const float v_src = -(src.fVelX * ux + src.fVelY * uy + src.fVelZ * uz);
+    const float denom = c - lis.fDoppler * v_src;
+    if (lis.fDoppler > 0.0f && denom > 1e-3f)
+        out.pitch = std::max(0.25f, std::min(4.0f, (c + lis.fDoppler * v_lis) / denom));
+    else if (lis.fDoppler > 0.0f)
+        out.pitch = 4.0f;
+    return out;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -267,68 +356,109 @@ void __stdcall gosAudio_AssignResourceToChannel(int Channel, HGOSAUDIO hgosaudio
 void __stdcall gosAudio_SetChannelSlider(int Channel, enum gosAudio_Properties prop, float value1,
                                          float value2, float value3)
 {
-    (void)value2;
-    (void)value3;
     gosAudio_ChannelInfo* ci = engine()->channel(Channel);
-    MIX_Track* track = engine()->track(Channel);
     gosASSERT(ci);
     if (!ci)
         return;
+
+    if (Channel == -1) {
+        // the mixer: master volume and the 3D listener
+        switch (prop) {
+        case gosAudio_Common:
+            break;
+        case gosAudio_Volume:
+            ci->fVolume = saturate(value1);
+            MIX_SetMixerGain(engine()->mixer(), ci->fVolume);
+            break;
+        case gosAudio_Panning:
+            ci->fPanning = value1 < -1.0f ? -1.0f : (value1 > 1.0f ? 1.0f : value1);
+            break;
+        case gosAudio_Position: ci->fPosX = value1; ci->fPosY = value2; ci->fPosZ = value3; break;
+        case gosAudio_Velocity: ci->fVelX = value1; ci->fVelY = value2; ci->fVelZ = value3; break;
+        case gosAudio_FrontOrientation: ci->fFrontX = value1; ci->fFrontY = value2; ci->fFrontZ = value3; break;
+        case gosAudio_TopOrientation: ci->fTopX = value1; ci->fTopY = value2; ci->fTopZ = value3; break;
+        case gosAudio_Doppler: ci->fDoppler = std::max(0.0f, value1); break;
+        case gosAudio_Rolloff: ci->fRolloff = std::max(0.0f, value1); break;
+        case gosAudio_Distance: ci->fDistance = value1 > 0.0f ? value1 : 1.0f; break;
+        case gosAudio_Reverb: ci->fReverb = value1; break; // stored only: no reverb effect
+        case gosAudio_Decay: ci->fDecay = value1; break;
+        default:
+            PAUSE(("Mixer slider not supported\n"));
+            return;
+        }
+        engine()->applyAll3D();
+        return;
+    }
 
     switch (prop) {
     case gosAudio_Common:
         break;
     case gosAudio_Volume:
         ci->fVolume = saturate(value1);
-        MIX_SetTrackGain(track, ci->fVolume);
         break;
-    case gosAudio_Panning: {
+    case gosAudio_Panning:
         ci->fPanning = value1 < -1.0f ? -1.0f : (value1 > 1.0f ? 1.0f : value1);
-        // Panning only attenuates the opposite side; centre is full level.
-        if (ci->fPanning == 0.0f) {
-            MIX_SetTrackStereo(track, nullptr);
-        } else {
-            MIX_StereoGains gains;
-            gains.left = gos_PanLeftGain(ci->fPanning);
-            gains.right = gos_PanRightGain(ci->fPanning);
-            MIX_SetTrackStereo(track, &gains);
-        }
         break;
-    }
     case gosAudio_Frequency:
-        // The game never changes frequency per channel
-        PAUSE(("Cannot change frequency on a specific channel\n"));
+        ci->fFrequency = value1 > 0.0f ? value1 : 1.0f;
+        break;
+    case gosAudio_Position:
+        ci->fPosX = value1; ci->fPosY = value2; ci->fPosZ = value3;
+        engine()->set3D(Channel);
+        break;
+    case gosAudio_Velocity:
+        ci->fVelX = value1; ci->fVelY = value2; ci->fVelZ = value3;
+        engine()->set3D(Channel);
+        break;
+    case gosAudio_MinMaxDistance:
+        ci->fMinDistance = value1 > 0.0f ? value1 : 1.0f;
+        ci->fMaxDistance = value2 > ci->fMinDistance ? value2 : 1e9f;
+        engine()->set3D(Channel);
+        break;
+    case gosAudio_ConeAngles: // stored only: sources are omnidirectional
+        ci->fConeInner = value1; ci->fConeOuter = value2;
+        break;
+    case gosAudio_ConeOrientation:
+        ci->fConeX = value1; ci->fConeY = value2; ci->fConeZ = value3;
         break;
     default:
         PAUSE(("Slider not supported yet\n"));
+        return;
     }
+    engine()->apply(Channel);
 }
 
 void __stdcall gosAudio_GetChannelSlider(int Channel, enum gosAudio_Properties prop, float* value1,
                                          float* value2, float* value3)
 {
-    (void)value2;
-    (void)value3;
     gosAudio_ChannelInfo* ci = engine()->channel(Channel);
     gosASSERT(ci && value1);
     if (!ci || !value1)
         return;
-
+    float a = 0.0f, b = 0.0f, c = 0.0f;
     switch (prop) {
-    case gosAudio_Common:
-        break;
-    case gosAudio_Volume:
-        *value1 = ci->fVolume;
-        break;
-    case gosAudio_Panning:
-        *value1 = ci->fPanning; // -1 ... +1
-        break;
-    case gosAudio_Frequency:
-        PAUSE(("Cannot read frequency of a specific channel\n"));
-        break;
+    case gosAudio_Common: break;
+    case gosAudio_Volume: a = ci->fVolume; break;
+    case gosAudio_Panning: a = ci->fPanning; break; // -1 ... +1
+    case gosAudio_Frequency: a = ci->fFrequency; break;
+    case gosAudio_Position: a = ci->fPosX; b = ci->fPosY; c = ci->fPosZ; break;
+    case gosAudio_Velocity: a = ci->fVelX; b = ci->fVelY; c = ci->fVelZ; break;
+    case gosAudio_MinMaxDistance: a = ci->fMinDistance; b = ci->fMaxDistance; break;
+    case gosAudio_FrontOrientation: a = ci->fFrontX; b = ci->fFrontY; c = ci->fFrontZ; break;
+    case gosAudio_TopOrientation: a = ci->fTopX; b = ci->fTopY; c = ci->fTopZ; break;
+    case gosAudio_Doppler: a = ci->fDoppler; break;
+    case gosAudio_Rolloff: a = ci->fRolloff; break;
+    case gosAudio_Distance: a = ci->fDistance; break;
+    case gosAudio_ConeAngles: a = ci->fConeInner; b = ci->fConeOuter; break;
+    case gosAudio_ConeOrientation: a = ci->fConeX; b = ci->fConeY; c = ci->fConeZ; break;
     default:
         PAUSE(("Slider not supported yet\n"));
     }
+    *value1 = a;
+    if (value2)
+        *value2 = b;
+    if (value3)
+        *value3 = c;
 }
 
 //////////////////////////////////////////////////////////////////////////////////

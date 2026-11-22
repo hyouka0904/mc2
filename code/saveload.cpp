@@ -668,7 +668,7 @@ void Mission::load (const char *loadFileName)
 
 	//Get the campaign name for the campaign we are currently playing.
 	EString campaignName = LogisticsData::instance->getCampaignName();
-	const char *cmpName = campaignName.Data();
+	(void)(campaignName.Data());
 
 	/*
 	if (stricmp(campName,cmpName) != 0)
@@ -1224,7 +1224,7 @@ void Mission::load (const char *loadFileName)
 		for (i = 1; i < numParts + 1; i++)
 		{
 			char partName[12];
-			sprintf(partName,"Part%d", i);
+			snprintf(partName, sizeof(partName),"Part%d", i);
 			
 			//------------------------------------------------------------------
 			// Find the object to load

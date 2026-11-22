@@ -626,7 +626,7 @@ long FastFile::writeFast (const char* fastFileName, void* buffer, int nbytes)
 
 			gosASSERT(memcmp(LZPacketBuffer, fbc, compressedSize) == 0);
 
-			size_t uncompressedSize = LZDecomp((Bytef*)fb, (Bytef*)fbc, compressedSize);
+			(void)(LZDecomp((Bytef*)fb, (Bytef*)fbc, compressedSize));
 			gosASSERT(nbytes == uncompressedSize);
 		}
 	}

@@ -671,7 +671,7 @@ long FitIniFile::floatToText (char *result, float num, unsigned long bufLen)
 long FitIniFile::longToTextDec (char *result, long num, unsigned long bufLen)
 {
 	char temp[250];
-	sprintf(temp,"%d",num);
+	sprintf(temp,"%ld",num);
 
 	unsigned long numLength = strlen(temp);
 	if (numLength >= bufLen)
@@ -687,7 +687,7 @@ long FitIniFile::longToTextDec (char *result, long num, unsigned long bufLen)
 long FitIniFile::longToTextHex (char *result, long num, unsigned long bufLen)
 {
 	char temp[250];
-	sprintf(temp,"0x%x",num);
+	sprintf(temp,"0x%lx",num);
 
 	unsigned long numLength = strlen(temp);
 	if (numLength >= bufLen)
@@ -2702,7 +2702,7 @@ long FitIniFile::writeIdBoolean (const char *varName, bool value)
 long FitIniFile::writeIdLong (const char *varName, long value)
 {
 	char thisLine[255];
-	sprintf(thisLine,"l %s = %d\r\n",varName,value);
+	sprintf(thisLine,"l %s = %ld\r\n",varName,value);
 	
 	long result = write((MemoryPtr)thisLine,strlen(thisLine));
 	return(result);
@@ -2732,7 +2732,7 @@ long FitIniFile::writeIdChar (const char *varName, char value)
 long FitIniFile::writeIdULong (const char *varName, unsigned long value)
 {
 	char thisLine[255];
-	sprintf(thisLine,"ul %s = %d\r\n",varName,value);
+	sprintf(thisLine,"ul %s = %ld\r\n",varName,value);
 	
 	long result = write((MemoryPtr)thisLine,strlen(thisLine));
 	return(result);
@@ -2779,7 +2779,7 @@ long FitIniFile::writeIdString (const char *varName, const char *result)
 long FitIniFile::writeIdUShortArray (const char *varName, unsigned short *array, unsigned long numElements)
 {
 	char thisLine[255];
-	sprintf(thisLine,"us[%d] %s = %d,",numElements,varName,array[0]);
+	sprintf(thisLine,"us[%ld] %s = %d,",numElements,varName,array[0]);
 	
 	long bytesWritten = write((MemoryPtr)thisLine,strlen(thisLine));
 
@@ -2798,13 +2798,13 @@ long FitIniFile::writeIdUShortArray (const char *varName, unsigned short *array,
 long FitIniFile::writeIdLongArray (const char *varName, long *array, unsigned long numElements)
 {
 	char thisLine[255];
-	sprintf(thisLine,"l[%d] %s = %d,",numElements,varName,array[0]);
+	sprintf(thisLine,"l[%ld] %s = %ld,",numElements,varName,array[0]);
 	
 	long bytesWritten = write((MemoryPtr)thisLine,strlen(thisLine));
 
 	for (long i=1;i<(long)numElements;i++)
 	{
-		sprintf(thisLine,"%d,",array[i]);
+		sprintf(thisLine,"%ld,",array[i]);
 		bytesWritten += write((MemoryPtr)thisLine,strlen(thisLine));
 	}
 	sprintf(thisLine,"\r\n");
@@ -2817,7 +2817,7 @@ long FitIniFile::writeIdLongArray (const char *varName, long *array, unsigned lo
 long FitIniFile::writeIdFloatArray (const char *varName, float *array, unsigned long numElements)
 {
 	char thisLine[255];
-	sprintf(thisLine,"f[%d] %s = %.2f,",numElements,varName,array[0]);
+	sprintf(thisLine,"f[%ld] %s = %.2f,",numElements,varName,array[0]);
 	
 	long bytesWritten = write((MemoryPtr)thisLine,strlen(thisLine));
 
@@ -2836,7 +2836,7 @@ long FitIniFile::writeIdFloatArray (const char *varName, float *array, unsigned 
 long FitIniFile::writeIdUCharArray (const char *varName, unsigned char *array, unsigned long numElements)
 {
 	char thisLine[255];
-	sprintf(thisLine,"uc[%d] %s = %d,",numElements,varName,array[0]);
+	sprintf(thisLine,"uc[%ld] %s = %d,",numElements,varName,array[0]);
 	
 	long bytesWritten = write((MemoryPtr)thisLine,strlen(thisLine));
 

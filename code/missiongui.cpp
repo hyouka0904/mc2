@@ -770,7 +770,7 @@ void MissionInterfaceManager::update (void)
 	// Update the Debug Status Bar...
 	int row, col;
 	land->worldToCell(wPos, row, col);
-	sprintf(DebugStatusBarString, "TIME: %06d, MOUSE: [%d, %d] %d,%d,%d (%.2f, %.2f, %.2f), PATHMGR: %02d(%02d)",
+	sprintf(DebugStatusBarString, "TIME: %06ld, MOUSE: [%d, %d] %ld,%ld,%ld (%.2f, %.2f, %.2f), PATHMGR: %02ld(%02ld)",
 		(long)scenarioTime,
 		row, col,
 		GlobalMoveMap[0]->calcArea(row, col),
@@ -781,9 +781,9 @@ void MissionInterfaceManager::update (void)
 	if (MPlayer) {
 		char mpStr[256];
 		if (MPlayer->isServer())
-			sprintf(mpStr, ", MULTIPLAY: %s-(%d)SERVER {%d,%d}", MPlayer->getPlayerName(), MPlayer->commanderID, MPlayer->maxReceiveLoad, MPlayer->maxReceiveSize);
+			sprintf(mpStr, ", MULTIPLAY: %s-(%ld)SERVER {%ld,%ld}", MPlayer->getPlayerName(), MPlayer->commanderID, MPlayer->maxReceiveLoad, MPlayer->maxReceiveSize);
 		else
-			sprintf(mpStr, ", MULTIPLAY: %s-(%d)CLIENT {%d,%d}", MPlayer->getPlayerName(), MPlayer->commanderID, MPlayer->maxReceiveLoad, MPlayer->maxReceiveSize);
+			snprintf(mpStr, sizeof(mpStr), ", MULTIPLAY: %s-(%ld)CLIENT {%ld,%ld}", MPlayer->getPlayerName(), MPlayer->commanderID, MPlayer->maxReceiveLoad, MPlayer->maxReceiveSize);
 		strcat(DebugStatusBarString, mpStr);
 	}
 	if (EnemiesGoalPlan)
@@ -3115,9 +3115,9 @@ void MissionInterfaceManager::printDebugInfo()
 		land->worldToCell(wPos, row, col);
 		char debugString[256];
 		if (target)
-			sprintf(debugString, "POS = %s(%c) %d,%d [%d, %d] (%.4f, %.4f, %.4f) OBJ = %s\n", terrainStr[GameMap->getTerrain(row, col)], GameMap->getPassable(row, col) ? 'T' : 'F', GlobalMoveMap[0]->calcArea(row, col), GlobalMoveMap[1]->calcArea(row, col), row, col, wPos.x, wPos.y, wPos.z, target->getName());
+			sprintf(debugString, "POS = %s(%c) %ld,%ld [%d, %d] (%.4f, %.4f, %.4f) OBJ = %s\n", terrainStr[GameMap->getTerrain(row, col)], GameMap->getPassable(row, col) ? 'T' : 'F', GlobalMoveMap[0]->calcArea(row, col), GlobalMoveMap[1]->calcArea(row, col), row, col, wPos.x, wPos.y, wPos.z, target->getName());
 		else
-			sprintf(debugString, "POS = %s(%c) %d,%d [%d, %d] (%.4f, %.4f, %.4f)\n", terrainStr[GameMap->getTerrain(row, col)], GameMap->getPassable(row, col) ? 'T' : 'F', GlobalMoveMap[0]->calcArea(row, col), GlobalMoveMap[1]->calcArea(row, col), row, col, wPos.x, wPos.y, wPos.z);
+			sprintf(debugString, "POS = %s(%c) %ld,%ld [%d, %d] (%.4f, %.4f, %.4f)\n", terrainStr[GameMap->getTerrain(row, col)], GameMap->getPassable(row, col) ? 'T' : 'F', GlobalMoveMap[0]->calcArea(row, col), GlobalMoveMap[1]->calcArea(row, col), row, col, wPos.x, wPos.y, wPos.z);
 		DEBUGWINS_print(debugString);
 	}
 
@@ -4149,7 +4149,7 @@ MoverPtr BringInReinforcement (long vehicleID, long rosterIndex, long commanderI
 	char* vehicleFile = (char*)MissionInterfaceManager::instance()->getSupportVehicleNameFromID(vehicleID);
 	if (!vehicleFile) {
 		char s[1024];
-		sprintf(s, "BringInReinforcement: null behicleFile (%d)", vehicleID);
+		sprintf(s, "BringInReinforcement: null behicleFile (%ld)", vehicleID);
 		STOP((s));
 		//return(NULL);
 	}
@@ -4252,7 +4252,7 @@ void MissionInterfaceManager::beginVtol (long supportID, long commanderID, Stuff
 
 	if (vehicleID[commanderID] == 0) {
 		char s[1024];
-		sprintf(s, "beginvtol: supportID = %d, commanderID = %d, vehicleID = %d, vehicleFile = %s", supportID, commanderID, vehicleID[commanderID], vehicleFile);
+		sprintf(s, "beginvtol: supportID = %ld, commanderID = %ld, vehicleID = %ld, vehicleFile = %s", supportID, commanderID, vehicleID[commanderID], vehicleFile);
 		PAUSE((s));
 	}
 
@@ -4758,7 +4758,7 @@ int MissionInterfaceManager::quickDebugInfo() {
 		land->worldToCell(wPos, row, col);
 		char debugString[256];
 		if (target)
-			sprintf(debugString, "INFO = %s(%c%c) %d(W%d) [%d, %d] (%.4f, %.4f, %.4f) #Pth=%d(%d) OBJ = %s\n",
+			sprintf(debugString, "INFO = %s(%c%c) %ld(W%d) [%d, %d] (%.4f, %.4f, %.4f) #Pth=%ld(%ld) OBJ = %s\n",
 				terrainStr[GameMap->getTerrain(row, col)],
 				GameMap->getPassable(row, col) ? 'T' : 'F',
 				GameMap->getForest(row, col) ? 'T' : 'F',
@@ -4768,7 +4768,7 @@ int MissionInterfaceManager::quickDebugInfo() {
 				wPos.x, wPos.y, wPos.z,
 				PathManager->numPaths, PathManager->peakPaths, target->getName());
 		else
-			sprintf(debugString, "INFO = %s(%c%c) %d(W%d) [%d, %d] (%.4f, %.4f, %.4f) #Pth=%d(%d)\n",
+			sprintf(debugString, "INFO = %s(%c%c) %ld(W%d) [%d, %d] (%.4f, %.4f, %.4f) #Pth=%ld(%ld)\n",
 				terrainStr[GameMap->getTerrain(row, col)],
 				GameMap->getPassable(row, col) ? 'T' : 'F',
 				GameMap->getForest(row, col) ? 'T' : 'F',
@@ -4781,7 +4781,7 @@ int MissionInterfaceManager::quickDebugInfo() {
 		sprintf(debugString, "REQ =");
 		char s[10];
 		for (long i = 0; i < 25; i++) {
-			sprintf(s, " %02d", PathManager->sourceTally[i]);
+			sprintf(s, " %02ld", PathManager->sourceTally[i]);
 			strcat(debugString, s);
 		}
 		DEBUGWINS_print(debugString);
@@ -5267,7 +5267,7 @@ int MissionInterfaceManager::saveHotKeys( FitIniFile& file )
 	for ( int i = 0; i < MAX_COMMAND; i++ )
 	{
 		char header[256];
-		sprintf( header, "Key%ld", i );
+		sprintf( header, "Key%d", i );
 		file.writeIdLong( header, commands[i].key );		
 	}
 
@@ -5292,7 +5292,7 @@ int MissionInterfaceManager::loadHotKeys( FitIniFile& file )
 		for ( int i = 0; i < MAX_COMMAND; i++ )
 		{
 			char header[256];
-			sprintf( header, "Key%ld", i );
+			sprintf( header, "Key%d", i );
 			file.readIdLong( header, commands[i].key );		
 		}
 
