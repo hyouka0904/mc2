@@ -2,9 +2,12 @@
 
 [原作者網站](https://alariq.github.io/mc2-website/)
 
+> **本專案是 [alariq/mc2](https://github.com/alariq/mc2) 的獨立 fork，與原作者 alariq 無關，也未經其認可。**
+> 問題請回報到本 repository，不要回報給原專案。兩者的差異見[與原專案的差異](#與原專案的差異)。
+
 本專案是《MechCommander 2》（微軟 2001 年發行的即時戰術遊戲）的開源引擎重製與跨平台移植。
 微軟在 Shared Source 授權下公開了遊戲程式碼，但其底層引擎 **GameOS** 只提供標頭檔（`.h`）而沒有實作；
-本專案依照這些介面，以 **SDL3 + OpenGL** 重新實作了整個 GameOS，使遊戲能以 64 位元在 Linux、Windows 與 macOS 上執行，
+原作者 alariq 依照這些介面重新實作了整個 GameOS（SDL2 + OpenGL）；本 fork 再把它改成 **SDL3**，繪圖預設走 SDL3 GPU（Vulkan / Metal），OpenGL 留作備援，使遊戲能以 64 位元在 Linux、Windows 與 macOS 上執行，
 並修正了許多原版遊戲本身就存在的錯誤。
 
 - 單人戰役、任務、存讀檔、機甲實驗室等功能皆可運作。
@@ -26,7 +29,8 @@
 6. [在 Windows 上建置](#在-windows-上建置)／[在 macOS 上建置](#在-macos-上建置)
 7. [安裝包與發佈](#安裝包與發佈)
 8. [已知限制與待辦事項](#已知限制與待辦事項)
-9. [授權](#授權)
+9. [與原專案的差異](#與原專案的差異)
+10. [授權](#授權)
 
 ---
 
@@ -380,7 +384,7 @@ ctest --test-dir build --output-on-failure
 | `unit_image_tga` | TGA 貼圖解碼：未壓縮與 RLE 壓縮、24/32/16 位元、損壞資料 |
 | `unit_pqueue` | 路徑搜尋優先佇列，包含與參考模型比對的隨機測試 |
 | `unit_run_options` | 決定性模式參數、PNG 截圖編碼、固定步長時鐘、輸入腳本解析 |
-| `unit_sound` | 音效 API（SDL3_mixer）：播放一次 / 迴圈 / 暫停 / 停止、音量線性、左右聲道定位、釋放資源；3D 音效的距離衰減、依聽者方向定位、都卜勒、移動聽者；不需要音效卡 |
+| `unit_sound` | 音效 API（SDL3_mixer）：播放一次 / 迴圈 / 暫停 / 停止、音量線性、左右聲道定位、釋放資源；3D 音效的距離衰減、依聽者方向定位、都卜勒、移動聽者；輸出限幅器（小聲不變、大聲不削波並會恢復、多個大聲音效同時播放不削波）；不需要音效卡 |
 | `unit_heap` | GameOS 記憶體堆積：`gos_Malloc` / `new` 依目前 heap 記錄、`gos_DestroyMemoryHeap(heap, false)` 釋放剩餘配置、`(heap, true)` 只回報洩漏且區塊仍可用 |
 | `unit_render_state` | 由 GameOS 渲染狀態推出的管線描述、32 位元管線鍵（可逆、互不重複）、管線快取 |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
@@ -720,6 +724,40 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 新檔案的授權標頭 | 本移植新增的原始碼、腳本、著色器、CMake 與 CI 檔加上 `SPDX-License-Identifier: GPL-3.0-only`；微軟原始檔不加，維持原有聲明 |
 | 網路對戰 | 尚未決定是否列入範圍 |
 
+### 音效輸出
+
+- **取樣率**：有音效裝置時，混音器以裝置本身的取樣率（通常 48 kHz）和 32 位元浮點運作。之前固定開在 22.05 kHz、16 位元，而配樂和約三成的音效是 44.1 kHz，先被砍到 22.05 kHz（11 kHz 以上全部消失）再升頻給音效卡，聽起來悶而且粗糙。沒有裝置時（測試）仍是 22.05 kHz。
+- **削波**：SDL3_mixer 疊加音軌時超過滿刻度就直接截掉（硬削波，聽起來是「爆」的聲音）。現在每條音軌以一半的音量混音（`kGosMixHeadroom`），最後由 `gosLimiter` 補回兩倍：峰值低於 0.95 的聲音完全不變，超過時立刻壓低、再於 150 ms 內恢復，所以不會削波。
+- **裝置緩衝**：預設請求 2048 個取樣框（48 kHz 下約 43 ms），主執行緒短暫忙碌時不會斷音。可用環境變數 `SDL_AUDIO_DEVICE_SAMPLE_FRAMES` 覆寫。
+
+起因是玩家回報 Windows 上用 OpenGL 時「音質有點爆」。在 Linux 上把遊戲輸出錄下來分析（`SDL_AUDIO_DRIVER=disk`），一般戰鬥中沒有出現削波，音效檔解碼也與 ffmpeg 逐位元一致，能確認的問題是取樣率造成的高頻損失；削波保護與較大的緩衝是預防措施。Windows 上的實際效果還需要實機確認。
+
+### 記憶體與未定義行為檢查
+
+```bash
+cmake -S . -B build-asan -DMC2_ENABLE_ASAN=ON -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fno-sanitize=alignment,vptr" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=undefined"
+```
+
+```bash
+cmake --build build-asan -j
+```
+
+執行時加上 `ASAN_OPTIONS=detect_leaks=0`（原始程式碼有刻意不釋放的靜態記憶體池，洩漏報告沒有參考價值）。以 AddressSanitizer + UndefinedBehaviorSanitizer 跑完 CTest，再以兩種繪圖後端各跑 8 個任務 2000 幀（mc2_01、03、05、07、10、15、20、24），找到並修正：
+
+| 問題 | 影響 |
+|---|---|
+| 遊戲關閉時先清掉貼圖圖集，貼圖的解構式才把圖集位置還回去（use-after-free） | 退出時可能當掉 |
+| ABL 腳本直譯器在每段程式碼結尾多讀一個位元組，該位元組是緩衝區殘留的內容 | 讀到記憶體區塊外；若殘留值剛好是分號，會繼續往下讀 |
+| 沒有隊伍的砲塔（編號 -1）讀取 `turretsEnabled[-1]` | 讀到陣列前一個位元組；原本讀到的是 0，現在明確當成停用，行為不變 |
+| 地面載具閃避碰撞時，懸浮移動的載具讀到未初始化的 `reachedEnd` | 結果隨機 |
+| `NotationFile` 以 `strcpy` 搬移重疊的字串 | 最佳化過的 `strcpy` 可能弄壞資料 |
+| 字串雜湊的有號整數溢位、位移量超過 31、讀到字串結尾之後的位元組 | 雜湊值不變，改成有定義的寫法 |
+| 陰影頂點以 `memset(0xff)` 標記成無效，`bool` 欄位因此是 255 | 改為明確設成 `true` |
+| ABL 的 `RoutineKey`、`TokenCodeType` 會存放列舉以外的值 | 列舉改用固定的 `int` 底層型別 |
+| 左移負數、`memcpy` 傳入空指標（大小為 0） | 改成有定義的寫法 |
+
+ASan 的配置器不會像標準函式庫一樣把 sized delete 與 nothrow new 轉給遊戲的 `operator new/delete`，因此也補上了這幾個多載（一般建置的行為不變）。修正後截圖比對與 UI 流程測試結果不變，代表遊戲邏輯沒有被改動。
+
 ### 其他尚未完成的項目
 
 - **網路對戰**未實作。
@@ -734,9 +772,37 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 
 ---
 
+## 與原專案的差異
+
+本 fork 從原專案的 `7130807`（2022 年 4 月的 master）分出。以下列出本 fork 新增的內容，以及哪些修正來自原作者。
+
+### 本 fork 新增
+- **繪圖**：SDL2 換成 SDL3（含 SDL3_mixer、SDL3_ttf）；新的 SDL3 GPU 後端為預設（Linux / Windows 用 Vulkan，macOS 用 Metal），OpenGL 改為備援並集中在 `GameOS/gameos/render/gl`；著色器在建置時編譯成 SPIR-V 與 MSL；批次繪製與貼圖圖集，第一關的繪製次數降到 100 次以下；TG 模型的光照移進著色器。
+- **平台與發佈**：macOS 支援（`.app`）；三個平台的安裝包與 release 流程，CI 會實際安裝並啟動安裝包；存檔與設定移到系統的使用者資料夾並自動搬移舊資料；版本號與 `-version`；啟動時檢查磁碟空間；精簡 Win32 平台層。
+- **測試**：單元測試、無畫面的任務冒煙測試、固定步長的截圖比對測試、UI 流程測試、效能量測腳本，以及 Linux / Windows / macOS 三平台 CI。
+- **功能**：Mod / Modpack 系統與 `mc2mod` 工具；3D 音效 API；記憶體配置追蹤。
+- **修正與整理**：能以 GCC 13 建置；編譯警告 643 → 0；A* 尋路錯誤與開放清單效能；RLE TGA 解碼；快速存讀檔、選項畫面、暫停選單；macOS 上 `#pragma pack(4)` 造成的結構排列錯誤；以 AddressSanitizer + UBSan 找到的記憶體錯誤與未定義行為（見[記憶體與未定義行為檢查](#記憶體與未定義行為檢查)）；音效改以裝置取樣率混音並加上限幅器。
+
+### 來自原作者的修正
+下列修正出自原作者在本 fork 分出之後的上游修改，由本 fork 移植（括號內為原專案的 commit）：
+
+- `RollDice()` 改用 15 位元的亂數，Linux 上的擲骰才會正確（`1c601fc`）
+- 選項檔少了 `ResolutionY` 或 `AltitudeMaximumLo` 時，不再把另一個值也重設（`88412ec`、`85adda9`）
+- 資訊視窗中編號大於 127 的零件不再顯示錯誤的縮寫（`3bfc4ae`）
+- 設定熱鍵時按到已使用的按鍵不再陷入無窮迴圈（`8dd96f8`）
+- 非 Windows 系統上，資料檔中的 `\` 路徑會轉成 `/`（`a22583e`、`73edc36`）
+- alpha test 只捨棄完全透明的像素，與原版繪圖相同，指北針與小地圖外框因此恢復（`29b5a88`）
+
+下列功能參考原作者的做法，在本 fork 的新架構上重新實作：影片播放（pl_mpeg）、`-datapath` 參數、只改變視窗高度時重新排版任務介面。
+
+### 原專案有、本 fork 沒有
+- 硬體 T&L 繪圖路徑：本 fork 的 SDL3 GPU 後端採用不同做法，不適用。
+- Windows 預編譯第三方套件與建置教學：本 fork 改用 vcpkg，見[在 Windows 上建置](#在-windows-上建置)。
+- 多螢幕視窗處理（displayIndex）。
+
 ## 授權
 
 - 原始遊戲程式碼以 Shared Source Limited Permission License 釋出，請見 `EULA.txt`。
-- 本專案作者撰寫的程式碼以 GPL v3 授權，請見 `license.txt`。
+- 原作者 alariq 撰寫的 GameOS 重新實作以 GPL v3 授權，請見 `license.txt`；本 fork 的修改同樣以 GPL v3 授權。
 - 本移植新增的檔案在開頭標示 `SPDX-License-Identifier: GPL-3.0-only`；沒有這行的檔案沿用上面兩條的說明。
 - GPL v3 與 Shared Source 授權第 (E) 條（原始碼散布只能沿用該授權）能否並存並不明確；公開或商業散布前請先諮詢法律意見。遊戲美術素材只能非商業使用。

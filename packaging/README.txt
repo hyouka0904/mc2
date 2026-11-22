@@ -2,6 +2,8 @@ MechCommander 2 - unofficial port
 =================================
 
 Free and non-commercial. Not affiliated with or endorsed by Microsoft.
+Independent fork of alariq/mc2 (https://github.com/alariq/mc2); not
+affiliated with or endorsed by its author, alariq.
 Licenses: see the "licenses" folder.
 
 Starting the game
@@ -38,6 +40,8 @@ MechCommander 2 非官方移植版
 ==========================
 
 免費、非商業發佈，與微軟無關，也未經微軟認可。授權條款請見 licenses 資料夾。
+本專案是 alariq/mc2（https://github.com/alariq/mc2）的獨立 fork，
+與原作者 alariq 無關，也未經其認可。
 
 啟動
 ----
