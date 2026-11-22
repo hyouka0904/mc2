@@ -375,8 +375,16 @@ TEST(create_and_validate_mod)
     writeFile(t.path / "my_mod" / "content" / "data" / "objects" / "pilots.csv", "x");
     CHECK(validateMod((t.path / "my_mod").string()).empty());
 
+    // Only on case-sensitive file systems: on Windows and (by default) macOS
+    // the second name opens the first file.
     writeFile(t.path / "my_mod" / "content" / "data" / "objects" / "Pilots.CSV", "y");
-    CHECK(contains(validateMod((t.path / "my_mod").string()), "differ only in case"));
+    {
+        int n = 0;
+        for (const auto& e : fs::directory_iterator(t.path / "my_mod" / "content" / "data" / "objects"))
+            n += e.path().filename() == "pilots.csv" || e.path().filename() == "Pilots.CSV";
+        if (n == 2)
+            CHECK(contains(validateMod((t.path / "my_mod").string()), "differ only in case"));
+    }
 
     ModManifest m;
     std::vector<std::string> errors;

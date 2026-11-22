@@ -148,8 +148,13 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMC2_SHADER_REQUIRE=msl
 
       - name: Build
-        # -k: report every compile error in one run
-        run: cmake --build build -j"$(sysctl -n hw.ncpu)" -- -k
+        # -k: compile everything, then list every error at the end
+        run: |
+          set +e
+          cmake --build build -j"$(sysctl -n hw.ncpu)" -- -k 2>&1 | tee build.log
+          status=${PIPESTATUS[0]}
+          echo "::group::Errors"; grep -E "error:|Undefined symbols|ld: " build.log | grep -v "_deps/" | sort -u; echo "::endgroup::"
+          exit $status
 
       - name: Unit and tool tests
         run: ctest --test-dir build --output-on-failure
@@ -196,8 +201,15 @@ jobs:
           -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
 
       - name: Build
-        # ContinueOnError: report every compile error in one run
-        run: cmake --build build --config RelWithDebInfo --parallel -- /p:ContinueOnError=ErrorAndContinue
+        # build everything, then list every error at the end
+        shell: bash
+        run: |
+          set +e
+          cmake --build build --config RelWithDebInfo --parallel -- /p:ContinueOnError=ErrorAndContinue 2>&1 | tee build.log
+          status=${PIPESTATUS[0]}
+          echo "::group::Errors"; grep -E "error (C|LNK)[0-9]+|fatal error" build.log | grep -v "_deps" | sort -u; echo "::endgroup::"
+          if grep -qE "error (C|LNK)[0-9]+|fatal error" build.log; then exit 1; fi
+          exit $status
 
       - name: Unit and tool tests
         run: ctest --test-dir build -C RelWithDebInfo --output-on-failure
