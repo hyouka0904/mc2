@@ -11,7 +11,7 @@
 #define _tcsinc _wcsinc
 #define _istdigit iswdigit
 
-wchar_t* _wcsinc( const wchar_t *current);
+inline const wchar_t* _wcsinc(const wchar_t* current) { return current + 1; }
 
 /*
  * __TEXT is a private macro whose specific use is to force the expansion of a
@@ -33,7 +33,7 @@ wchar_t* _wcsinc( const wchar_t *current);
 #define _tcsinc     _strinc
 #define _istdigit   isdigit
 
-const char *_strinc( const char *current);
+inline const char* _strinc(const char* current) { return current + 1; }
 
 /*
  * __TEXT is a private macro whose specific use is to force the expansion of a

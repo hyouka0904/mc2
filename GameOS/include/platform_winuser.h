@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-#define SM_SWAPBUTTON 23
 
 #define MB_USERICON 128
 #define MB_ICONASTERISK 64
@@ -175,15 +174,19 @@ extern "C" {
 #define VK_OEM_CLEAR	0xFE
 
 
-int GetSystemMetrics(int);
-SHORT GetAsyncKeyState(int);
 
 #define MessageBox MessageBoxA //__AW(MessageBox)
 #define CharLower CharLowerA 
 #define CharUpper CharUpperA 
 
 int MessageBoxA(HWND,LPCSTR,LPCSTR,UINT);
-int MessageBoxW(HWND,LPCWSTR,LPCWSTR,UINT);
+
+// MessageBox goes to a replaceable handler. The default writes the message to
+// stderr and answers without waiting (see platform_auto_answer_message_box);
+// GameOS installs a handler that shows a real dialog when a user is present.
+typedef int (*platform_message_box_fn)(const char* caption, const char* message, UINT type);
+void platform_set_message_box_handler(platform_message_box_fn handler);
+int platform_auto_answer_message_box(UINT type);
 
 LPSTR CharLowerA(LPSTR);
 LPSTR CharUpperA(LPSTR);

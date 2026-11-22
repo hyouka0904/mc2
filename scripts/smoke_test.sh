@@ -16,6 +16,8 @@
 # The test fails if the game exits before the time is up (crash or quit),
 # shows any message box, logs an OpenGL error, or renders an all-black frame.
 set -uo pipefail
+# message boxes must not wait for a click (the test fails on them anyway)
+export MC2_NO_DIALOGS=1
 
 game_dir=${1:?usage: smoke_test.sh <game_dir> [mission] [seconds]}
 mission=${2:-mc2_01}

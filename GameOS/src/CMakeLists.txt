@@ -6,9 +6,6 @@ set(SOURCES ${SOURCES}
     platform_winnls.cpp
     platform_winuser.cpp
     platform_stdlib.cpp
-    platform_tchar.cpp
-    platform_mbstring.cpp
-    platform_eh.cpp
     platform_io.cpp
     platform_mmsystem.cpp
     platform_clock.cpp

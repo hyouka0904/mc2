@@ -1,145 +1,124 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Win32 file, time and virtual memory functions for platforms other than
+// Windows, built on the C++ standard library (std::filesystem, <ctime>) and
+// POSIX mmap. The same code runs on Linux and macOS.
+
 #ifndef PLATFORM_WINDOWS
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <time.h>
-#include <utime.h>
-#include <sys/time.h>
 #include <sys/mman.h>
-#include <unistd.h>
-#include <assert.h>
-#include <errno.h>
-#include <dirent.h>
-#include <fnmatch.h>
-#include <stdint.h>
-#include <libgen.h> // dirname
-#include <stdlib.h> // free
-#include <stdio.h> // free
-#include<wchar.h> // wcscpy
+#include <algorithm>
+#include <cassert>
+#include <cerrno>
+#include <cstring>
+#include <ctime>
+#include <cwchar>
+#include <cwctype>
+#include <filesystem>
+#include <string>
+#include <system_error>
+#include <vector>
+#include <strings.h> // strcasecmp
 
-#include"platform_windows.h"
-#include"platform_str.h"
+#include "platform_windows.h"
+
+namespace fs = std::filesystem;
 
 static int gGetLastError = 0;
 
+static void set_last_error(const std::error_code& ec)
+{
+    if (ec == std::errc::file_exists)
+        gGetLastError = ERROR_ALREADY_EXISTS;
+    else if (ec == std::errc::no_such_file_or_directory)
+        gGetLastError = ERROR_PATH_NOT_FOUND;
+    else
+        gGetLastError = ec.value();
+}
+
+static void fill_system_time(const struct tm& t, LPSYSTEMTIME st)
+{
+    st->wYear = (WORD)(1900 + t.tm_year);
+    st->wMonth = (WORD)(1 + t.tm_mon);
+    st->wDayOfWeek = (WORD)t.tm_wday;
+    st->wDay = (WORD)t.tm_mday;
+    st->wHour = (WORD)t.tm_hour;
+    st->wMinute = (WORD)t.tm_min;
+    st->wSecond = (WORD)t.tm_sec;
+    st->wMilliseconds = 0;
+}
+
 DWORD GetTimeZoneInformation(LPTIME_ZONE_INFORMATION tzi)
 {
+    memset(tzi, 0, sizeof(*tzi));
+    const time_t now = time(NULL);
+    struct tm local;
+    localtime_r(&now, &local);
 
-    const wchar_t* tzn = L"EST";
-    wcscpy(tzi -> StandardName, tzn);
-    tzi -> StandardBias = 0;
-    GetSystemTime(&tzi -> StandardDate);
-
-    struct timeval tv;
-    struct timezone tz;
-    gettimeofday(&tv, &tz);
-    tzi -> Bias = tz.tz_minuteswest; // sebi !NB check this
-
-    return TIME_ZONE_ID_STANDARD;
-
+    // Win32: UTC = local time + Bias (minutes)
+    tzi->Bias = (LONG)(-local.tm_gmtoff / 60);
+    if (local.tm_zone)
+        mbstowcs(tzi->StandardName, local.tm_zone, 31);
+    GetSystemTime(&tzi->StandardDate);
+    return local.tm_isdst > 0 ? TIME_ZONE_ID_DAYLIGHT : TIME_ZONE_ID_STANDARD;
 }
 
-VOID WINAPI GetSystemTime(LPSYSTEMTIME t)
+VOID WINAPI GetSystemTime(LPSYSTEMTIME st)
 {
-    time_t tim = time(NULL);
-    struct tm* gm_time_data = gmtime(&tim);
-
-    t -> wYear = 1900 + gm_time_data -> tm_year;
-    t -> wMonth = 1 + gm_time_data -> tm_mon;
-    t -> wDayOfWeek = gm_time_data -> tm_wday;
-    t -> wDay = gm_time_data -> tm_mday;
-    t -> wHour = gm_time_data -> tm_hour;
-    t -> wMinute = gm_time_data -> tm_min;
-    t -> wSecond = gm_time_data -> tm_sec;
-    t -> wMilliseconds = 0;
+    const time_t now = time(NULL);
+    struct tm utc;
+    gmtime_r(&now, &utc);
+    fill_system_time(utc, st);
 }
 
-BOOL CreateDirectory(LPCSTR dir, LPSECURITY_ATTRIBUTES attr)
+BOOL CreateDirectory(LPCSTR dir, LPSECURITY_ATTRIBUTES)
 {
-    int rv = mkdir(dir, S_IRWXU);
-    if (rv) {
-        gGetLastError = errno;
-        switch (gGetLastError)
-        {
-        case EEXIST:
-            gGetLastError = ERROR_ALREADY_EXISTS;
-            break;
-        case ENOENT:
-            gGetLastError = ERROR_PATH_NOT_FOUND;
-            break;
-        }
+    std::error_code ec;
+    if (fs::exists(dir, ec)) {
+        gGetLastError = ERROR_ALREADY_EXISTS;
+        return FALSE;
     }
-    return rv==0;
+    if (!fs::create_directory(dir, ec)) {
+        set_last_error(ec ? ec : std::make_error_code(std::errc::io_error));
+        return FALSE;
+    }
+    return TRUE;
 }
 
-BOOL SetFileAttributes(LPCSTR str, DWORD attr_bits)
+BOOL SetFileAttributes(LPCSTR, DWORD)
 {
-    return TRUE; // sebi: does this means anything for Linux ?
+    // Only used to clear the read-only bit before overwriting a file, which
+    // POSIX permissions do not need.
+    return TRUE;
 }
 
 BOOL DeleteFile(LPCSTR file)
 {
-    return 0 == unlink(file);
+    std::error_code ec;
+    if (!fs::is_regular_file(file, ec) || !fs::remove(file, ec)) {
+        set_last_error(ec ? ec : std::make_error_code(std::errc::no_such_file_or_directory));
+        return FALSE;
+    }
+    return TRUE;
 }
 
-BOOL CopyFile(  LPCTSTR lpExistingFileName,
-                LPCTSTR lpNewFileName,
-                BOOL    bFailIfExists)
+BOOL CopyFile(LPCTSTR from, LPCTSTR to, BOOL bFailIfExists)
 {
-    int src = open(lpExistingFileName, O_RDONLY);
-    if(src == -1) {
+    std::error_code ec;
+    const auto opt = bFailIfExists ? fs::copy_options::none : fs::copy_options::overwrite_existing;
+    if (!fs::copy_file(from, to, opt, ec)) {
+        set_last_error(ec ? ec : std::make_error_code(std::errc::file_exists));
         return FALSE;
     }
-
-    /* rw-rw-rw- */
-    int permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;      
-
-    int dst_flags = O_CREAT | O_WRONLY | O_TRUNC;
-    if(bFailIfExists)
-        dst_flags |= O_EXCL;
-
-    int dst = open(lpNewFileName, dst_flags, permissions);
-    if(dst == -1) {
-        return FALSE;
-    }
-
-    const int BUF_SIZE = 1024;
-    char buf[BUF_SIZE];
-    int num_read = 0;
-
-    bool error = false;
-    while ((num_read = read(src, buf, BUF_SIZE)) > 0) {
-        if(write(dst, buf, num_read) != num_read) {
-            error = true;
-            break;
-        }
-    }
-
-
-    if (num_read != -1 && !error)
-    {
-        struct stat file_info = {0};
-        fstat(src, &file_info);
-
-        struct utimbuf ut;
-        ut.actime = file_info.st_atim.tv_sec;
-        ut.modtime = file_info.st_mtim.tv_sec;
-        utime(lpExistingFileName, &ut);
-    }
-
-    close(src);
-    close(dst);
-
-    if (num_read == -1 || error)
-        return FALSE;
-
+    // Like Win32, the copy keeps the source's modification time.
+    const auto t = fs::last_write_time(from, ec);
+    if (!ec)
+        fs::last_write_time(to, t, ec);
     return TRUE;
 }
 
 int lstrlen(LPCSTR str)
 {
-    return strlen(str);
+    return (int)strlen(str);
 }
 
 int lstrlenA(LPCSTR str)
@@ -151,102 +130,72 @@ int lstrcmpiA(LPCSTR str1, LPCSTR str2)
 {
     return strcasecmp(str1, str2);
 }
+
 int lstrcmpiW(LPCWSTR str1, LPCWSTR str2)
 {
-    return wcscasecmp(str1, str2);
+    for (;; ++str1, ++str2) {
+        const wint_t a = towlower(*str1), b = towlower(*str2);
+        if (a != b)
+            return a < b ? -1 : 1;
+        if (!a)
+            return 0;
+    }
+}
+
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS MAP_ANON
+#endif
+
+static int page_protection(DWORD flProtect)
+{
+    switch (flProtect) {
+        case PAGE_READONLY: return PROT_READ;
+        case PAGE_READWRITE: return PROT_READ | PROT_WRITE;
+        default: return PROT_NONE;
+    }
 }
 
 WINBASEAPI PVOID WINAPI VirtualAlloc(PVOID lpAddress, DWORD dwSize, DWORD flAllocationType, DWORD flProtect)
 {
-    if(flAllocationType == MEM_RESERVE)
-    {       
-        // to RESERVE memory in Linux, use mmap with a private, anonymous, non-accessible mapping.
-        // The following line reserves 1gb of ram starting at 0x10000000.
-        void* result = mmap(0, dwSize, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0);
-        if(result == MAP_FAILED)
-            gGetLastError = errno;
-
-        return result == MAP_FAILED ? 0 : result;
-    }
-    else if(flAllocationType == MEM_COMMIT)
-    {
-        void* memptr;
-        if(lpAddress == 0) {
-            memptr = mmap(0, dwSize, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0);
-            if(memptr == MAP_FAILED)
-                gGetLastError = errno;
-
-            if(memptr == MAP_FAILED)
-               return 0;
-
-            lpAddress = memptr;
-        }
-
-        assert(lpAddress!=0);
-
-        // to COMMIT memory in Linux, use mprotect on the range of memory you'd like to commit, and
-        // grant the memory READ and/or WRITE access.
-        // The following line commits 1mb of the buffer.  It will return -1 on out of memory errors.
-        //
-        int flags = 0;
-
-        if(flProtect == PAGE_READONLY)
-            flags = PROT_READ;
-        else if(flProtect == PAGE_READWRITE)
-            flags = PROT_READ | PROT_WRITE;
-
-        int result = mprotect((void*)lpAddress, dwSize, flags);
-        if(result == -1)
-        {
-            gGetLastError = errno;
-            return NULL;
-        }
-        return lpAddress;
-    }
-    else
-    {
+    // MEM_RESERVE: address space only (inaccessible); MEM_COMMIT: make a
+    // reserved range (or, with no address, a new one) accessible.
+    if (flAllocationType != MEM_RESERVE && flAllocationType != MEM_COMMIT) {
         assert(0 && "VirtualAlloc: unsupported allocation type");
         return NULL;
     }
+    if (flAllocationType == MEM_RESERVE || lpAddress == NULL) {
+        void* p = mmap(NULL, dwSize, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (p == MAP_FAILED) {
+            gGetLastError = errno;
+            return NULL;
+        }
+        if (flAllocationType == MEM_RESERVE)
+            return p;
+        lpAddress = p;
+    }
+    if (mprotect(lpAddress, dwSize, page_protection(flProtect)) == -1) {
+        gGetLastError = errno;
+        return NULL;
+    }
+    return lpAddress;
 }
-
 
 WINBASEAPI BOOL WINAPI VirtualFree(PVOID lpAddress, DWORD dwSize, DWORD dwFreeType)
 {
-    //assert(dwFreeType == MEM_RELEASE);
-    if(dwFreeType == MEM_RELEASE) {
-
-        int rv = munmap(lpAddress, dwSize);
-        if(rv == -1) {
-            gGetLastError = errno;
-            return FALSE;
-        }
-        return TRUE;
-    } 
-    /*
-    else if(deFreeType == MEM_DECOMMIT) {
-
-        // http://blog.nervus.org/managing-virtual-address-spaces-with-mmap/
-        // instead of unmapping the address, we're just gonna trick 
-        // the TLB to mark this as a new mapped area which, due to 
-        // demand paging, will not be committed until used.
-
-        mmap(lpAddress, dwSize, PROT_NONE, MAP_FIXED|MAP_PRIVATE|MAP_ANON, -1, 0);
-        msync(lpAddress, dwSize, MS_SYNC|MS_INVALIDATE);
-    }*/
-    else if(dwFreeType == MEM_DECOMMIT) {
-
-        int result = mprotect((void*)lpAddress, dwSize, PROT_NONE);
-        if(result == -1) {
-            gGetLastError = errno;
-            return FALSE;
-        }
-        return TRUE;
+    int rv;
+    if (dwFreeType == MEM_RELEASE)
+        rv = munmap(lpAddress, dwSize);
+    else if (dwFreeType == MEM_DECOMMIT)
+        rv = mprotect(lpAddress, dwSize, PROT_NONE);
+    else {
+        assert(0 && "VirtualFree: unsupported dwFreeType");
+        return FALSE;
     }
-
-    assert(0 && "VirtualFree: Unsupported dwFreeType");
-    return FALSE;
-
+    if (rv == -1) {
+        gGetLastError = errno;
+        return FALSE;
+    }
+    return TRUE;
 }
 
 WINBASEAPI DWORD WINAPI GetLastError()
@@ -254,148 +203,96 @@ WINBASEAPI DWORD WINAPI GetLastError()
     return gGetLastError;
 }
 
-static const char* g_current_wildcard = NULL;
-static int path_filter(const struct dirent* e) {
-    return 0 == fnmatch(g_current_wildcard, e->d_name, FNM_PATHNAME);
-}
-struct FindFileData {
-    struct dirent* entries;
-    int last_retrieved_entry;
-    int num_entries;
-    char* dir_name;
-    bool initialized;
-};
+// FindFirstFile / FindNextFile: the pattern's last component may contain the
+// wildcards '*' and '?' (case-sensitive, like the file system); the
+// directory part may not. Entries are returned in byte order of their names.
 
-static void FillFindData(const char* dir_name, const char* entry_name, LPWIN32_FIND_DATAA lpFindFileData) {
-
-        char entry_path[MAX_PATH];
-        snprintf(entry_path, MAX_PATH-1, "%s/%s", dir_name, entry_name);
-
-        struct stat s;
-        stat(entry_path, &s);
-
-        if(S_ISDIR(s.st_mode))
-            lpFindFileData->dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
-        if(S_ISREG(s.st_mode))
-            lpFindFileData->dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
-        if(S_ISBLK(s.st_mode))
-            lpFindFileData->dwFileAttributes = FILE_ATTRIBUTE_DEVICE;
-
-        // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
-        uint64_t sec_since = 60*60*24*365*1601L; // well approximately
-
-        // all date setting is incorrect
-        uint64_t sec = s.st_atim.tv_sec - sec_since;
-        uint64_t nsec = sec*1e9 + s.st_atim.tv_sec;
-	    lpFindFileData->ftLastAccessTime.dwLowDateTime = (DWORD)nsec&0xffffffff;
-	    lpFindFileData->ftLastAccessTime.dwHighDateTime = (DWORD)(nsec>>32)&0xffffffff;
-
-        sec = s.st_ctim.tv_sec - sec_since;
-        nsec = sec*1e9 + s.st_ctim.tv_sec;
-	    lpFindFileData->ftCreationTime.dwLowDateTime = (DWORD)nsec&0xffffffff;
-	    lpFindFileData->ftCreationTime.dwHighDateTime = (DWORD)(nsec>>32)&0xffffffff;
-
-        sec = s.st_ctim.tv_sec - sec_since;
-        nsec = sec*1e9 + s.st_ctim.tv_sec;
-	    lpFindFileData->ftLastWriteTime.dwLowDateTime = (DWORD)nsec&0xffffffff;
-	    lpFindFileData->ftLastWriteTime.dwHighDateTime = (DWORD)(nsec>>32)&0xffffffff;
-
-        
-	    lpFindFileData->nFileSizeHigh = s.st_size&0xffffffff;
-	    lpFindFileData->nFileSizeLow = (s.st_size>>32)&0xffffffff;;
-
-        int copy_size = strlen(entry_name);
-        copy_size = copy_size < MAX_PATH ? copy_size : MAX_PATH-1;
-        strncpy(lpFindFileData->cFileName, entry_name, copy_size);
-        lpFindFileData->cFileName[copy_size] = '\0';
-}
-
-HANDLE WINAPI FindFirstFileA( LPCTSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData)
+static bool wildcard_match(const char* pat, const char* s)
 {
-    struct dirent** entries;
-    int n = 0;
-
-    // this will NOT work correctly if directory has wildcard
-
-    char* dn = strdup(lpFileName);
-    char* bn = strdup(lpFileName);
-    char* dir_name = dirname(dn);
-    char* base_name = basename(bn);
-
-    g_current_wildcard = base_name;
-    n = scandir(dir_name, &entries, path_filter, alphasort);
-    g_current_wildcard = NULL;
-
-
-    FindFileData* ffd = NULL;
-
-    if(n > 0) {
-
-        ffd = new FindFileData();
-        ffd->entries = new dirent[n];
-        for(int i=0;i<n;++i) {
-            //memcpy(ffd->entries+i, entries[i], sizeof(struct dirent));
-            // sebi: for some reason AddressSanitizer and valgrind complain about memcpy :-/
-            const int len = sizeof(ffd->entries[i].d_name);
-            strncpy(ffd->entries[i].d_name, entries[i]->d_name, len - 1);
-            ffd->entries[i].d_name[len - 1] = '\0';
-            free(entries[i]);
+    const char* star = NULL;
+    const char* resume = NULL;
+    while (*s) {
+        if (*pat == '?' || *pat == *s) {
+            ++pat;
+            ++s;
+        } else if (*pat == '*') {
+            star = pat++;
+            resume = s;
+        } else if (star) {
+            pat = star + 1;
+            s = ++resume;
+        } else {
+            return false;
         }
-        free(entries);
-        entries = NULL;
-        ffd->last_retrieved_entry = 0;
-        ffd->num_entries = n;
-        ffd->initialized = true;
-        ffd->dir_name = strdup(dir_name);
-
-        FillFindData(ffd->dir_name, ffd->entries[0].d_name, lpFindFileData);
-
     }
+    while (*pat == '*')
+        ++pat;
+    return *pat == '\0';
+}
 
-    free(dn);
-    free(bn);
+namespace {
+struct FindState {
+    std::vector<std::string> names;
+    std::vector<bool> is_dir;
+    size_t next = 0;
+};
+}
 
-    return ffd == NULL ? INVALID_HANDLE_VALUE : ffd;
+static void fill_find_data(const FindState& st, size_t i, LPWIN32_FIND_DATAA data)
+{
+    memset(data, 0, sizeof(*data));
+    data->dwFileAttributes = st.is_dir[i] ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+    strncpy(data->cFileName, st.names[i].c_str(), MAX_PATH - 1);
+}
+
+HANDLE WINAPI FindFirstFileA(LPCTSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData)
+{
+    const std::string spec(lpFileName);
+    const size_t slash = spec.find_last_of('/');
+    const std::string dir = slash == std::string::npos ? "." : (slash == 0 ? "/" : spec.substr(0, slash));
+    const std::string pattern = slash == std::string::npos ? spec : spec.substr(slash + 1);
+
+    std::vector<std::pair<std::string, bool>> found;
+    std::error_code ec;
+    for (fs::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
+        const std::string name = it->path().filename().string();
+        if (wildcard_match(pattern.c_str(), name.c_str())) {
+            std::error_code ec2;
+            found.emplace_back(name, it->is_directory(ec2));
+        }
+    }
+    if (found.empty()) {
+        gGetLastError = ERROR_NO_MORE_FILES;
+        return INVALID_HANDLE_VALUE;
+    }
+    std::sort(found.begin(), found.end());
+
+    FindState* st = new FindState();
+    for (auto& f : found) {
+        st->names.push_back(f.first);
+        st->is_dir.push_back(f.second);
+    }
+    fill_find_data(*st, st->next++, lpFindFileData);
+    return st;
 }
 
 BOOL WINAPI FindNextFileA(HANDLE hFindFile, LPWIN32_FIND_DATAA lpFindFileData)
 {
-    assert(hFindFile!=0);
-
-    FindFileData* ffd = (FindFileData*)hFindFile;
-    assert(ffd->initialized);
-
-    assert(ffd->last_retrieved_entry < ffd->num_entries);
-
-    if(ffd->last_retrieved_entry + 1 == ffd->num_entries) {
-        gGetLastError = ERROR_NO_MORE_FILES; 
+    assert(hFindFile && hFindFile != INVALID_HANDLE_VALUE);
+    FindState* st = (FindState*)hFindFile;
+    if (st->next >= st->names.size()) {
+        gGetLastError = ERROR_NO_MORE_FILES;
         return FALSE;
-    } else {
-        const int e_idx = ++ffd->last_retrieved_entry;
-        FillFindData(ffd->dir_name, ffd->entries[e_idx].d_name, lpFindFileData);
-        return TRUE;
     }
+    fill_find_data(*st, st->next++, lpFindFileData);
+    return TRUE;
 }
 
 BOOL WINAPI FindClose(HANDLE hFindFile)
 {
-    assert(hFindFile!=0);
-
-    if(hFindFile == INVALID_HANDLE_VALUE)
-        return TRUE;
-
-    FindFileData* ffd = (FindFileData*)hFindFile;
-    assert(ffd->initialized);
-
-    free(ffd->dir_name);
-    delete[] ffd->entries;
-    delete ffd;
-
+    if (hFindFile && hFindFile != INVALID_HANDLE_VALUE)
+        delete (FindState*)hFindFile;
     return TRUE;
 }
 
-
 #endif // PLATFORM_WINDOWS
-
-
-

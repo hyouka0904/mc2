@@ -152,6 +152,67 @@ static bool capture_frame(graphics::RenderWindowHandle win, const gos_run_option
     return ok;
 }
 
+#ifndef PLATFORM_WINDOWS
+// MessageBox handler that asks the user with an SDL dialog. Falls back to the
+// automatic answer when the dialog cannot be shown.
+static int sdl_message_box(const char* caption, const char* message, UINT type)
+{
+    fprintf(stderr, "MSGBOX: %s : %s\n", caption, message);
+
+    struct Button { int id; const char* text; };
+    static const Button ok[] = {{IDOK, "OK"}};
+    static const Button ok_cancel[] = {{IDOK, "OK"}, {IDCANCEL, "Cancel"}};
+    static const Button abort_retry_ignore[] = {{IDABORT, "Abort"}, {IDRETRY, "Retry"}, {IDIGNORE, "Ignore"}};
+    static const Button yes_no_cancel[] = {{IDYES, "Yes"}, {IDNO, "No"}, {IDCANCEL, "Cancel"}};
+    static const Button yes_no[] = {{IDYES, "Yes"}, {IDNO, "No"}};
+    static const Button retry_cancel[] = {{IDRETRY, "Retry"}, {IDCANCEL, "Cancel"}};
+    const Button* buttons = ok;
+    int num_buttons = 1;
+#define MC2_BUTTONS(a) (buttons = a, num_buttons = (int)(sizeof(a) / sizeof(a[0])))
+    switch (type & MB_TYPEMASK) {
+        case MB_OKCANCEL: MC2_BUTTONS(ok_cancel); break;
+        case MB_ABORTRETRYIGNORE: MC2_BUTTONS(abort_retry_ignore); break;
+        case MB_YESNOCANCEL: MC2_BUTTONS(yes_no_cancel); break;
+        case MB_YESNO: MC2_BUTTONS(yes_no); break;
+        case MB_RETRYCANCEL: MC2_BUTTONS(retry_cancel); break;
+        default: break;
+    }
+#undef MC2_BUTTONS
+    const int fallback = platform_auto_answer_message_box(type);
+
+    SDL_MessageBoxButtonData data[3];
+    for (int i = 0; i < num_buttons; ++i) {
+        const Button& b = buttons[i];
+        SDL_MessageBoxButtonData& d = data[i];
+        d = SDL_MessageBoxButtonData();
+        d.buttonID = b.id;
+        d.text = b.text;
+        if (i == 0)
+            d.flags |= SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
+        if (b.id == fallback)
+            d.flags |= SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT;
+    }
+
+    SDL_MessageBoxData box = {};
+    switch (type & MB_ICONMASK) {
+        case MB_ICONERROR: box.flags = SDL_MESSAGEBOX_ERROR; break;
+        case MB_ICONWARNING: box.flags = SDL_MESSAGEBOX_WARNING; break;
+        default: box.flags = SDL_MESSAGEBOX_INFORMATION; break;
+    }
+    extern SDL_Window* g_sdl_window;
+    box.window = g_sdl_window;
+    box.title = caption;
+    box.message = message;
+    box.numbuttons = num_buttons;
+    box.buttons = data;
+
+    int pressed = -1;
+    if (!SDL_ShowMessageBox(&box, &pressed) || pressed < 0)
+        return fallback;
+    return pressed;
+}
+#endif
+
 #ifndef DISABLE_GAMEOS_MAIN
 int main(int argc, char** argv)
 {
@@ -165,6 +226,12 @@ int main(int argc, char** argv)
     }
     // Before the game initialises: it seeds and reads the clock during startup
     platform_clock::set_fixed_step(run_opts.fixed_step_us);
+#ifndef PLATFORM_WINDOWS
+    // Real dialogs only when someone can answer them: not in deterministic or
+    // scripted runs, and not when MC2_NO_DIALOGS is set (CI, test scripts).
+    if (!run_opts.fixed_step_us && run_opts.input_script.empty() && !SDL_getenv("MC2_NO_DIALOGS"))
+        platform_set_message_box_handler(sdl_message_box);
+#endif
     if (run_opts.has_seed)
         gos_SetFixedRandomSeed(run_opts.seed);
     gos_SetForceWindowed(run_opts.windowed);

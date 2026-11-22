@@ -6,8 +6,11 @@
 #include "platform_str.h"
 #include "platform_windows.h"
 
+#include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <string>
+#include <vector>
 
 TEST(strcmp_returns_sign_of_lexical_order)
 {
@@ -82,6 +85,162 @@ TEST(messagebox_never_answers_retry)
     CHECK_EQ(MessageBoxA(NULL, "sure?", "Q", MB_YESNO), IDNO);
     CHECK_EQ(MessageBoxA(NULL, "notice", "Info", MB_OK), IDOK);
     CHECK_EQ(MessageBoxA(NULL, NULL, NULL, MB_OK), IDOK); // null strings are tolerated
+}
+
+namespace {
+// Fresh empty directory under the system temp dir, removed on destruction.
+struct TempDir {
+    std::string path;
+    TempDir()
+    {
+        namespace fs = std::filesystem;
+        path = (fs::temp_directory_path() / ("mc2_platform_" + std::to_string((unsigned long)(uintptr_t)this))).string();
+        fs::remove_all(path);
+        fs::create_directories(path);
+    }
+    ~TempDir() { std::filesystem::remove_all(path); }
+    std::string file(const char* name) const { return path + "/" + name; }
+};
+
+void write_file(const std::string& path, const char* text)
+{
+    FILE* f = fopen(path.c_str(), "wb");
+    fputs(text, f);
+    fclose(f);
+}
+
+std::string read_file(const std::string& path)
+{
+    std::string s;
+    if (FILE* f = fopen(path.c_str(), "rb")) {
+        char buf[256];
+        size_t n;
+        while ((n = fread(buf, 1, sizeof(buf), f)) > 0)
+            s.append(buf, n);
+        fclose(f);
+    }
+    return s;
+}
+
+std::vector<std::string> find_all(const std::string& pattern, std::vector<bool>* dirs = NULL)
+{
+    std::vector<std::string> names;
+    WIN32_FIND_DATA data;
+    HANDLE h = FindFirstFile(pattern.c_str(), &data);
+    if (h == INVALID_HANDLE_VALUE)
+        return names;
+    do {
+        names.push_back(data.cFileName);
+        if (dirs)
+            dirs->push_back((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+    } while (FindNextFile(h, &data));
+    FindClose(h);
+    return names;
+}
+}
+
+TEST(find_file_matches_wildcards_in_name_order)
+{
+    TempDir d;
+    write_file(d.file("b.fit"), "b");
+    write_file(d.file("a.fit"), "a");
+    write_file(d.file("a.fitx"), "x");
+    write_file(d.file("c.txt"), "c");
+    std::filesystem::create_directory(d.file("sub.fit"));
+
+    std::vector<bool> dirs;
+    const std::vector<std::string> fit = find_all(d.file("*.fit"), &dirs);
+    CHECK_EQ(fit.size(), (size_t)3);
+    CHECK_EQ(fit[0], std::string("a.fit"));
+    CHECK_EQ(fit[1], std::string("b.fit"));
+    CHECK_EQ(fit[2], std::string("sub.fit"));
+    CHECK(!dirs[0] && !dirs[1] && dirs[2]);
+
+    CHECK_EQ(find_all(d.file("?.txt")).size(), (size_t)1);
+    CHECK_EQ(find_all(d.file("*")).size(), (size_t)5); // no "." or ".."
+    CHECK_EQ(find_all(d.file("a.fit")).size(), (size_t)1);
+}
+
+TEST(find_file_reports_no_match)
+{
+    TempDir d;
+    WIN32_FIND_DATA data;
+    CHECK(FindFirstFile(d.file("*.none").c_str(), &data) == INVALID_HANDLE_VALUE);
+    CHECK(FindFirstFile(d.file("missing_dir/*").c_str(), &data) == INVALID_HANDLE_VALUE);
+    CHECK(FindClose(INVALID_HANDLE_VALUE));
+}
+
+TEST(create_copy_delete_files)
+{
+    TempDir d;
+    const std::string sub = d.file("savegame");
+    CHECK(CreateDirectory(sub.c_str(), NULL));
+    CHECK(!CreateDirectory(sub.c_str(), NULL));
+    CHECK_EQ(GetLastError(), (DWORD)ERROR_ALREADY_EXISTS);
+
+    const std::string a = sub + "/a.fit", b = sub + "/b.fit";
+    write_file(a, "first");
+    CHECK(CopyFile(a.c_str(), b.c_str(), TRUE));
+    CHECK_EQ(read_file(b), std::string("first"));
+
+    write_file(a, "second");
+    CHECK(!CopyFile(a.c_str(), b.c_str(), TRUE)); // fail if exists
+    CHECK_EQ(read_file(b), std::string("first"));
+    CHECK(CopyFile(a.c_str(), b.c_str(), FALSE)); // overwrite
+    CHECK_EQ(read_file(b), std::string("second"));
+
+    CHECK(DeleteFile(b.c_str()));
+    CHECK(!DeleteFile(b.c_str()));
+    CHECK(!DeleteFile(sub.c_str())); // not a file
+}
+
+TEST(wide_conversions_follow_win32_lengths)
+{
+    char narrow[16];
+    // -1: null-terminated source, terminator counted
+    CHECK_EQ(WideCharToMultiByte(CP_ACP, 0, L"mech", -1, narrow, sizeof(narrow), NULL, NULL), 5);
+    CHECK_EQ(std::string(narrow), std::string("mech"));
+    // explicit length: no terminator written or counted
+    CHECK_EQ(WideCharToMultiByte(CP_ACP, 0, L"mech", 2, narrow, sizeof(narrow), NULL, NULL), 2);
+    // no buffer: size needed
+    CHECK_EQ(WideCharToMultiByte(CP_ACP, 0, L"mech", -1, NULL, 0, NULL, NULL), 5);
+    // too small: fails, but leaves a terminated string
+    CHECK_EQ(WideCharToMultiByte(CP_ACP, 0, L"commander", -1, narrow, 4, NULL, NULL), 0);
+    CHECK_EQ(std::string(narrow), std::string("com"));
+
+    wchar_t wide[16];
+    CHECK_EQ(MultiByteToWideChar(CP_ACP, 0, "atlas", -1, wide, 16), 6);
+    CHECK(std::wstring(wide) == L"atlas");
+    CHECK_EQ(MultiByteToWideChar(CP_ACP, 0, "atlas", -1, NULL, 0), 6);
+    CHECK_EQ(MultiByteToWideChar(CP_ACP, 0, "atlas", 3, wide, 16), 3);
+    CHECK_EQ(MultiByteToWideChar(CP_ACP, 0, "commander", -1, wide, 4), 0);
+    CHECK(std::wstring(wide) == L"com");
+}
+
+TEST(string_type_classifies_every_character)
+{
+    WORD types[4] = {0xffff, 0xffff, 0xffff, 0xffff};
+    GetStringTypeEx(LOCALE_SYSTEM_DEFAULT, CT_CTYPE1, "a1 ,", 4, types);
+    CHECK((types[0] & C1_ALPHA) && (types[0] & C1_LOWER));
+    CHECK((types[1] & C1_DIGIT) && !(types[1] & C1_ALPHA));
+    CHECK_EQ(types[2], (WORD)C1_SPACE);
+    CHECK_EQ(types[3], (WORD)C1_PUNCT);
+}
+
+static int g_seen_type = -1;
+static int answer_yes(const char*, const char*, UINT type)
+{
+    g_seen_type = (int)type;
+    return IDYES;
+}
+
+TEST(messagebox_handler_can_be_replaced)
+{
+    platform_set_message_box_handler(answer_yes);
+    CHECK_EQ(MessageBoxA(NULL, "sure?", "Q", MB_YESNO), IDYES);
+    CHECK_EQ(g_seen_type, (int)MB_YESNO);
+    platform_set_message_box_handler(NULL); // back to the automatic answer
+    CHECK_EQ(MessageBoxA(NULL, "sure?", "Q", MB_YESNO), IDNO);
 }
 
 TEST(char_upper_lower_ascii)

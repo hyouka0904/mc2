@@ -7,14 +7,14 @@
 #include"platform_windows.h"
 #include"platform_str.h"
 
-// There is no native message box on this platform, so messages are written
-// to stderr and the box is answered automatically.
+// Default MessageBox handler: messages are written to stderr and the box is
+// answered automatically.
 //
 // The answer must never be "retry": the game's missing-file prompts loop on
 // MessageBox until the user cancels, and with nobody to insert a CD that loop
 // would never end. So any box that offers a cancel/no button is answered with
 // it, and plain OK boxes are answered with OK.
-static int auto_answer_message_box(UINT type)
+int platform_auto_answer_message_box(UINT type)
 {
     switch (type & MB_TYPEMASK) {
         case MB_OKCANCEL:
@@ -28,29 +28,22 @@ static int auto_answer_message_box(UINT type)
     }
 }
 
-int GetSystemMetrics(int)
+static int stderr_message_box(const char* caption, const char* message, UINT type)
 {
-    // Only queried for SM_SWAPBUTTON; SDL already reports mouse buttons with
-    // the OS-level swap applied, so "not swapped" is the correct answer here.
-    return 0;
+    fprintf(stderr, "MSGBOX: %s : %s\n", caption, message);
+    return platform_auto_answer_message_box(type);
 }
 
-SHORT GetAsyncKeyState(int)
+static platform_message_box_fn g_message_box = stderr_message_box;
+
+void platform_set_message_box_handler(platform_message_box_fn handler)
 {
-    // Unused: input is polled through gos_GetKeyStatus()/gos_GetMouseInfo().
-    return 0;
+    g_message_box = handler ? handler : stderr_message_box;
 }
 
 int MessageBoxA(HWND, LPCSTR message, LPCSTR caption, UINT type)
 {
-    fprintf(stderr, "MSGBOX: %s : %s\n", caption ? caption : "", message ? message : "");
-    return auto_answer_message_box(type);
-}
-
-int MessageBoxW(HWND, LPCWSTR message, LPCWSTR caption, UINT type)
-{
-    fprintf(stderr, "MSGBOX: %S : %S\n", caption ? caption : L"", message ? message : L"");
-    return auto_answer_message_box(type);
+    return g_message_box(caption ? caption : "", message ? message : "", type);
 }
 
 LPSTR CharLowerA(LPSTR s)
