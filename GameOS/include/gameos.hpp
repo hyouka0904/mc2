@@ -11,6 +11,11 @@
 // Pragmas needed to compile at Warning 4
 //
 //
+#ifdef PLATFORM_WINDOWS
+// Before the pack(4) below: the Windows SDK requires its default packing (on
+// x64 a different packing changes the layout of structures the OS reads).
+#include <windows.h>
+#endif
 #pragma pack(push,4)
 #ifdef PLATFORM_WINDOWS
 #pragma warning( disable: 4725 )					// fdiv generates a warning

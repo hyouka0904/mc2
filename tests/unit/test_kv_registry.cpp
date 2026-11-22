@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include <unistd.h>
+#include <filesystem>
 
 using kv_registry::Store;
 using kv_registry::Value;
@@ -86,11 +86,9 @@ TEST(registry_load_follows_gos_size_contract)
 
 TEST(registry_file_roundtrip)
 {
-    char tmpl[] = "/tmp/mc2_registry_XXXXXX";
-    const int fd = mkstemp(tmpl);
-    REQUIRE(fd != -1);
-    close(fd);
-    const std::string path = tmpl;
+    namespace fs = std::filesystem;
+    const std::string path = (fs::temp_directory_path() / "mc2_registry_roundtrip").string();
+    fs::remove(path);
 
     Store s;
     s["PID"] = bytes("OEM-42", 6);
@@ -101,7 +99,7 @@ TEST(registry_file_roundtrip)
     s["Other"] = bytes("\x01", 1);
     CHECK(kv_registry::writeFile(path, s));
     CHECK(kv_registry::readFile(path) == s);
-    CHECK(access((path + ".tmp").c_str(), F_OK) != 0);
+    CHECK(!std::filesystem::exists(path + ".tmp"));
 
     remove(path.c_str());
     CHECK(kv_registry::readFile(path).empty()); // missing file reads as empty

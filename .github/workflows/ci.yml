@@ -197,7 +197,7 @@ jobs:
 
       - name: Build
         # ContinueOnError: report every compile error in one run
-        run: cmake --build build --config RelWithDebInfo --parallel -- /p:ContinueOnError=true
+        run: cmake --build build --config RelWithDebInfo --parallel -- /p:ContinueOnError=ErrorAndContinue
 
       - name: Unit and tool tests
         run: ctest --test-dir build -C RelWithDebInfo --output-on-failure

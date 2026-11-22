@@ -78,7 +78,7 @@ void
 	gosFX::EffectLibrary::Save(Stuff::MemoryStream* stream)
 {
 	WriteGFXVersion(stream);
-	*stream << m_effects.GetLength();
+	*stream << (uint64_t)m_effects.GetLength(); // 8 bytes, as size_t on 64-bit Linux
 	for (unsigned i=0; i<m_effects.GetLength(); ++i)
 	{
 		Check_Object(m_effects[i]);
