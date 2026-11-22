@@ -356,6 +356,14 @@ OptionsGraphics::OptionsGraphics()
     numResolutionModes = 0;
 }
 
+int OptionsGraphics::findResolution( int xRes, int yRes ) const
+{
+    for ( int i = 0; i < numResolutionModes; i++ )
+        if ( resolutionModes[i].xRes == xRes && resolutionModes[i].yRes == yRes )
+            return i;
+    return -1;
+}
+
 void OptionsGraphics::init(long xOffset, long yOffset)
 {
 	FullPathFileName path;
@@ -376,20 +384,35 @@ void OptionsGraphics::init(long xOffset, long yOffset)
 	resolutionList.move( xOffset, yOffset );
 	resolutionList.ListBox().setOrange( true );
 
-    const int num_modes = gos_GetNumDisplayModes(0);
-    gosASSERT(!resolutionModes && !resolutionModesStr);
-    resolutionModes = new ResModes[num_modes];
-    resolutionModesStr = new char*[num_modes];
-    numResolutionModes = num_modes;
-
+    // One entry per size: SDL lists a size once per refresh rate, and its
+    // bit depth (24 for 8 bit RGB) never matches the 32 or 16 kept in the
+    // preferences, so sizes are compared without it. The current size is
+    // added when the display does not list it (a window of any size), so
+    // that accepting the options never changes the resolution by itself.
     const int displayIndex = gos_GetWindowDisplayIndex();
+    const int num_modes = gos_GetNumDisplayModes(displayIndex);
+    gosASSERT(!resolutionModes && !resolutionModesStr);
+    resolutionModes = new ResModes[num_modes + 1];
+    resolutionModesStr = new char*[num_modes + 1];
+    numResolutionModes = 0;
 
-	for ( int i = 0; i < num_modes; i++ ) {
-        gos_GetDisplayModeByIndex(displayIndex, i, &resolutionModes[i].xRes, &resolutionModes[i].yRes, &resolutionModes[i].bitDepth);
-
-        resolutionModesStr[i] = new char[256];
-        S_snprintf(resolutionModesStr[i], 256, "%dx%dx%d", resolutionModes[i].xRes, resolutionModes[i].yRes, resolutionModes[i].bitDepth);
-        resolutionList.AddItem( resolutionModesStr[i], 0xffffffff );
+    for ( int i = 0; i <= num_modes; i++ ) {
+        ResModes m;
+        if ( i < num_modes ) {
+            if ( !gos_GetDisplayModeByIndex(displayIndex, i, &m.xRes, &m.yRes, &m.bitDepth) )
+                continue;
+        } else {
+            m.xRes = prefs.resolutionX;
+            m.yRes = prefs.resolutionY;
+            m.bitDepth = prefs.bitDepth;
+        }
+        if ( findResolution( m.xRes, m.yRes ) != -1 )
+            continue;
+        resolutionModes[numResolutionModes] = m;
+        resolutionModesStr[numResolutionModes] = new char[64];
+        S_snprintf(resolutionModesStr[numResolutionModes], 64, "%dx%d", m.xRes, m.yRes);
+        resolutionList.AddItem( resolutionModesStr[numResolutionModes], 0xffffffff );
+        numResolutionModes++;
     }
 
     /*
@@ -595,9 +618,11 @@ void OptionsGraphics::end()
 	if ( sel > -1 )
 	{
         gosASSERT(numResolutionModes > sel);
-        prefs.resolutionX = resolutionModes[sel].xRes;
-        prefs.resolutionY = resolutionModes[sel].yRes;
-        prefs.bitDepth = resolutionModes[sel].bitDepth;
+        if ( resolutionModes[sel].xRes != prefs.resolutionX || resolutionModes[sel].yRes != prefs.resolutionY ) {
+            prefs.resolutionX = resolutionModes[sel].xRes;
+            prefs.resolutionY = resolutionModes[sel].yRes;
+            prefs.bitDepth = 32;
+        }
 
         /*
 		for ( int i = IDS_RESOLUTION0; i < IDS_RESOLUTION9 + 1; i++ )
@@ -676,17 +701,10 @@ void OptionsGraphics::reset(const CPrefs& newPrefs)
 	getButton( MSG_HARDWARE_RASTERIZER )->press( (newPrefs.renderer != 3) );
 
     // find index of mode
-    int index = -1;
-    for(int i=0;i<numResolutionModes;++i) {
-        if( resolutionModes[i].xRes == newPrefs.resolutionX && 
-            resolutionModes[i].yRes == newPrefs.resolutionY && 
-            resolutionModes[i].bitDepth == newPrefs.bitDepth) {
-            index = i;
-            break;
-        }
-    }
-
-    resolutionList.SelectItem(index==-1 ? 0 : index);
+    // a size the list lacks keeps the current selection
+    int index = findResolution( newPrefs.resolutionX, newPrefs.resolutionY );
+    if ( index != -1 )
+        resolutionList.SelectItem( index );
 
     /*
 	if (availableMode[1])

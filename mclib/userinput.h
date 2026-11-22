@@ -280,6 +280,7 @@ class UserInput
 			leftClick = rightClick = middleClick = false;
 			leftMouseButtonState = rightMouseButtonState = middleMouseButtonState = MC2_MOUSE_UP;
 			leftMouseDrag = rightMouseDrag = false;
+			wasLeftMouseDrag = wasRightMouseDrag = false;
 			leftDoubleClick = rightDoubleClick = middleDoubleClick = false;
 
 			mouseDragThreshold = 0.0166667f;

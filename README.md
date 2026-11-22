@@ -465,18 +465,36 @@ scripts/run_screenshot_tests.py game shots
 畫面刻意變更（例如修改 shader）後，用 `--update` 重新產生基準圖並一起提交。
 單獨比較兩張圖或兩個資料夾可用 `scripts/compare_screenshots.py`。
 
-### UI 流程測試（曾經卡死或中止遊戲的操作）
+### UI 流程測試（走過遊戲的每個畫面）
 
 ```bash
-scripts/run_flow_tests.py game --renderer gl
+scripts/run_flow_tests.py game --renderer gl          # 全部流程
+scripts/run_flow_tests.py game --only pause_menu      # 只跑指定的流程
 ```
 
-以腳本操作實際遊戲，每個流程都有逾時（預設 300 秒），超過就判定為卡死。使用者目錄的路徑刻意包含大寫字母與空格，和預設的 `~/.local/share/MechCommander2` 一樣：
+用腳本操作滑鼠和鍵盤，實際玩過每個畫面。每個流程都有逾時（預設 300 秒），超過就判定為卡死。記錄檔中不能出現 STOP、FATAL、ASSERT、MSGBOX 或 Segmentation。使用者目錄的路徑刻意包含大寫字母與空格，和預設的 `~/.local/share/MechCommander2` 一樣。每 100 幀截一張圖，和記錄檔一起留在 `<out>/<流程>/`，方便查出流程在哪裡出錯。
 
-| 流程 | 檢查 |
+| 流程 | 操作與檢查 |
 |---|---|
-| `options` | 主選單 → Options：畫面要能打開、遊戲繼續跑。顯示卡名稱很長時，文字換行曾經陷入無窮迴圈 |
-| `quick_save` | 任務中先在沒有存檔時 Quick Load（滑鼠不能被鎖住），再 Quick Save、Quick Load；記錄檔必須有 `Saved game` / `Loaded game`，且不能出現 STOP / FATAL。使用者目錄的路徑曾被整個轉成小寫，在 Linux 上指向不存在的目錄，導致每次存檔都失敗 |
+| `options` | 主選單 → Options，切換四個分頁後按 Accept；解析度不能被改掉 |
+| `encyclopedia` | 百科的六個分類 → Close |
+| `exit` | Exit → Yes，遊戲要在時限前自行結束 |
+| `campaign` | 新戰役 → 第一關（用除錯鍵 Ctrl+Alt+Shift+W 直接過關）→ 結算 → 選關 → 簡報 → 機甲庫 → 駕駛員 → 出擊第二關；要留下戰役存檔 |
+| `load_game` | Load Game 要列出 `campaign` 留下的存檔，讀檔後進入後勤畫面 |
+| `solo_mission` | Solo Mission 要列出已完成的任務，選取後進入簡報、機甲庫、駕駛員畫面 |
+| `quick_save` | 用快捷鍵：沒有存檔時先 Quick Load（滑鼠不能被鎖住），再 Quick Save、Quick Load；記錄檔要有 `Saved game` / `Loaded game` |
+| `pause_menu` | 先框選單位，再用暫停選單 Quick Save、Quick Load、Options → Accept、Exit → Yes |
+
+`load_game` 和 `solo_mission` 會用到 `campaign` 留下的存檔，所以要和它一起跑，或排在它之後。
+
+這些流程曾經抓到的問題（都已修正）：
+
+- 顯示卡名稱很長時，選項畫面的文字換行陷入無窮迴圈。
+- 在選項畫面按 Accept，解析度就被改掉：SDL3 回報的色深是 24，設定檔存的是 32，比對不到時清單選了第一項。
+- 使用者目錄的路徑被整個轉成小寫，在 Linux 上存檔全部失敗。
+- 讀檔失敗時，滑鼠沒有恢復。
+- 暫停選單的按鈕點了沒反應：判斷「是不是剛拖曳完」用的是上一次點擊的狀態，而且這個狀態沒有初始化。框選單位之後，第一下點擊一定會被吞掉。
+- 用 `-mission` 直接開始任務時，在暫停選單的 Options 按 Accept 會當掉。
 
 ### 持續整合
 

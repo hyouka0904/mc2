@@ -77,7 +77,6 @@ class PauseWindow
 		aFont	font;
 		aFont	headerFont;
 
-		bool wasDragging;
 		bool objectivesAlreadyOn;
 
 		static MoveInfo moveInfo[8];

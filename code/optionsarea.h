@@ -120,6 +120,7 @@ private:
 	aDropList		cardList;
 	bool			bExpanded;
 
+    int             findResolution( int xRes, int yRes ) const;
     ResModes        *resolutionModes;
     char            **resolutionModesStr;
     int             numResolutionModes;

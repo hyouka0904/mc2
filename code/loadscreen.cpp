@@ -88,6 +88,10 @@ void LoadScreenWrapper::init( FitIniFile& file )
 
 void LoadScreenWrapper::changeRes()
 {
+	// no load screens yet when a mission was started directly (-mission)
+	if ( !exitScreen )
+		return;
+
 	const char* Appendix = NULL;
 
     /*

@@ -1,3 +1,3 @@
-# Main menu -> Solo Mission screen
-590 move 516 391
+# Main menu -> Solo Mission screen (no completed missions: empty list)
+590 move 402 306
 600 click left

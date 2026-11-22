@@ -51,7 +51,6 @@ PauseWindow::PauseWindow()
 
 	finalReference = 0;
 	currentTime = 0;
-	wasDragging = 0;
 	objectivesAlreadyOn = 0;
 	bPromptToQuit = bPromptToAbort = 0;
 
@@ -190,7 +189,10 @@ void PauseWindow::update()
 				continue;
 			}
 
-			if ( userInput->leftMouseReleased() && !wasDragging )
+			// wasLeftDrag() tells whether the button just released ended a drag;
+			// a copy from the previous frame told about the click before
+			// (a box selection made the first click on the menu do nothing)
+			if ( userInput->leftMouseReleased() && !userInput->wasLeftDrag() )
 			{
 				{
 					handleClick( buttons[i].ID );
@@ -234,7 +236,6 @@ void PauseWindow::update()
 		
 	}
 
-	wasDragging = userInput->wasLeftDrag();
 
 	const char * campaignName = LogisticsData::instance->getCampaignName().Data();
 	char campName[1024];

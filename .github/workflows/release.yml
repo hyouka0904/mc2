@@ -93,7 +93,8 @@ jobs:
               -mission mc2_01 -exit-after 300 -capture-frames 300 -capture-dir "$shots") \
               > run_$renderer.log 2>&1 || { tail -60 run_$renderer.log; exit 1; }
             if [ ! -f "$shots/capture_000300.png" ]; then
-              echo "$renderer: no capture of frame 300; end of the log:"; grep -v "^>" run_$renderer.log | tail -80; exit 1
+              echo "$renderer: no capture of frame 300; the log without shader and statistics lines:"
+              grep -vE "^>|INFO: name|^STATISTICS|^setOnGUI|^\s*$" run_$renderer.log | head -150; exit 1
             fi
             test -f "$user_dir/options.cfg"
             if grep -E "^MSGBOX:|ASSERT:|VERIFY:" run_$renderer.log; then exit 1; fi
@@ -180,7 +181,7 @@ jobs:
         run: |
           set -e
           check() { # <game folder>
-            test -d "$1/data/missions"
+            test -f "$1/mission.fst"
             test -f "$1/shaders/compiled/shaders.txt"
             test -f "$1/licenses/EULA.txt"
             test -f "$1/vcruntime140.dll"
