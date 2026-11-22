@@ -71,6 +71,18 @@ TEST(run_options_rejects_bad_values)
     CHECK(!parseArgs({"-seed"}, o)); // missing value
 }
 
+TEST(run_options_datapath)
+{
+    Options o;
+    CHECK(parseArgs({"-datapath", "/games/mc2", "-mission", "mc2_01"}, o));
+    CHECK(o.data_path == "/games/mc2");
+    Options none;
+    CHECK(parseArgs({"-mission", "mc2_01"}, none));
+    CHECK(none.data_path.empty());
+    Options bad;
+    CHECK(!parseArgs({"-datapath"}, bad));
+}
+
 TEST(capture_file_name_is_zero_padded)
 {
     CHECK(gos_run_options::capture_file_name(300) == "capture_000300.png");

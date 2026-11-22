@@ -337,7 +337,8 @@ void MissionInterfaceManager::init (void)
 	
 	bPaused = 0;
 	bPausedWithoutMenu = 0;
-	resolution = Environment.screenWidth;
+	resolutionX = Environment.screenWidth;
+	resolutionY = Environment.screenHeight;
 	s_instance = this;
 	bEnergyWeapons = 0;
 	zoomChoice = 2;
@@ -421,7 +422,7 @@ void MissionInterfaceManager::setTutorialText(const char *text)
 
 void MissionInterfaceManager::update (void)
 {
-	if ( Environment.screenWidth != resolution )
+	if ( Environment.screenWidth != resolutionX || Environment.screenHeight != resolutionY )
 	{
 		swapResolutions();
 	}
@@ -4650,7 +4651,8 @@ bool MissionInterfaceManager::isPausedWithoutMenu()
 void	MissionInterfaceManager::swapResolutions()
 {
 	controlGui.swapResolutions( Environment.screenWidth, Environment.screenHeight );
-	resolution = Environment.screenWidth;
+	resolutionX = Environment.screenWidth;
+	resolutionY = Environment.screenHeight;
 	keyboardRef->init();
 }
 

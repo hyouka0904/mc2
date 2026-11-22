@@ -219,10 +219,18 @@ static int sdl_message_box(const char* caption, const char* message, UINT type)
 // started from a file manager (Finder, Explorer) the current directory is
 // somewhere else, so look for the game data next to the executable, in the
 // .app bundle's resources, or next to the .app bundle.
-static void find_game_directory()
+static void find_game_directory(const std::string& data_path)
 {
     namespace fs = std::filesystem;
     std::error_code ec;
+    if (!data_path.empty()) {
+        fs::current_path(data_path, ec);
+        if (ec)
+            fprintf(stderr, "-datapath %s: %s\n", data_path.c_str(), ec.message().c_str());
+        else if (!fs::is_directory("data", ec))
+            fprintf(stderr, "-datapath %s: no data directory there\n", data_path.c_str());
+        return;
+    }
     if (fs::is_directory("data", ec))
         return;
     const char* base = SDL_GetBasePath();
@@ -256,7 +264,7 @@ int main(int argc, char** argv)
             return 2;
         }
     }
-    find_game_directory();
+    find_game_directory(run_opts.data_path);
     // Before the game initialises: it seeds and reads the clock during startup
     platform_clock::set_fixed_step(run_opts.fixed_step_us);
 #ifndef PLATFORM_WINDOWS

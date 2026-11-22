@@ -160,7 +160,10 @@ public:
 		bool						bPausedWithoutMenu;
 		bool						bEnergyWeapons;
 		bool						bDrawHotKeys;
-		long						resolution;
+		// Screen size the interface was laid out for; a change in either
+		// dimension relayouts it.
+		long						resolutionX;
+		long						resolutionY;
 		
 		//-----------------------------------------------
 		// Attila (Strategic Commander) Data
