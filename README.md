@@ -23,8 +23,9 @@
 4. [Mod / Modding / Modpack](#mod--modding--modpack)
 5. [自動化測試](#自動化測試)
 6. [在 Windows 上建置](#在-windows-上建置)／[在 macOS 上建置](#在-macos-上建置)
-7. [已知限制與待辦事項](#已知限制與待辦事項)
-8. [授權](#授權)
+7. [安裝包與發佈](#安裝包與發佈)
+8. [已知限制與待辦事項](#已知限制與待辦事項)
+9. [授權](#授權)
 
 ---
 
@@ -184,17 +185,19 @@ MC2_PLACEHOLDER_MOVIES=1 scripts/prepare_game_dir.sh build mc2srcdata game
 cd game && ./mc2
 ```
 
-- **第一次執行**時遊戲會檢測硬體、寫入 `options.cfg` 後自動結束（原版設計），請再執行一次。
+- **第一次執行**時直接以最高畫質預設（`hiprefs.cfg`）開始。原版會先跑一次硬體檢測再自動結束，現在只有加 `-sniffer` 時才會執行。
+- 顯示版本：`./mc2 -version`（視窗標題也會顯示）。版本號在 CMake 設定時由 `git describe` 決定，也可用 `-DMC2_VERSION=1.2.3` 指定。
 - 直接進入指定任務（跳過選單）：`./mc2 -mission mc2_01`
-- 設定檔與存檔放在系統的應用程式資料目錄（`SDL_GetPrefPath`）：
+- 設定檔（`options.cfg`、`orgprefs.cfg`）與存檔放在系統的應用程式資料目錄（`SDL_GetPrefPath`），所以遊戲目錄可以是唯讀的：
   Linux 為 `~/.local/share/MechCommander2/`（或 `$XDG_DATA_HOME/MechCommander2/`），
   macOS 為 `~/Library/Application Support/MechCommander2/`，Windows 為 `%APPDATA%\MechCommander2\`。
   設定環境變數 `MC2_USER_DIR` 可改用其他目錄（測試時用來從空目錄開始）。
 - **舊存檔遷移**：舊版放在 `~/.mechcommander2/`（或 `$XDG_CONFIG_HOME/.mechcommander2/`、Windows 的
   `%USERPROFILE%\.mechcommander2\`）。新目錄是空的時候，遊戲會把舊目錄的內容複製過去，並在舊目錄留下
   `MOVED.txt` 說明新位置；舊檔案不會刪除。新目錄已有資料時不會再複製。
+  舊版寫在遊戲目錄裡的 `options.cfg` / `orgprefs.cfg` 也會在第一次啟動時複製到新目錄。
 - 遊戲需要在遊戲目錄（含 `data/` 的目錄）中執行。從檔案管理員（Finder、檔案總管）直接開啟時，
-  遊戲會到執行檔旁邊、或 macOS `.app` 套件旁邊尋找 `data/` 並切換過去。
+  遊戲會依序到執行檔旁邊、執行檔的 `../share/mechcommander2/`（Linux 安裝包）、macOS `.app` 的 `Contents/Resources/`、或 `.app` 旁邊尋找 `data/` 並切換過去。
   也可以用 `-datapath <目錄>` 直接指定遊戲目錄。注意其他參數裡的相對路徑（例如 `-mods`）會以該目錄為基準。
 - 錯誤訊息會以對話框顯示並等待選擇；以 `-fixedstep`、輸入腳本執行，或設定 `MC2_NO_DIALOGS=1` 時，
   只寫到標準錯誤輸出並自動回答（測試腳本都會設定）。
@@ -413,7 +416,8 @@ sudo apt-get install xvfb x11-utils imagemagick libgl1-mesa-dri
 scripts/smoke_test.sh game mc2_01 60
 ```
 
-若遊戲提前結束（當機）、跳出訊息框、出現 OpenGL 錯誤、不回應 SIGTERM，或畫面全黑，測試就會失敗。
+測試使用全新的使用者資料目錄（`MC2_USER_DIR`），所以也檢查第一次啟動：遊戲必須直接進入任務，並把 `options.cfg` 寫到使用者目錄。
+若遊戲提前結束（當機）、跳出訊息框、出現 OpenGL 錯誤、不回應 SIGTERM、沒有寫出設定檔，或畫面全黑，測試就會失敗。
 結果截圖會存為 `game/smoke.png`。額外的遊戲參數放在環境變數 `MC2_SMOKE_ARGS`，例如以 SDL3 GPU 後端執行：
 
 ```bash
@@ -436,6 +440,7 @@ SDL3 GPU 後端在沒有 GPU 的環境使用 Mesa 的軟體 Vulkan（lavapipe）
 | `-input-script <file>` | 依腳本重播滑鼠／鍵盤事件，期間忽略真實輸入（格式見 `GameOS/gameos/utils/input_script.h`） |
 | `-perf-csv <file>` | 每幀寫一行統計：幀號、實際耗時（毫秒）、draw call 數、管線狀態切換次數、出現過的不同管線數、主執行緒 CPU 時間（毫秒） |
 | `-datapath <dir>` | 指定遊戲目錄（含 `data/` 的目錄） |
+| `-version` | 顯示版本後結束 |
 | `-mods <dir>` / `-modpack <file>` | 啟用 Mod / Modpack（見 [Mod / Modding / Modpack](#mod--modding--modpack)） |
 | `-windowed` | 忽略遊戲的全螢幕設定，一律以視窗執行（全螢幕行為取決於視窗管理員，會讓截圖因環境而異） |
 | `-shader-reload` | 開發用：著色器原始碼變更時在遊戲中重新編譯（每半秒檢查一次，預設關閉） |
@@ -443,7 +448,7 @@ SDL3 GPU 後端在沒有 GPU 的環境使用 Mesa 的軟體 Vulkan（lavapipe）
 | `-no-batching` | 關閉繪製合併，每個 `gos_Draw*` 呼叫各畫一次（比較效能或排查問題用） |
 | `-gpu-shapes` | 3D 模型的實心部分改用 `gos_RenderShape` 在 GPU 上轉換與打光（光照與 CPU 路徑一致）；在軟體繪圖上較慢，預設關閉 |
 
-測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行。`tests/golden/manifest.txt` 列出 18 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
+測試在 800×600 的 Xvfb 畫面上以 `-windowed` 執行，使用一個預先放入低畫質預設（`minprefs.cfg`，基準圖以此產生）的全新使用者目錄。`tests/golden/manifest.txt` 列出 18 張基準圖：4 個任務各 3 幀、主選單、戰役選擇、Solo Mission 畫面、
 暫停中的任務，以及載入範例 Mod / Modpack 的主選單。執行與比對：
 
 ```bash
@@ -467,6 +472,8 @@ scripts/run_screenshot_tests.py game shots
 1. 以 RelWithDebInfo 與 Debug 建置並執行全部 CTest 測試（Linux），另在 Windows（MSVC）與 macOS（Apple Silicon）建置並執行單元測試；
 2. 下載遊戲資料、建置資料，並以冒煙測試實際遊玩 `mc2_01` 60 秒；
 3. 執行截圖比對測試，上傳截圖、熱度圖與記錄檔。
+
+`.github/workflows/release.yml` 建置並測試三個平台的安裝包，見[安裝包與發佈](#安裝包與發佈)。
 
 ---
 
@@ -504,6 +511,56 @@ ctest --test-dir build
 產出 `build/mc2.app`（字串資源 `libmc2res.dylib` 在 `Contents/Resources/`）。`scripts/prepare_game_dir.sh`
 會把 `mc2.app` 複製到遊戲目錄，並建立 `./mc2` 指向其中的執行檔，可在終端機執行；
 從 Finder 開啟時，遊戲會到 `.app` 旁邊尋找 `data/`。
+
+---
+
+## 安裝包與發佈
+
+### 下載的安裝包
+
+| 平台 | 檔案 | 內容 |
+|---|---|---|
+| Windows 10 以上（x64） | `MechCommander2-<版本>-windows-x64-setup.exe` | Inno Setup 安裝程式：預設裝在使用者自己的目錄，不需要系統管理員權限，也可選擇替所有使用者安裝到 Program Files。會建立開始選單捷徑（桌面捷徑可選），並提供解除安裝。 |
+| | `MechCommander2-<版本>-windows-x64.zip` | 免安裝版，解壓後執行 `mc2.exe` |
+| macOS 13 以上（Apple Silicon） | `MechCommander2-<版本>-macos-arm64.dmg` | `MechCommander 2.app`，遊戲資料放在 `Contents/Resources/`，拖到「應用程式」即可 |
+| Linux x86_64 | `MechCommander2-<版本>-linux-x86_64.AppImage` | 單一執行檔，內含 GLEW 等不一定有安裝的函式庫（OpenGL、Vulkan、X11 用系統的）。需要 FUSE 2 |
+| | `MechCommander2-<版本>-linux-x86_64.tar.gz` | 同樣的內容，解壓後執行 `./mc2` |
+
+每個安裝包都包含完整的遊戲資料（約 480 MB），下載後不需要另外建置資料。另外附有授權條款（`licenses/`）和給玩家的說明 `README.txt`（中英對照，內容包括啟動方式、存檔位置、常用參數）。
+
+**沒有程式碼簽章**：Windows SmartScreen 會警告「未知的發行者」，macOS 第一次會拒絕開啟，需要到「系統設定 > 隱私權與安全性」按「強制打開」。若要免除這些警告，Windows 需要購買程式碼簽章憑證，macOS 需要 Apple 開發者帳號（每年 99 美元）並做公證；`scripts/package.py` 裡的 macOS 簽章目前是 ad-hoc（Apple Silicon 執行程式的最低要求）。
+
+### 發佈新版本
+
+```bash
+git tag v0.1.0
+```
+
+```bash
+git push origin v0.1.0
+```
+
+`.github/workflows/release.yml` 會：
+
+1. **Linux**：建置、跑單元測試、從 mc2srcdata 建置遊戲資料（必須拿到 Git LFS 的真正影片，不使用測試畫面），產出 AppImage 與 tar.gz。接著從別的目錄、用全新的使用者目錄執行唯讀的 AppImage，以 OpenGL 與 SDL3 GPU 各玩 `mc2_01` 300 幀並檢查截圖不是全黑。
+2. **Windows**：以 MSVC 建置，產出安裝程式與 zip（Visual C++ 執行階段 DLL 一起放在 `mc2.exe` 旁邊）。測試靜默安裝、檢查檔案、執行 `mc2.exe -version`、解除安裝。
+3. **macOS**：建置、產出 dmg（重新 ad-hoc 簽章並產生圖示）。掛載後檢查簽章、檔案與 `mc2 -version`。
+4. 三個平台都通過後，建立一個**草稿** GitHub Release，附上所有安裝包與 `SHA256SUMS.txt`，說明取自 `packaging/RELEASE_NOTES.md`。確認無誤後再到 GitHub 上按「Publish」。
+
+遊戲資料和編譯好的著色器（SPIR-V / MSL / HLSL）與平台無關，只在 Linux 建置一次，再交給 Windows 和 macOS 使用。
+在 Actions 頁面手動執行（workflow_dispatch，可指定測試用版本號），或修改 `packaging/`、`scripts/package.py` 時，也會跑完前三步，安裝包保留為 workflow 的 artifact，不建立 Release。
+
+Windows 與 macOS 的 CI 機器沒有可用的 GPU，所以那兩個平台只測安裝流程與程式能否啟動，沒有實際進入遊戲。
+
+### 在本機打包
+
+```bash
+python3 scripts/package.py --platform linux --build build --game game --version 0.1.0 --out dist
+```
+
+`--game` 是 `scripts/prepare_game_dir.sh` 組出的遊戲目錄，只取其中的資料。Linux 加上 `--linuxdeploy <linuxdeploy 執行檔>` 才會產出 AppImage；Windows 需要安裝 [Inno Setup 6](https://jrsoftware.org/isinfo.php) 才會產出安裝程式（沒有則只產出 zip）；macOS 用系統內建的 `sips`、`iconutil`、`codesign`、`hdiutil`。
+
+相關檔案都在 `packaging/`：圖示（`icon.png` / `icon.ico`，原創的簡單圖樣，未使用原作商標）、Linux 的 `.desktop`、Windows 的安裝程式腳本 `mc2.iss` 與版本資源 `mc2.rc`、玩家說明、第三方授權清單與 Release 說明。
 
 ---
 
@@ -627,7 +684,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 - **`-gpu-shapes` 是否改為預設**：GPU 光照已完成（見上方「3D 模型的硬體路徑」），但在 Mesa 軟體繪圖上比 CPU 路徑慢，需要在實體 GPU 上量測後再決定。
 - GameOS 其餘繪圖 API 的型別安全（3D 模型已改用 `gos_RenderShape`）。
 - 編譯警告：從 643 則降到 0 則（GCC 13，Debug 與 RelWithDebInfo）。修正了全部 `printf` / `scanf` 型別不符（64 位元下 `long` 配 `%d`）、所有可能的 `sprintf` 緩衝區溢位與 `snprintf` 截斷（改用 `snprintf` 並把緩衝區加大到放得下）、ABL 腳本 `objectVisible` / `objectActivate` 對群組使用時的空指標存取、讀取被截斷的字型檔時的無窮迴圈、多人模式未實作時以空指標當作玩家名稱；`fread` 皆檢查回傳值；刪除未使用的變數（只在除錯或 `LAB_ONLY` 程式碼中用到的計時變數保留並標示）。
-- 尚未在 Windows、macOS、實體 GPU、長時間遊玩下實機驗證（遊戲本身的 CI 只在 Linux + Mesa 軟體繪圖上執行；Windows 與 macOS 只在 CI 建置並跑單元測試）。
+- 尚未在 Windows、macOS、實體 GPU、長時間遊玩下實機驗證（遊戲本身的 CI 只在 Linux + Mesa 軟體繪圖上執行；Windows 與 macOS 只在 CI 建置、跑單元測試，並測試安裝包能安裝與啟動）。
 - `GameOS/include/platform_*.h` 中的 `FIXME` 來自 Wine 的 Win32 標頭，屬於上游註解。
 
 `code/`、`mclib/` 中大量標註為 `HACK` 的註解是微軟 2001 年原始碼的開發紀錄，描述的是刻意的遊戲行為（AI、網路封包、地圖格子等），

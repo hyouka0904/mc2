@@ -35,7 +35,10 @@ WizardStyle=modern
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
+; Traditional Chinese is not part of every Inno Setup installation
+#if FileExists(AddBackslash(CompilerPath) + "Languages\ChineseTraditional.isl")
 Name: "zh_tw"; MessagesFile: "compiler:Languages\ChineseTraditional.isl"
+#endif
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

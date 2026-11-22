@@ -1,0 +1,275 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Builds the downloadable packages (scripts/package.py) and tests each one:
+#   Linux    AppImage + tarball: plays mission mc2_01 from the read-only
+#            AppImage with a fresh user directory (OpenGL and SDL3 GPU)
+#   Windows  installer + zip: silent install, mc2.exe -version, files present
+#   macOS    dmg: mount, signature check, mc2 -version, files present
+#
+# Pushing a tag v<version> (git tag v0.1.0 && git push origin v0.1.0) also
+# creates a draft GitHub release with the packages; publish it on GitHub
+# after a look. Runs started by hand or by changes to the packaging only
+# keep the packages as workflow artifacts.
+name: Release
+
+on:
+  push:
+    # Tags always run (GitHub does not apply path filters to tags); branch
+    # pushes only when the packaging changes
+    branches: ["**"]
+    tags: ["v*"]
+    paths:
+      - "packaging/**"
+      - "scripts/package.py"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for a test build (no release is created)"
+        default: "0.0.0-test"
+
+env:
+  VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version || '0.0.0-test' }}
+
+jobs:
+  linux:
+    # Also builds the game data and the shaders the other platforms use
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout game data
+        uses: actions/checkout@v4
+        with:
+          repository: alariq/mc2srcdata
+          path: mc2srcdata
+          lfs: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake git libglew-dev libgl-dev zlib1g-dev \
+            libfreetype-dev fontconfig fonts-dejavu-core \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libxss-dev libxtst-dev libxfixes-dev libxkbcommon-dev \
+            libpulse-dev libasound2-dev glslang-tools spirv-tools spirv-cross python3 \
+            ffmpeg xvfb x11-utils python3-pil libfuse2t64 fuse3 \
+            libopengl0 libgl1 libglx0 libglx-mesa0 libgl1-mesa-dri libvulkan1 mesa-vulkan-drivers
+
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMC2_SHADER_REQUIRE=msl,hlsl \
+                -DMC2_VERSION="$VERSION"
+          cmake --build build -j"$(nproc)"
+          ctest --test-dir build --output-on-failure
+          build/mc2 -version
+
+      - name: Build game data
+        # No placeholder movies in a release: this fails if Git LFS did not
+        # deliver the real ones
+        run: scripts/prepare_game_dir.sh build mc2srcdata game
+
+      - name: Package
+        run: |
+          curl -fsSL -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy
+          python3 scripts/package.py --platform linux --build build --game game \
+            --version "$VERSION" --out dist --linuxdeploy ./linuxdeploy
+
+      - name: Test the AppImage
+        run: |
+          app=$(ls "$PWD"/dist/*.AppImage)
+          chmod +x "$app"
+          "$app" -version | tee version.txt
+          grep -qF "${VERSION#v}" version.txt
+          Xvfb :99 -screen 0 1024x768x24 -nolisten tcp & sleep 2
+          for renderer in gl gpu; do
+            user_dir=$(mktemp -d); shots=$(mktemp -d)
+            # from another directory, with a fresh user directory: the first
+            # launch must go straight into the mission and save its settings
+            (cd /tmp && DISPLAY=:99 SDL_AUDIODRIVER=dummy MC2_NO_DIALOGS=1 MC2_USER_DIR="$user_dir" \
+              timeout 900 "$app" -renderer $renderer -windowed -fixedstep 33 -seed 1 \
+              -mission mc2_01 -exit-after 300 -capture-frames 300 -capture-dir "$shots") \
+              > run_$renderer.log 2>&1 || { tail -40 run_$renderer.log; exit 1; }
+            test -f "$user_dir/options.cfg"
+            if grep -E "^MSGBOX:|ASSERT:|VERIFY:" run_$renderer.log; then exit 1; fi
+            python3 -c "
+          import sys; from PIL import Image, ImageStat
+          m = ImageStat.Stat(Image.open(sys.argv[1]).convert('L')).mean[0] / 255
+          print('$renderer: mean brightness %.3f' % m); sys.exit(m < 0.03)" "$shots/capture_000300.png"
+            cp "$shots/capture_000300.png" shot_$renderer.png
+          done
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-linux
+          path: dist/*.*
+          retention-days: 7
+
+      - name: Upload test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-test-linux
+          path: |
+            shot_*.png
+            run_*.log
+          retention-days: 7
+
+      - name: Upload game data and shaders for the other platforms
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-data
+          retention-days: 1
+          path: |
+            game/data/
+            game/assets/
+            game/*.fst
+            game/*.cfg
+            game/testtxm.tga
+            build/shaders_out/
+
+  windows:
+    needs: linux
+    runs-on: windows-latest
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: game-data
+          path: shared
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install zlib glew freetype --triplet x64-windows-static-md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake -S . -B build -A x64 `
+            "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static-md "-DMC2_VERSION=$env:VERSION"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build --config RelWithDebInfo --parallel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Package
+        shell: bash
+        run: |
+          python scripts/package.py --platform windows --build build --game shared/game \
+            --shaders shared/build/shaders_out --version "$VERSION" --out dist
+          ls dist/*-setup.exe dist/*.zip
+
+      - name: Test the installer and the zip
+        shell: bash
+        run: |
+          set -e
+          check() { # <game folder>
+            test -d "$1/data/missions"
+            test -f "$1/shaders/compiled/shaders.txt"
+            test -f "$1/licenses/EULA.txt"
+            test -f "$1/vcruntime140.dll"
+            out=$("$1/mc2.exe" -version)
+            echo "$1: $out"
+            [[ "$out" == *"${VERSION#v}"* ]]
+          }
+          ./dist/*-setup.exe //VERYSILENT //SUPPRESSMSGBOXES //CURRENTUSER //DIR='C:\mc2test' //LOG=install.log
+          check /c/mc2test
+          test -f /c/mc2test/unins000.exe
+          mkdir zip && cd zip && unzip -q ../dist/*.zip && cd ..
+          check "$(ls -d zip/*)"
+          /c/mc2test/unins000.exe //VERYSILENT //SUPPRESSMSGBOXES
+          for _ in $(seq 30); do [ -f /c/mc2test/mc2.exe ] || break; sleep 2; done
+          test ! -f /c/mc2test/mc2.exe
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-windows
+          path: dist/*.*
+          retention-days: 7
+
+  macos:
+    needs: linux
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: game-data
+          path: shared
+
+      - name: Install dependencies
+        run: brew install glslang spirv-tools spirv-cross freetype
+
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMC2_SHADER_REQUIRE=msl \
+                -DMC2_VERSION="$VERSION"
+          cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Package
+        run: |
+          python3 scripts/package.py --platform macos --build build --game shared/game \
+            --shaders shared/build/shaders_out --version "$VERSION" --out dist
+
+      - name: Test the dmg
+        run: |
+          set -e
+          mnt=$(mktemp -d)
+          hdiutil attach dist/*.dmg -nobrowse -readonly -mountpoint "$mnt"
+          app="$mnt/MechCommander 2.app"
+          codesign --verify --deep --strict "$app"
+          test -d "$app/Contents/Resources/data"
+          test -f "$app/Contents/Resources/shaders/compiled/shaders.txt"
+          test -f "$app/Contents/Resources/AppIcon.icns"
+          test -f "$app/Contents/Resources/libmc2res.dylib"
+          out=$("$app/Contents/MacOS/mc2" -version)
+          echo "$out"
+          [[ "$out" == *"${VERSION#v}"* ]]
+          plutil -p "$app/Contents/Info.plist" | grep -E "CFBundleShortVersionString|CFBundleIconFile"
+          hdiutil detach "$mnt"
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-macos
+          path: dist/*.*
+          retention-days: 7
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, windows, macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create a draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+            --title "MechCommander 2 ${GITHUB_REF_NAME#v}" \
+            --notes-file ../packaging/RELEASE_NOTES.md *
