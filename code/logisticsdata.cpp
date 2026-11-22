@@ -13,7 +13,7 @@ LogisticsData.cpp			: Implementation of the LogisticsData component.
 #include"paths.h"
 #include"warrior.h"
 #include"../resource.h"
-#include"malloc.h"
+#include "platform_stdlib.h" // alloca
 #include"team.h"
 #include"mech.h"
 #include"logisticsmissioninfo.h"

@@ -34,7 +34,7 @@ controlGui.cpp			: Implementation of the controlGui component.
 #include"txmmgr.h"
 
 #include "../resource.h"
-#include"malloc.h"
+#include "platform_stdlib.h" // alloca
 
 #include"chatwindow.h"
 

@@ -10,7 +10,7 @@ ComponentListBox.cpp			: Implementation of the ComponentListBox component.
 #include"logisticsvariant.h"
 #include"logisticscomponent.h"
 #include "../resource.h"
-#include"malloc.h"
+#include "platform_stdlib.h" // alloca
 #include"mclib.h"
 #include"logisticsdata.h"
 #include"mechlabscreen.h"
