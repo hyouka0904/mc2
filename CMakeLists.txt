@@ -121,6 +121,7 @@ add_subdirectory("./mclib/mlr" "./out/mclib/mlr")
 add_subdirectory("./mclib/gosfx" "./out/mclib/gosfx")
 add_subdirectory("./mclib/stuff" "./out/mclib/stuff")
 add_subdirectory("./gui" "./out/gui")
+add_subdirectory("./thirdparty/enet" "./out/thirdparty/enet")
 add_subdirectory("./GameOS/gameos" "./out/GameOS/gameos")
 
 add_subdirectory("./GameOS/src" "./out/windows")

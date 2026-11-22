@@ -86,7 +86,8 @@ def copy_payload(game_dir, shaders_out, dest):
     lic = os.path.join(dest, "licenses")
     os.makedirs(lic, exist_ok=True)
     for src, name in [("EULA.txt", "EULA.txt"), ("license.txt", "GPL-3.0.txt"),
-                      ("thirdparty/pl_mpeg/LICENSE", "pl_mpeg.txt")]:
+                      ("thirdparty/pl_mpeg/LICENSE", "pl_mpeg.txt"),
+                      ("thirdparty/enet/LICENSE", "enet.txt")]:
         shutil.copy2(os.path.join(REPO, src), os.path.join(lic, name))
     shutil.copy2(os.path.join(PKG, "THIRD_PARTY.txt"), lic)
     shutil.copy2(os.path.join(PKG, "README.txt"), dest)

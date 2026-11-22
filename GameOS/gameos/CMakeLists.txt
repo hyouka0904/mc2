@@ -32,6 +32,7 @@ set(SOURCES ${SOURCES}
     utils/run_options.cpp
     utils/png_writer.cpp
     utils/input_script.cpp
+    net/gos_net.cpp
     )
 
 set(MAIN_SRC gameosmain.cpp)
@@ -49,7 +50,7 @@ set_target_properties(mc2mods PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED O
 target_include_directories(mc2mods PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/mods)
 
 add_library(gameos ${SOURCES})
-target_link_libraries(gameos MC2::SDL MC2::Mixer mc2mods ZLIB::ZLIB)
+target_link_libraries(gameos MC2::SDL MC2::Mixer mc2mods ZLIB::ZLIB MC2::ENet)
 
 # The OpenGL backend (-renderer gl) is a separate library: only the game
 # links it (and with it GLEW / OpenGL); the data tools and tests do not.

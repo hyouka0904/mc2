@@ -7,6 +7,7 @@
 #  unit_sound         GameOS sound API on SDL3_mixer (no audio device needed)
 #  unit_render_state  pipeline keys / cache derived from GameOS render states
 #  render_isolation   OpenGL is only used under GameOS/gameos/render/gl/
+#  unit_net           LAN transport: connect, ordered reliable delivery, discovery
 #  unit_mods          mod system: versions, manifests, modpacks, load order, overlay
 #  tool_mc2mod        modding workflow through the mc2mod command line tool
 #  shader_validation  every shader variant compiles and links (glslangValidator)
@@ -103,6 +104,11 @@ if(NOT WIN32)
     add_test(NAME render_isolation
         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_render_isolation.sh ${CMAKE_SOURCE_DIR})
 endif()
+
+mc2_add_unit_test(unit_net
+    SOURCES unit/test_net.cpp ${MC2_GAMEOS_DIR}/net/gos_net.cpp
+    INCLUDES ${MC2_GAMEOS_DIR}
+    LIBS MC2::ENet)
 
 mc2_add_unit_test(unit_mods
     SOURCES unit/test_mods.cpp

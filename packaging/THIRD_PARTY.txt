@@ -9,6 +9,7 @@ GameOS reimplementation by alariq      GNU GPL v3 (GPL-3.0.txt)
 the changes made in this fork
 SDL3, SDL3_mixer, SDL3_ttf             zlib license (sdl3*.txt, when bundled)
 pl_mpeg (MPEG-1 movie decoder)         MIT (pl_mpeg.txt)
+ENet (LAN multiplayer transport)       MIT (enet.txt)
 FreeType                               FreeType License (FTL)
 GLEW (Windows/Linux, OpenGL backend)   Modified BSD / MIT
 zlib                                   zlib license
