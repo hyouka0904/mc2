@@ -23,6 +23,9 @@
 //                            GPU and falls back to OpenGL if that cannot start
 //   -no-batching             draw every gos_Draw* call on its own instead of
 //                            merging consecutive calls with the same state
+//   -gpu-shapes              experimental: also draw solid 3D model parts with
+//                            gos_RenderShape (GPU transform and lighting; the
+//                            lighting does not match the game yet)
 //   -shader-reload           development: recompile shaders whose source files
 //                            changed (checked twice a second)
 //   -windowed                stay in a window even if the game asks for
@@ -46,6 +49,7 @@ struct Options {
     bool windowed = false;
     bool shader_reload = false;
     bool batching = true;
+    bool gpu_shapes = false;
     std::string renderer;           // "gl", "gpu" or empty (gpu, else gl)
     std::string perf_csv;           // empty = none
     std::string mods_dir;           // empty = ./mods if present

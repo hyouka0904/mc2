@@ -2256,6 +2256,12 @@ void __stdcall gos_RenderIndexedArray(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDE
 void __stdcall gos_RenderShape(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLARATION vdecl, const float* world,
                                const float* wvp, int light_index);
 
+// True when the game was started with -gpu-shapes. TG shapes are always
+// drawn as transformed and lit triangles (as in the original game); with
+// the option their solid parts are also drawn with gos_RenderShape, an
+// unfinished GPU path whose lighting does not match yet.
+bool gos_GPUShapesEnabled();
+
 
 void __stdcall gos_SetRenderViewport(float x, float y, float w, float h);
 void __stdcall gos_GetRenderViewport(float* x, float* y, float* w, float* h); //sebi

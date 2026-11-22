@@ -572,8 +572,8 @@ void MC_TextureManager::addRenderShape(DWORD nodeId, TG_RenderShape* render_shap
 
 			masterTextureNodes[nodeId].hardwareVertexData2->currentShape = shapes;
 		}
-		else if (masterTextureNodes[nodeId].vertexData3 &&
-			masterTextureNodes[nodeId].vertexData3->flags == flags)
+		else if (masterTextureNodes[nodeId].hardwareVertexData3 &&
+			masterTextureNodes[nodeId].hardwareVertexData3->flags == flags)
 		{
 			TG_RenderShape * shapes = masterTextureNodes[nodeId].hardwareVertexData3->currentShape;
 
@@ -619,7 +619,7 @@ void MC_TextureManager::addRenderShape(DWORD nodeId, TG_RenderShape* render_shap
 					rsManager->getBlock(hardwareVertexData->numShapes);
 			}
 
-			if (shapes <= (hardwareVertexData->shapes + hardwareVertexData->numShapes))
+			if (shapes < (hardwareVertexData->shapes + hardwareVertexData->numShapes))
 			{
 				*shapes = *render_shape;
 				shapes ++;
@@ -638,7 +638,7 @@ void MC_TextureManager::addRenderShape(DWORD nodeId, TG_RenderShape* render_shap
 					rsManager->getBlock(hardwareVertexData2->numShapes);
 			}
 
-			if (shapes <= (hardwareVertexData2->shapes + hardwareVertexData2->numShapes))
+			if (shapes < (hardwareVertexData2->shapes + hardwareVertexData2->numShapes))
 			{
 				*shapes = *render_shape;
 				shapes ++;
@@ -657,7 +657,7 @@ void MC_TextureManager::addRenderShape(DWORD nodeId, TG_RenderShape* render_shap
 					rsManager->getBlock(hardwareVertexData3->numShapes);
 			}
 
-			if (shapes <= (hardwareVertexData3->shapes + hardwareVertexData3->numShapes))
+			if (shapes < (hardwareVertexData3->shapes + hardwareVertexData3->numShapes))
 			{
 				*shapes = *render_shape;
 				shapes ++;
@@ -676,7 +676,7 @@ void MC_TextureManager::addRenderShape(DWORD nodeId, TG_RenderShape* render_shap
 					rsManager->getBlock(hardwareVertexData4->numShapes);
 			}
 
-			if (shapes <= (hardwareVertexData4->shapes + hardwareVertexData4->numShapes))
+			if (shapes < (hardwareVertexData4->shapes + hardwareVertexData4->numShapes))
 			{
 				*shapes = *render_shape;
 				shapes ++;
@@ -695,7 +695,7 @@ void MC_TextureManager::addRenderShape(DWORD nodeId, TG_RenderShape* render_shap
 					rsManager->getBlock(hardwareVertexData5->numShapes);
 			}
 
-			if (shapes <= (hardwareVertexData5->shapes + hardwareVertexData5->numShapes))
+			if (shapes < (hardwareVertexData5->shapes + hardwareVertexData5->numShapes))
 			{
 				*shapes = *render_shape;
 				shapes ++;

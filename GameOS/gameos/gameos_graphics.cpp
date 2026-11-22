@@ -531,6 +531,11 @@ void gos_AtlasRemove(gosTexture* t);
 static bool g_draw_batching = true;
 void gos_SetDrawBatching(bool enable) { g_draw_batching = enable; }
 
+// -gpu-shapes: see gos_GPUShapesEnabled in gameos.hpp
+static bool g_gpu_shapes = false;
+void gos_SetGPUShapes(bool enable) { g_gpu_shapes = enable; }
+bool gos_GPUShapesEnabled() { return g_gpu_shapes; }
+
 class gosTexture {
     public:
         gosTexture(gos_TextureFormat fmt, const char* fname, DWORD hints, BYTE* pdata, DWORD size, bool from_memory)

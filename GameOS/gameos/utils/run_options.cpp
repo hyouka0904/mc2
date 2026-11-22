@@ -102,6 +102,8 @@ bool parse(int argc, const char* const* argv, Options& out, std::string* error)
             ++i;
         } else if (!strcmp(a, "-no-batching")) {
             out.batching = false;
+        } else if (!strcmp(a, "-gpu-shapes")) {
+            out.gpu_shapes = true;
         } else if (!strcmp(a, "-shader-reload")) {
             out.shader_reload = true;
         } else if (!strcmp(a, "-input-script")) {

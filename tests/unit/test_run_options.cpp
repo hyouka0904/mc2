@@ -246,6 +246,14 @@ TEST(run_options_no_batching_flag)
     CHECK(!o.batching);
 }
 
+TEST(run_options_gpu_shapes_flag)
+{
+    Options o;
+    CHECK(!o.gpu_shapes);
+    CHECK(parseArgs({"-gpu-shapes"}, o));
+    CHECK(o.gpu_shapes);
+}
+
 TEST(run_options_perf_csv_flag)
 {
     Options o;

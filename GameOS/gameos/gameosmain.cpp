@@ -32,6 +32,7 @@ extern bool gosExitGameOS();
 extern void gos_SetForceWindowed(bool windowed);
 extern void gos_SetShaderHotReload(bool enable);
 extern void gos_SetDrawBatching(bool enable);
+extern void gos_SetGPUShapes(bool enable);
 
 #include "gameos_sound.h"
 #include "mods/gos_mods.h"
@@ -169,6 +170,7 @@ int main(int argc, char** argv)
     gos_SetForceWindowed(run_opts.windowed);
     gos_SetShaderHotReload(run_opts.shader_reload);
     gos_SetDrawBatching(run_opts.batching);
+    gos_SetGPUShapes(run_opts.gpu_shapes);
     // SDL3 GPU unless -renderer says otherwise; OpenGL is the fallback
     gos_render::registerGLBackend();
     const bool explicit_renderer = !run_opts.renderer.empty();
