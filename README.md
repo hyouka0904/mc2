@@ -583,7 +583,7 @@ GameOS 是即時模式 API（改狀態、更新頂點、畫，每幀數百次，
 | 5 SDL3 GPU 後端 | 完成 | `render/gpu/`（Vulkan via SDL3 GPU）、`-renderer gl\|gpu`、記錄重播式的即時模式模擬、管線快取、每幀上傳環狀緩衝區；兩個後端共用的繪製合併讓 mc2_01 第 600 幀 draw call 從 242 降到 156；CI 對兩個後端各跑冒煙測試與 18 張截圖比對（GPU 後端開啟 Vulkan 驗證層，零訊息）；兩後端差異最多 0.25%，門檻維持 0.5% |
 | 6 移除 OpenGL / GLEW | 進行中（依決策保留 OpenGL 一個版本週期） | 預設改為 SDL3 GPU，無法啟動時自動退回 OpenGL；OpenGL 後端移到獨立的 `gameos_gl` 函式庫，資料工具（含 `aseconv`）與測試不再連結 libGL / GLEW（CI 以 `ldd` 檢查）；移除 Viewer；修正 OpenGL 結束時重複 `glDetachShader` 的錯誤。待備援期結束後刪除 `render/gl/` 與 GLEW |
 | 7 新繪圖 API | 完成（達停止條件） | 新 API `gos_RenderShape`（網格 + 矩陣 + 光源索引，可合併），3D 模型的硬體路徑改用它；繪製合併與小貼圖圖集；找出硬體路徑的 `+100` 像素殘影，改為預設關閉（`-gpu-shapes` 開啟）；`-gpu-shapes` 的光照移到著色器；mc2_01 第 600 幀 draw call 242 → 68、平均幀時間 26.7 → 11.5 ms（GL） |
-| 8 平台層整理與 macOS 支援 | 進行中 | 把 `GameOS/src/` 的 Win32 替代實作換成 SDL3 / C++ 標準函式庫並刪除用不到的部分；存檔與設定改用 `SDL_GetPrefPath`（舊位置自動遷移）；排除 macOS 建置障礙、產生 `.app`；CI 加入 Windows 與 macOS 的建置和單元測試。macOS 實機遊玩需人工驗證 |
+| 8 平台層整理與 macOS 支援 | 完成（macOS 實機遊玩待人工驗證） | `GameOS/src/` 的檔案、時間、訊息框改用 C++17 `std::filesystem` / SDL3，刪除用不到的替代實作與三個檔案；存檔與設定改放 `SDL_GetPrefPath`，自動遷移 `~/.mechcommander2`；macOS 建置（Apple Silicon、最低 13.0、無 OpenGL）與 `mc2.app`；CI 加入 Windows（MSVC）與 macOS 的建置與全部單元測試。過程中修正 clang / MSVC 找到的錯誤（如 `WAYPOINT_KEY` 未初始化、`gosAudio` class/struct 不一致） |
 
 ### 決策紀錄
 
