@@ -202,7 +202,8 @@ enum {
 	MCMSG_RP_UPDATE,
 	MCMSG_TECHBASE_CHANGE,
 	MCMSG_SESSIONCHECKIN,
-	MCMSG_REINFORCEMENT
+	MCMSG_REINFORCEMENT,
+	MCMSG_PAUSE							// network pause (request / host decision)
 };
 
 #define	MAXLEN_SESSION_NAME			25
@@ -1354,6 +1355,7 @@ class MultiPlayer {
 		long				lastTurretTargetSent[MAX_MULTIPLAYER_TURRETS];
 		double				lastFullUpdateTime;
 		double				nextMissionStatusCheck;
+		bool				netPaused;
 		bool				onLAN;
 		bool				hostLeft;
 		VersionStatus		versionStatus;
@@ -1767,6 +1769,8 @@ class MultiPlayer {
 		void recalcTeamColors (void);
 		void logState (void);
 		void clearRosters (void);
+		void requestPause (bool pause);
+		void handlePause (NETPLAYER sender, const unsigned char* data, int size);
 
 		bool calcMissionStatus (void);
 

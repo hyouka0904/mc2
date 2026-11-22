@@ -4407,6 +4407,9 @@
 #define IDS_GAME_HDSPACE_MSG            60047
 #define IDS_MPLAYER_NO_MORE_SUPPORT_VEHICLES 60048
 #define IDS_MPLAYER_NO_MORE_SUPPORT_VEHICLES1 60049
+#define IDS_MP_NET_PAUSED               60050
+#define IDS_MP_NET_RESUMED              60051
+#define IDS_MP_NET_NO_PAUSES            60052
 */
 
 #include "strings.res.h"

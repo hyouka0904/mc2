@@ -1203,6 +1203,13 @@ void MultiPlayer::handlePeerDisconnected (int peer) {
 			hostLeft = true;
 			hostDroppedOut = true;
 			inSession = false;
+			netPaused = false;
+			char text[512];
+			char format[256];
+			cLoadString(IDS_PLAYER_LEFT, format, 255);
+			long host = findPlayer(HOST_NETPLAYER);
+			sprintf(text, format, (host > -1) ? playerInfo[host].name : "Host");
+			addLocalChat(host, text, true, false);
 		}
 		return;
 	}
@@ -1891,6 +1898,9 @@ void MultiPlayer::processNetMessage (NETPLAYER sender, const unsigned char* data
 			if (iAmHost) return;
 			NEED(MCMSG_WeaponHitUpdate);
 			handleWeaponHitUpdate(sender, (MCMSG_WeaponHitUpdate*)m);
+			break;
+		case MCMSG_PAUSE:
+			handlePause(sender, buffer, size);
 			break;
 		case MCMSG_WORLD_UPDATE:
 			if (iAmHost) return;

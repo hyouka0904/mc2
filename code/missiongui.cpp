@@ -262,7 +262,7 @@ MissionInterfaceManager::Command		MissionInterfaceManager::commands[MAX_COMMAND]
 		KEY_F9,			-1,	-1,						true,		&MissionInterfaceManager::showObjectives, 0, 43226,
 		KEY_ESCAPE,			-1,	-1,						true,		&MissionInterfaceManager::togglePause, 0, 43234,
 		KEY_F1,				-1,	-1,					true,		&MissionInterfaceManager::toggleHotKeys, 0, -1,
-		KEY_P,			-1,	-1,						true,		&MissionInterfaceManager::togglePause, 0, -1,
+		KEY_P,			-1,	-1,						true,		&MissionInterfaceManager::toggleNetPause, 0, -1,
 		KEY_TAB,			-1,	-1,						true,		&MissionInterfaceManager::switchTab, 0, -1,
 		KEY_TAB | SHIFT,	-1,	-1,						true,		&MissionInterfaceManager::reverseSwitchTab, 0, -1,
 		KEY_I,				-1, -1,						true,		&MissionInterfaceManager::infoCommand, &MissionInterfaceManager::infoButtonReleased, 43219,
@@ -306,7 +306,7 @@ MissionInterfaceManager::Command		MissionInterfaceManager::commands[MAX_COMMAND]
 		KEY_EQUALS,			-1,	-1,				false,		&MissionInterfaceManager::zoomIn,0, -1,
 		ALT | KEY_PERIOD, -1, -1,						false, &MissionInterfaceManager::rotateObjectLeft, 0, -1,
 		ALT | KEY_COMMA, -1, -1,				false,	&MissionInterfaceManager::rotateObjectRight, 0, -1,
-		KEY_PAUSE,		-1, -1,						true,		&MissionInterfaceManager::togglePause, 0, -1
+		KEY_PAUSE,		-1, -1,						true,		&MissionInterfaceManager::toggleNetPause, 0, -1
 
 };
 
@@ -1386,7 +1386,8 @@ void MissionInterfaceManager::updateOldStyle( bool shiftDn, bool altDn, bool ctr
 			{
 				doGuard(target);
 			}
-			else if ( target->getTeamId() == Team::home->getId() && !target->isDisabled() )
+			else if ( target->getTeamId() == Team::home->getId() && !target->isDisabled()
+				&& (!MPlayer || target->getCommanderId() == Commander::home->getId()) ) // allies' units: info only
 			{
 				
 				//--------------------------------------------------------------------
@@ -4610,6 +4611,18 @@ int MissionInterfaceManager::togglePause()
 	}
 
 	return 1;
+}
+
+// P / Pause: in multiplayer this asks the host to pause (or resume) the
+// battle for everybody; alone it is the normal pause menu.
+int MissionInterfaceManager::toggleNetPause()
+{
+	if ( MPlayer )
+	{
+		MPlayer->requestPause( !MPlayer->netPaused );
+		return 1;
+	}
+	return togglePause();
 }
 
 int MissionInterfaceManager::togglePauseWithoutMenu()

@@ -315,6 +315,14 @@ extern bool 			invulnerableON;		//Used for tutorials so mechs can take damage, b
 #define DEFAULT_SKY			1
 //----------------------------------------------------------------------------------
 // class Mission
+// In multiplayer the local pause menu does not stop the battle; only a
+// network pause (MCMSG_PAUSE, agreed by the host) does, on every machine.
+static bool MissionSimPaused (MissionInterfaceManagerPtr iface) {
+	if (MPlayer)
+		return(MPlayer->netPaused);
+	return(iface && iface->isPaused());
+}
+
 long Mission::update (void)
 {
 	if (active)
@@ -411,7 +419,7 @@ long Mission::update (void)
 
 		//--------------------------------------------------
 		// Update length of time scenario has been running.
-		if (!missionInterface->isPaused() || MPlayer )
+		if (!MissionSimPaused(missionInterface))
 		{
 			//First Frame we just set LastTimeGetTime.
 			// After that, it increments based on System Time.
@@ -500,7 +508,7 @@ long Mission::update (void)
 
 		ProfileTime(MCTimeTerrainGeometry,land->geometry());
 
-		if ( missionInterface->isPaused() && !MPlayer )
+		if ( MissionSimPaused(missionInterface) )
 			ObjectManager->updateAppearancesOnly( true, true, true );
 		else
 			ObjectManager->update(true, true, true);
@@ -509,20 +517,20 @@ long Mission::update (void)
 		
 		//Do not UPDATE the textures during a pause.  
 		//This uncaches things which only objectManager->update can cache back in!!!!!
-		if ( !missionInterface->isPaused() || MPlayer )
+		if ( !MissionSimPaused(missionInterface) )
 			ProfileTime(MCTimeTXMManagerUpdate,mcTextureManager->update());
 
 		//--------------------------------------
 		// update sensor and contact managers...
-		if (useSensors && ( !missionInterface->isPaused() || MPlayer ) )
+		if (useSensors && ( !MissionSimPaused(missionInterface) ) )
 			ProfileTime(MCTimeSensorUpdate, SensorManager->update());
 
-		if (useCollisions && ( !missionInterface->isPaused() || MPlayer ) )
+		if (useCollisions && ( !MissionSimPaused(missionInterface) ) )
 			ProfileTime(MCTimeCollisionUpdate,ObjectManager->updateCollisions());
 
 		if (missionBrain)
 		{
-			if ( !missionInterface->isPaused() || MPlayer )
+			if ( !MissionSimPaused(missionInterface) )
 			{
 				ProfileTime(MCTimeMissionScript,missionBrain->execute());
 				long missionResult = missionBrain->getInteger();

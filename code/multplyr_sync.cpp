@@ -113,6 +113,7 @@
 #include "../resource.h"
 
 #include "net/gos_net.h"
+#include "gamesound.h"
 
 #include <chrono>
 
@@ -416,6 +417,9 @@ void MultiPlayer::initSpecialBuildings (char commandersToLoad[8][3]) {
 	numWorldEvents = 0;
 	numWeaponHitChunks = 0;
 	endMission = false;
+	netPaused = false;
+	for (long i = 0; i < MAX_MC_PLAYERS; i++)
+		pausesUsed[i] = 0;
 	allUnitsDestroyed[0] = false;
 	for (long i = 0; i < MAX_TEAMS; i++)
 		teamScore[i] = 0;
@@ -1049,8 +1053,15 @@ void MultiPlayer::handleEndMission (NETPLAYER sender, MCMSG_EndMission* msg) {
 
 bool MultiPlayer::calcMissionStatus (void) {
 
-	if (!iAmHost)
+	if (!iAmHost) {
+		// the host decides; if it is gone the mission is over (and lost)
+		if (hostLeft && !endMission) {
+			endMission = true;
+			for (long i = 0; i < MAX_MC_PLAYERS; i++)
+				playerInfo[i].winner = false;
+		}
 		return(endMission);
+	}
 	if (endMission)
 		return(true);
 	if (!startMission || (scenarioTime < 5.0f))
@@ -1658,4 +1669,94 @@ void MultiPlayer::clearRosters (void) {
 	numLocalMovers = 0;
 	numWeaponHitChunks = 0;
 	numWorldEvents = 0;
+}
+
+//***************************************************************************
+// Network pause: any player may pause (3 times per game) or resume; the
+// host decides and tells everybody, so the battle stops on every machine.
+//***************************************************************************
+
+#define MAX_PAUSES_PER_PLAYER	3
+
+#pragma pack(1)
+typedef struct _NetPause {
+	unsigned char	type;			// MCMSG_PAUSE
+	unsigned char	paused;
+	char			commanderID;	// who asked
+	unsigned char	refused;		// host: no pauses left
+} NetPause;
+#pragma pack()
+
+static void AnnouncePause (MultiPlayer* mp, long cid, bool paused) {
+
+	char format[256];
+	char text[512];
+	cLoadString(paused ? IDS_MP_NET_PAUSED : IDS_MP_NET_RESUMED, format, 255);
+	const char* name = ((cid >= 0) && (cid < MAX_MC_PLAYERS)) ? mp->playerInfo[cid].name : "";
+	snprintf(text, sizeof(text), format, name);
+	mp->addLocalChat(cid, text, true, false);
+	printf("[net] %s by commander %ld\n", paused ? "paused" : "resumed", cid);
+	fflush(stdout);
+	if (paused)
+		soundSystem->playDigitalSample(LOG_NEXTBACKBUTTONS);
+}
+
+void MultiPlayer::requestPause (bool pause) {
+
+	NetPause msg;
+	msg.type = MCMSG_PAUSE;
+	msg.paused = pause ? 1 : 0;
+	msg.commanderID = (char)commanderID;
+	msg.refused = 0;
+	if (iAmHost)
+		handlePause(HOST_NETPLAYER, (const unsigned char*)&msg, sizeof(msg));
+	else
+		sendMessage(MCGROUP_SERVER, &msg, sizeof(msg), true);
+}
+
+void MultiPlayer::handlePause (NETPLAYER sender, const unsigned char* data, int size) {
+
+	if (size < (int)sizeof(NetPause))
+		return;
+	NetPause msg;
+	memcpy(&msg, data, sizeof(msg));
+	if (iAmHost) {
+		long cid = (sender == HOST_NETPLAYER) ? commanderID : findPlayer(sender);
+		if ((cid < 0) || (mode != MULTIPLAYER_MODE_MISSION))
+			return;
+		bool pause = msg.paused != 0;
+		if (pause == netPaused)
+			return;
+		if (pause && (pausesUsed[cid] >= MAX_PAUSES_PER_PLAYER)) {
+			NetPause no = msg;
+			no.refused = 1;
+			if (sender == HOST_NETPLAYER) {
+				char text[256];
+				cLoadString(IDS_MP_NET_NO_PAUSES, text, 255);
+				addLocalChat(cid, text, true, false);
+			}
+			else
+				sendMessage(sender, &no, sizeof(no), true);
+			return;
+		}
+		if (pause)
+			pausesUsed[cid]++;
+		netPaused = pause;
+		NetPause out;
+		out.type = MCMSG_PAUSE;
+		out.paused = pause ? 1 : 0;
+		out.commanderID = (char)cid;
+		out.refused = 0;
+		sendMessage(0, &out, sizeof(out), true);
+		AnnouncePause(this, cid, pause);
+		return;
+	}
+	if (msg.refused) {
+		char text[256];
+		cLoadString(IDS_MP_NET_NO_PAUSES, text, 255);
+		addLocalChat(commanderID, text, true, false);
+		return;
+	}
+	netPaused = msg.paused != 0;
+	AnnouncePause(this, msg.commanderID, netPaused);
 }

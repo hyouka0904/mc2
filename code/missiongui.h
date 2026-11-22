@@ -272,6 +272,7 @@ public:
 		bool	isPaused();
 		bool	isPausedWithoutMenu();
 		int		togglePause();
+		int		toggleNetPause();
 		int		togglePauseWithoutMenu();
 		int		toggleHoldPosition();
 		int		showObjectives();
