@@ -105,12 +105,24 @@ jobs:
             cp "$shots/capture_000300.png" shot_$renderer.png
           done
 
+      # Large uploads sometimes time out while finalizing; retry once.
       - name: Upload packages
+        id: upload
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: packages-linux
           path: dist/*.*
           retention-days: 7
+
+      - name: Upload packages (retry)
+        if: steps.upload.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-linux
+          path: dist/*.*
+          retention-days: 7
+          overwrite: true
 
       - name: Upload test screenshots
         if: always()
@@ -198,12 +210,24 @@ jobs:
           for _ in $(seq 30); do [ -f /c/mc2test/mc2.exe ] || break; sleep 2; done
           test ! -f /c/mc2test/mc2.exe
 
+      # Large uploads sometimes time out while finalizing; retry once.
       - name: Upload packages
+        id: upload
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: packages-windows
           path: dist/*.*
           retention-days: 7
+
+      - name: Upload packages (retry)
+        if: steps.upload.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-windows
+          path: dist/*.*
+          retention-days: 7
+          overwrite: true
 
   macos:
     needs: linux
@@ -250,12 +274,24 @@ jobs:
           plutil -p "$app/Contents/Info.plist" | grep -E "CFBundleShortVersionString|CFBundleIconFile"
           hdiutil detach "$mnt"
 
+      # Large uploads sometimes time out while finalizing; retry once.
       - name: Upload packages
+        id: upload
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: packages-macos
           path: dist/*.*
           retention-days: 7
+
+      - name: Upload packages (retry)
+        if: steps.upload.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-macos
+          path: dist/*.*
+          retention-days: 7
+          overwrite: true
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
