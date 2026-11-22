@@ -1109,8 +1109,6 @@ void BattleMech::handleStaticCollision (void) {
 
 		int numCollidables = ObjectManager->getObjBlockNumCollidables(blockNumber);
 		int terrainObjHandle = ObjectManager->getObjBlockFirstHandle(blockNumber);
-		int colliderBlockNumber = -1;
-		int colliderVertexNumber = -1;
 		for (int i = 0; i < numCollidables; i++) 
 		{
 			GameObjectPtr terrainObj = ObjectManager->get(terrainObjHandle + i);
@@ -1121,7 +1119,6 @@ void BattleMech::handleStaticCollision (void) {
 				case TREEBUILDING:
 				case TERRAINOBJECT:
 				case BUILDING:
-					terrainObj->getBlockAndVertexNumber(colliderBlockNumber, colliderVertexNumber);
 					isTangible = terrainObj->getTangible();
 					break;
 					
