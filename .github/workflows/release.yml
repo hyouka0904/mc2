@@ -91,7 +91,10 @@ jobs:
             (cd /tmp && DISPLAY=:99 SDL_AUDIODRIVER=dummy MC2_NO_DIALOGS=1 MC2_USER_DIR="$user_dir" \
               timeout 900 "$app" -renderer $renderer -windowed -fixedstep 33 -seed 1 \
               -mission mc2_01 -exit-after 300 -capture-frames 300 -capture-dir "$shots") \
-              > run_$renderer.log 2>&1 || { tail -40 run_$renderer.log; exit 1; }
+              > run_$renderer.log 2>&1 || { tail -60 run_$renderer.log; exit 1; }
+            if [ ! -f "$shots/capture_000300.png" ]; then
+              echo "$renderer: no capture of frame 300; end of the log:"; grep -v "^>" run_$renderer.log | tail -80; exit 1
+            fi
             test -f "$user_dir/options.cfg"
             if grep -E "^MSGBOX:|ASSERT:|VERIFY:" run_$renderer.log; then exit 1; fi
             python3 -c "
