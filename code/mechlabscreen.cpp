@@ -14,7 +14,7 @@ MechLabScreen.cpp			: Implementation of the MechLabScreen component.
 #include"platform_windows.h"
 #include "../resource.h"
 #include"logisticsdialog.h"
-#include<malloc.h>
+#include "platform_stdlib.h" // alloca
 #include"gamesound.h"
 #include"chatwindow.h"
 #include"multplyr.h"

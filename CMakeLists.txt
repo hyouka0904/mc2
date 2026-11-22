@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.10)
 # select GLVND versus legacy OpenGL libraries
 cmake_policy(SET CMP0072 NEW) # cmake --help-policy CMP0072
+# Oldest supported macOS (decision record: macOS 13); must precede project()
+set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS version")
 project(mc2)
 
 include(CMakeToolsHelpers OPTIONAL)
@@ -60,8 +62,21 @@ add_definitions(-DLINUX_BUILD)
 
 # SDL3 / SDL3_mixer / SDL3_ttf -> MC2::SDL, MC2::Mixer, MC2::TTF
 include(MC2Dependencies)
-find_package(GLEW REQUIRED)
-find_package(OpenGL REQUIRED)
+# The OpenGL backend (-renderer gl) is kept for one release as a fallback
+# for the SDL3 GPU backend. macOS only has a deprecated OpenGL 4.1, so it is
+# off there by default.
+if(APPLE)
+    set(_mc2_gl_default OFF)
+else()
+    set(_mc2_gl_default ON)
+endif()
+option(MC2_ENABLE_OPENGL "Build the OpenGL backend (needs GLEW)" ${_mc2_gl_default})
+if(MC2_ENABLE_OPENGL)
+    find_package(GLEW REQUIRED)
+    find_package(OpenGL REQUIRED)
+else()
+    add_definitions(-DMC2_NO_OPENGL)
+endif()
 find_package(ZLIB REQUIRED)
 
 
@@ -184,7 +199,28 @@ endif()
 
 
 add_executable(mc2 ${SOURCES} ${MAIN_SRC})
-target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main gameos_gl windows ZLIB::ZLIB MC2::SDL MC2::Mixer ${ADDITIONAL_LIBS})
+target_link_libraries(mc2 mclib gosfx mlr stuff gui gameos gameos_main windows ZLIB::ZLIB MC2::SDL MC2::Mixer ${ADDITIONAL_LIBS})
+if(MC2_ENABLE_OPENGL)
+    target_link_libraries(mc2 gameos_gl)
+endif()
+
+# macOS: mc2.app. The string resource library goes into Contents/Resources,
+# where the game looks for it first; the game data can sit next to the .app
+# (or be the current directory, as on the other platforms).
+if(APPLE)
+    set_target_properties(mc2 PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/macos/Info.plist.in
+        MACOSX_BUNDLE_BUNDLE_NAME "MechCommander 2"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.mc2.mechcommander2"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1")
+    add_dependencies(mc2 mc2res_64)
+    add_custom_command(TARGET mc2 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_BUNDLE_CONTENT_DIR:mc2>/Resources
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:mc2res_64> $<TARGET_BUNDLE_CONTENT_DIR:mc2>/Resources/libmc2res.dylib
+        VERBATIM)
+endif()
 
 # Shaders for the non-OpenGL backends (SPIR-V, MSL, HLSL, DXIL when dxc is
 # installed) are compiled into ${CMAKE_BINARY_DIR}/shaders_out at build time.

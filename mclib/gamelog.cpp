@@ -20,7 +20,7 @@
 #include<heap.h>
 #endif
 
-#include<malloc.h>
+#include "platform_stdlib.h" // alloca
 #include<stdlib.h>
 #include<stdio.h>
 #include"platform_str.h"

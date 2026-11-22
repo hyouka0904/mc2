@@ -15,7 +15,7 @@ SalvageMechArea.cpp			: Implementation of the SalvageMechArea component.
 #include"logisticsdata.h"
 #include "../resource.h"
 #include"gamesound.h"
-#include<malloc.h>
+#include "platform_stdlib.h" // alloca
 
 aAnimButton* SalvageListItem::templateCheckButton = NULL;
 

@@ -12,7 +12,7 @@
 
 #ifdef UNICODE
 #define K_UNICODE
-#include<malloc.h>
+#include "platform_stdlib.h" // alloca
 #include<tchar.h>
 #endif
 

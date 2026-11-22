@@ -21,7 +21,7 @@ namespace MidLevelRenderer {
 	//
 	public:
 		GOSImagePool();
-		~GOSImagePool();
+		virtual ~GOSImagePool();
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Image handling

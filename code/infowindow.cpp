@@ -764,7 +764,7 @@ void InfoWindow::drawScrollingStuff()
 	count[0] = pUnit->ecm;
 	count[1] = pUnit->probe;
 	count[2] = pUnit->jumpJets;
-	count[3] = pUnit->isMech() ?  pUnit->sensor : 255;
+	count[3] = pUnit->isMech() ?  pUnit->sensor : (char)255;
 
 	if ((count[0] || count[1] || count[2] || count[3] ) )
 	{
@@ -781,7 +781,8 @@ void InfoWindow::drawScrollingStuff()
 
 	for (int curWeapon = 0; curWeapon < 4; curWeapon++ )
 	{
-		if ( count[curWeapon] != 255)
+		// count[] is char: 255 is stored as -1 and the original "!= 255" test
+		// was always true. Kept that way so the layout does not change.
 		{
 			uint32_t color = 0xffc29b00;
 			//Neither the ecm, probe, sensors or JumpJets can ever REALLY be disabled. No matter what the setting is!!

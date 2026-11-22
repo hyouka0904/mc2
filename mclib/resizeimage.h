@@ -17,7 +17,7 @@
 #include"dstd.h"
 #endif
 
-#include<malloc.h>
+#include "platform_stdlib.h" // alloca
 #include<memory.h>
 #include<math.h>
 

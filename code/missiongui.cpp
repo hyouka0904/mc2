@@ -165,7 +165,9 @@ int MissionInterfaceManager::mouseX = 0;
 int MissionInterfaceManager::mouseY = 0;
 GameObject* MissionInterfaceManager::target = NULL;
 MissionInterfaceManager* MissionInterfaceManager::s_instance = NULL;
-gosEnum_KeyIndex MissionInterfaceManager::WAYPOINT_KEY = (gosEnum_KeyIndex)-1;
+// Was (gosEnum_KeyIndex)-1 and set to KEY_LCONTROL on first update; -1 is out
+// of the enum's range, so clang folded that check to false and left it unset.
+gosEnum_KeyIndex MissionInterfaceManager::WAYPOINT_KEY = KEY_LCONTROL;
 
 
 extern bool drawTerrainTiles;
@@ -842,8 +844,6 @@ void MissionInterfaceManager::update (void)
 	
 	if( useLeftRightMouseProfile ) // using AOE control style
 	{
-		if ( WAYPOINT_KEY == -1 )
-			WAYPOINT_KEY = KEY_LCONTROL;
 
 		commandClicked = rightClicked;
 		selectClicked = !bLeftDouble && !lastUpdateDoubleClick && userInput->leftMouseReleased() && !userInput->getKeyDown( KEY_T) && !isDragging;
@@ -869,8 +869,6 @@ void MissionInterfaceManager::update (void)
 		selectClicked = leftClicked && !lastUpdateDoubleClick;
 		cameraClicked = userInput->isRightDrag();
 
-		if ( WAYPOINT_KEY == -1 )
-			WAYPOINT_KEY = KEY_LCONTROL;
 		if ( moveCameraAround( lineOfSight, passable, ctrlDn, bGui, moverCount, nonMoverCount ) )
 		{
 			bool leftClicked = (!userInput->isLeftDrag() && !userInput->isRightDrag() && userInput->isLeftClick());

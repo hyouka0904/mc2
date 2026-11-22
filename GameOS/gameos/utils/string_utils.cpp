@@ -2,7 +2,7 @@
 #define STRING_UTILS_H
 
 #include <memory.h>
-#include <malloc.h>
+#include "platform_stdlib.h" // alloca
 #include <string.h>
 #include <ctype.h> // for tolower
 #include <cassert>

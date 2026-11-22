@@ -16,6 +16,8 @@
 
 #include <vector>
 #include <chrono>
+#include <filesystem>
+#include <system_error>
 
 #include <signal.h>
 
@@ -213,6 +215,36 @@ static int sdl_message_box(const char* caption, const char* message, UINT type)
 }
 #endif
 
+// The game opens its data relative to the current directory. When it is
+// started from a file manager (Finder, Explorer) the current directory is
+// somewhere else, so look for the game data next to the executable, in the
+// .app bundle's resources, or next to the .app bundle.
+static void find_game_directory()
+{
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    if (fs::is_directory("data", ec))
+        return;
+    const char* base = SDL_GetBasePath();
+    if (!base)
+        return;
+    fs::path dir = fs::path(base);
+    if (dir.filename().empty())
+        dir = dir.parent_path(); // trailing separator
+    std::vector<fs::path> candidates = {dir};
+    // .app bundle: <folder>/MC2.app/Contents/Resources
+    if (dir.filename() == "Resources" && dir.parent_path().filename() == "Contents")
+        candidates.push_back(dir.parent_path().parent_path().parent_path());
+    for (const fs::path& c : candidates) {
+        if (fs::is_directory(c / "data", ec)) {
+            fs::current_path(c, ec);
+            if (!ec)
+                fprintf(stderr, "Game directory: %s\n", c.string().c_str());
+            return;
+        }
+    }
+}
+
 #ifndef DISABLE_GAMEOS_MAIN
 int main(int argc, char** argv)
 {
@@ -224,6 +256,7 @@ int main(int argc, char** argv)
             return 2;
         }
     }
+    find_game_directory();
     // Before the game initialises: it seeds and reads the clock during startup
     platform_clock::set_fixed_step(run_opts.fixed_step_us);
 #ifndef PLATFORM_WINDOWS
@@ -239,7 +272,9 @@ int main(int argc, char** argv)
     gos_SetDrawBatching(run_opts.batching);
     gos_SetGPUShapes(run_opts.gpu_shapes);
     // SDL3 GPU unless -renderer says otherwise; OpenGL is the fallback
+#ifndef MC2_NO_OPENGL
     gos_render::registerGLBackend();
+#endif
     const bool explicit_renderer = !run_opts.renderer.empty();
     {
         gos_render::Backend b = gos_render::Backend::GPU;

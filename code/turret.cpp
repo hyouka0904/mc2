@@ -1363,6 +1363,7 @@ void Turret::fireWeapon (GameObjectPtr target, long weaponId) {
 	if (currentWeaponNode != -1) 
 	{
 		Stuff::Vector3D pos = appearance->getWeaponNodePosition(currentWeaponNode);
+		(void)pos;
 		appearance->setWeaponNodeUsed(currentWeaponNode);
 		
 		//Check if this is an indirect Fire weapon.

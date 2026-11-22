@@ -3,7 +3,9 @@
 
 #ifdef PLATFORM_WINDOWS
 	#include <stdlib.h>
+	#include <malloc.h> // _alloca
 #else
+#include <alloca.h>
 
 #include<stdio.h>
 #include<stdlib.h> // itoa

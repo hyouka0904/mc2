@@ -1969,8 +1969,6 @@ inline bool GameObject::lineOfSight (GameObjectPtr target, float startExtRad, bo
 			float elev = land->getTerrainElevation(getLOSPosition());
 			(void)(getLOSPosition().z - elev);
 
-			Stuff::Vector3D targetPosition = target->getLOSPosition();
-		
 			if (Team::lineOfSight(getLOSPosition(), target->getLOSPosition(), getTeamId(), target->getAppearRadius(), startExtRad, checkVisibleBits)) 
 			{
 #ifdef LAB_ONLY

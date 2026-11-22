@@ -36,7 +36,7 @@
 #include<gameos.hpp>
 
 #ifdef UNICODE
-#include<malloc.h>
+#include "platform_stdlib.h" // alloca
 #include"platform_tchar.h"
 #endif
 

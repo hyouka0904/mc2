@@ -58,13 +58,23 @@ fi
 
 echo "Building game data in $data_dir/build_scripts"
 cp "$tools"/{aseconv,makefst,makersp,pak} "$build_dir/out/text_tool/text_tool" "$data_dir/build_scripts/"
-make -C "$data_dir/build_scripts" -j"$(nproc)" all BUILD_PLATFORM=linux
+make -C "$data_dir/build_scripts" -j"$(getconf _NPROCESSORS_ONLN)" all BUILD_PLATFORM=linux
 
 echo "Assembling $game_dir"
 cd "$data_dir/build_scripts"
 cp -r data assets ./*.cfg ./*.fst testtxm.tga "$game_dir/"
-cp "$build_dir/mc2" "$game_dir/"
-cp "$build_dir/out/res/libmc2res_64.so" "$game_dir/libmc2res.so"
+case "$(uname -s)" in
+    Darwin)
+        # mc2.app carries libmc2res.dylib; ./mc2 starts it from the terminal
+        rm -rf "$game_dir/mc2.app"
+        cp -R "$build_dir/mc2.app" "$game_dir/"
+        ln -sf mc2.app/Contents/MacOS/mc2 "$game_dir/mc2"
+        ;;
+    *)
+        cp "$build_dir/mc2" "$game_dir/"
+        cp "$build_dir/out/res/libmc2res_64.so" "$game_dir/libmc2res.so"
+        ;;
+esac
 cp -r "$repo_dir/shaders" "$game_dir/"
 # precompiled shaders for the non-OpenGL backends, when the build made them
 if [ -d "$build_dir/shaders_out" ]; then

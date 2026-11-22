@@ -14,7 +14,7 @@
 
 #else
 #include<assert.h>
-#include<malloc.h>
+#include "platform_stdlib.h" // alloca
 #define gosASSERT assert
 #define gos_Malloc malloc
 #define gos_Free free

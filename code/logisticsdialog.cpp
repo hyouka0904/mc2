@@ -14,7 +14,7 @@ LogisticsDialog.cpp			: Implementation of the LogisticsDialog component.
 #include "../resource.h"
 #include"aedit.h"
 #include"logisticsdata.h"
-#include<malloc.h>
+#include "platform_stdlib.h" // alloca
 #include"missionbriefingscreen.h"
 #include"sounds.h"
 #include"gamesound.h"

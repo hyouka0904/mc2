@@ -50,12 +50,14 @@ target_link_libraries(gameos MC2::SDL MC2::Mixer mc2mods)
 
 # The OpenGL backend (-renderer gl) is a separate library: only the game
 # links it (and with it GLEW / OpenGL); the data tools and tests do not.
-add_library(gameos_gl
-    render/gl/gl_device.cpp
-    render/gl/gl_utils.cpp
-    render/gl/gl_render_constants.cpp
-    render/gl/shader_builder.cpp)
-target_link_libraries(gameos_gl gameos GLEW::GLEW OpenGL::GL)
+if(MC2_ENABLE_OPENGL)
+    add_library(gameos_gl
+        render/gl/gl_device.cpp
+        render/gl/gl_utils.cpp
+        render/gl/gl_render_constants.cpp
+        render/gl/shader_builder.cpp)
+    target_link_libraries(gameos_gl gameos GLEW::GLEW OpenGL::GL)
+endif()
 add_library(gameos_main ${MAIN_SRC})
 # main() uses the run options / PNG capture helpers from gameos
 target_link_libraries(gameos_main gameos windows ZLIB::ZLIB MC2::SDL)

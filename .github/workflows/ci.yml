@@ -132,3 +132,79 @@ jobs:
             smoke_gpu/
             shots/
             shots_gpu/
+
+  build-macos:
+    # Apple Silicon, Metal through SDL3 GPU. No GPU on the runner for the
+    # game itself: build, unit tests and the .app bundle only.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install glslang spirv-tools spirv-cross freetype
+
+      - name: Configure
+        # OpenGL is off by default on macOS; shaders must include Metal
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMC2_SHADER_REQUIRE=msl
+
+      - name: Build
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Unit and tool tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Check the app bundle
+        run: |
+          test -x build/mc2.app/Contents/MacOS/mc2
+          test -f build/mc2.app/Contents/Resources/libmc2res.dylib
+          plutil -lint build/mc2.app/Contents/Info.plist
+          vtool -show-build build/mc2.app/Contents/MacOS/mc2 | grep -E "minos 13\.0"
+          if otool -L build/mc2.app/Contents/MacOS/mc2 | grep -iE "sdl|glew|opengl"; then
+            echo "unexpected SDL / OpenGL library in mc2"; exit 1
+          fi
+
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: mc2-macos-build
+          retention-days: 3
+          path: |
+            build/mc2.app
+            build/shaders_out/
+
+  build-windows:
+    # MSVC, x64. zlib / GLEW / FreeType from vcpkg as static libraries with
+    # the dynamic CRT (the default for CMake's release configurations).
+    runs-on: windows-latest
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install zlib glew freetype --triplet x64-windows-static-md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Configure
+        shell: pwsh
+        run: >
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+          "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+
+      - name: Build
+        run: cmake --build build --config RelWithDebInfo --parallel
+
+      - name: Unit and tool tests
+        run: ctest --test-dir build -C RelWithDebInfo --output-on-failure
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: mc2-windows-build
+          retention-days: 3
+          path: |
+            build/RelWithDebInfo/mc2.exe
+            build/out/res/RelWithDebInfo/mc2res_64.dll

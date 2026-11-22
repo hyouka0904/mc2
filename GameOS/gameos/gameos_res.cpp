@@ -6,6 +6,7 @@
 #include <string.h>
 #include <SDL3/SDL_loadso.h>
 #include <SDL3/SDL_error.h>
+#include <SDL3/SDL_filesystem.h>
 
 // SDL's loader wraps dlopen / LoadLibrary, so one code path serves every
 // platform.
@@ -38,8 +39,23 @@ HSTRRES __stdcall gos_OpenResourceDLL(char const* FileName, const char** strings
 
 	DL_GetError();
 
-    /* Load dynamically loaded library */
-    module = DL_Open(FileName);
+    /* A bare file name is looked up next to the executable (or in the .app
+       bundle's resources), then in the current (game) directory. */
+    module = NULL;
+    if (!strchr(FileName, '/') && !strchr(FileName, '\\')) {
+        if (const char* base = SDL_GetBasePath()) {
+            char path[1024];
+            snprintf(path, sizeof(path), "%s%s", base, FileName);
+            module = DL_Open(path);
+        }
+        if (!module) {
+            char path[1024];
+            snprintf(path, sizeof(path), "./%s", FileName);
+            module = DL_Open(path);
+        }
+    } else {
+        module = DL_Open(FileName);
+    }
     gosASSERT(module);
     if (!module) {
         fprintf(stderr, "Couldn't open resourse dll: %s\n", DL_GetError());
