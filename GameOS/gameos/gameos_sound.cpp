@@ -16,7 +16,9 @@
 #include <vector>
 
 // HGOSAUDIO (gameos.hpp) is a pointer to this
-struct gosAudio {
+// "class" as in gameos.hpp: MSVC mangles class and struct differently
+class gosAudio {
+public:
     MIX_Audio* audio = nullptr;
 };
 
