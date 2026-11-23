@@ -42,6 +42,7 @@ Name: "zh_tw"; MessagesFile: "compiler:Languages\ChineseTraditional.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "firewall"; Description: "Allow LAN multiplayer through Windows Firewall (mc2.exe, UDP; asks for administrator rights once)"; GroupDescription: "Network:"
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -53,3 +54,49 @@ Name: "{autodesktop}\MechCommander 2"; Filename: "{app}\mc2.exe"; WorkingDir: "{
 
 [Run]
 Filename: "{app}\mc2.exe"; Description: "{cm:LaunchProgram,MechCommander 2}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+// Windows Firewall rule for LAN multiplayer: hosting a game means accepting
+// UDP from other players (port 27015). The rule is tied to mc2.exe and UDP,
+// on every network profile (Windows 10/11 often mark a new home network as
+// Public). Adding a rule needs administrator rights, so a per-user install
+// raises one UAC prompt; declining it just leaves the rule out (Windows then
+// asks the first time a game is hosted). A marker file records that the rule
+// was added, so uninstall removes it only then.
+const
+  FirewallRule = 'MechCommander2-LAN';
+  FirewallMarker = 'firewall_rule_added.txt';
+
+function RunNetsh(const Commands: String): Boolean;
+var
+  ResultCode: Integer;
+begin
+  // One elevated cmd.exe for all netsh calls: a single UAC prompt.
+  Result := ShellExec('runas', ExpandConstant('{cmd}'), '/c "' + Commands + '"', '',
+    SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  Exe: String;
+begin
+  if (CurStep = ssPostInstall) and WizardIsTaskSelected('firewall') then
+  begin
+    Exe := ExpandConstant('{app}\mc2.exe');
+    if RunNetsh('netsh advfirewall firewall delete rule name=' + FirewallRule + ' >nul 2>&1 & ' +
+        'netsh advfirewall firewall add rule name=' + FirewallRule +
+        ' dir=in action=allow protocol=UDP program="' + Exe + '" profile=any enable=yes') then
+      SaveStringToFile(ExpandConstant('{app}\' + FirewallMarker), FirewallRule, False)
+    else
+      Log('Firewall rule was not added (UAC declined or netsh failed)');
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if (CurUninstallStep = usUninstall) and FileExists(ExpandConstant('{app}\' + FirewallMarker)) then
+  begin
+    RunNetsh('netsh advfirewall firewall delete rule name=' + FirewallRule);
+    DeleteFile(ExpandConstant('{app}\' + FirewallMarker));
+  end;
+end;
