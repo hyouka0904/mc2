@@ -13,6 +13,7 @@ MPGameBrowser.cpp			: Implementation of the MPGameBrowser component.
 #include "../resource.h"
 #include"multplyr.h"
 #include"mechbayscreen.h"
+#include "net/gos_net.h"
 
 #ifndef GAMESOUND_H
 #include"gamesound.h"
@@ -117,11 +118,29 @@ void MPGameBrowser::init(FitIniFile* file)
 
 
 	hostDlg.init();
+
+	// Right of the Host Game button: the address other players can type
+	// for "direct IP" when the broadcast does not reach them.
+	// Same (readable) font as the LAN panel's help text.
+	{
+		char path[256];
+		strcpy( path, artPath );
+		strcat( path, "mcl_mp_contype_lan.fit" );
+		FitIniFile lanFile;
+		if ( NO_ERR == lanFile.open( path ) )
+			ipText.init( &lanFile, "Text0" );
+		else if ( textCount )
+			ipText = textObjects[0];
+	}
+	ipText.moveTo( 545, 422 );
+	ipText.resize( 205, 40 );
+	ipRefresh = 0;
 }
 
 void MPGameBrowser::begin()
 {
 	status = RUNNING;
+	ipRefresh = 0;
 	bHosting = 0;
 	bShowErrorDlg = 0;
 	
@@ -153,6 +172,8 @@ void MPGameBrowser::render(int xOffset, int yOffset )
 	}
 
 	LogisticsScreen::render(xOffset, yOffset);
+	if ((0 == xOffset) && (0 == yOffset))
+		ipText.render();
 
 	if ( bHosting )
 	{
@@ -324,6 +345,16 @@ void MPGameBrowser::update()
 
 	LogisticsScreen::update();
 	gameList.update();
+
+	if ( --ipRefresh <= 0 )
+	{
+		char fmt[256];
+		cLoadString( IDS_MP_LOCAL_IP, fmt, 255 );
+		char str[512];
+		sprintf( str, fmt, gos_NetLocalAddressList().c_str() );
+		ipText.setText( str );
+		ipRefresh = 180;
+	}
 	float oldScrollPos = gameList.getScrollPos();
 
 	if ( userInput->isLeftDoubleClick() )

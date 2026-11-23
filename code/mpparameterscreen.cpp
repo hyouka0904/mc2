@@ -14,6 +14,7 @@ MPParameterScreen.cpp			: Implementation of the MPParameterScreen component.
 #include "../resource.h"
 #include"assert.h"
 #include"multplyr.h"
+#include "net/gos_net.h"
 #include"mechbayscreen.h"
 #include"logisticsdata.h"
 #include"comndr.h"
@@ -800,7 +801,12 @@ void MPParameterScreen::update()
 	char str[256];
 	cLoadString( IDS_MP_PARAM_HOST_IP, str, 255 );
 	char IPAddressStr[256];
-	sprintf( IPAddressStr, str, MPlayer->sessionIPAddress );
+	// The host lists every LAN address it has (one may be a VPN or a
+	// virtual adapter); clients show the address they joined.
+	if ( MPlayer->isHost() )
+		snprintf( IPAddressStr, sizeof(IPAddressStr), str, gos_NetLocalAddressList().c_str() );
+	else
+		snprintf( IPAddressStr, sizeof(IPAddressStr), str, MPlayer->sessionIPAddress );
 	textObjects[11].setText( IPAddressStr );
 
 	if ( !bWaitingToStart && MPlayer->missionSettings.inProgress )

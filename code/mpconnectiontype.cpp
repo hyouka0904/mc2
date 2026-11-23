@@ -20,6 +20,7 @@ MPConnectionType.cpp			: Implementation of the MPConnectionType component.
 #ifndef GAMESOUND_H
 #include"gamesound.h"
 #endif
+#include "net/gos_net.h"
 
 #define CHECK_BUTTON 200
 
@@ -462,6 +463,17 @@ void aLanPanel::update()
 {
 	aObject::update();
 
+	// Addresses can change (cable, Wi-Fi); refresh every few seconds.
+	if (--ipRefresh <= 0)
+	{
+		char fmt[256];
+		cLoadString( IDS_MP_LOCAL_IP, fmt, 255 );
+		char str[512];
+		sprintf( str, fmt, gos_NetLocalAddressList().c_str() );
+		ipText.setText( str );
+		ipRefresh = 180;
+	}
+
 
 }
 
@@ -498,6 +510,15 @@ void aLanPanel::init(FitIniFile* pFile)
 
 	text.init( &file, "Text0" );
 	addChild(&text);
+
+	// Between the help box and the buttons: the address other players type
+	// for "direct IP" (the LAN browser finds the room without it).
+	ipText.init( &file, "Text0" );
+	long ipTop = (long)(text.top() + text.height()) + 40;
+	ipText.moveTo( (long)text.left(), ipTop );
+	ipText.resize( (long)text.width(), (long)button0.top() - ipTop - 10 );
+	addChild(&ipText);
+	ipRefresh = 0;
 }
 
 int	aLanPanel::handleMessage( unsigned long message, unsigned long who)

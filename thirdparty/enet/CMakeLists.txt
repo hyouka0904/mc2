@@ -13,7 +13,7 @@ target_include_directories(enet PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set_target_properties(enet PROPERTIES C_STANDARD 99 POSITION_INDEPENDENT_CODE ON)
 
 if(WIN32)
-    target_link_libraries(enet PUBLIC ws2_32 winmm)
+    target_link_libraries(enet PUBLIC ws2_32 winmm iphlpapi) # iphlpapi: gos_net interface list
     if(MSVC)
         target_compile_options(enet PRIVATE /W0)
     endif()

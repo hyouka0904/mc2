@@ -50,6 +50,18 @@ void gos_NetGlobalShutdown();
 // "127.0.0.1" when there is no network. Sends no packets.
 std::string gos_NetLocalAddress();
 
+struct gosNetInterface {
+    std::string address;   // dotted IPv4
+    std::string broadcast; // subnet broadcast (e.g. 192.168.1.255)
+};
+
+// Every active, non-loopback IPv4 interface. The one carrying the default
+// route (gos_NetLocalAddress) comes first. Empty when there is no network.
+std::vector<gosNetInterface> gos_NetLocalInterfaces();
+
+// "192.168.1.23, 10.0.0.5" for the UI, or "127.0.0.1" with no network.
+std::string gos_NetLocalAddressList();
+
 class GosNetSession {
 public:
     GosNetSession();
@@ -107,7 +119,8 @@ public:
 
     bool open();
     void close();
-    // address == nullptr: LAN broadcast plus loopback; otherwise that host.
+    // address == nullptr: LAN broadcast (255.255.255.255 and every
+    // interface's subnet broadcast) plus loopback; otherwise that host.
     void query(const char* address, uint16_t port = GOS_NET_DEFAULT_PORT);
     // Returns true while answers are pending.
     bool poll(gosNetRoom* room);

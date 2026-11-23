@@ -110,6 +110,9 @@ private:
 
 	int						bSortUpward;
 	long					oldScrollPos;
+
+	aText					ipText;		// this machine's LAN address(es)
+	int						ipRefresh;
 };
 
 

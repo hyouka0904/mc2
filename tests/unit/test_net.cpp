@@ -8,6 +8,7 @@
 #include "net/gos_net.h"
 
 #include <chrono>
+#include <cstdio>
 #include <cstring>
 
 namespace {
@@ -176,14 +177,65 @@ TEST(net_discovery_query)
         }
         gosNetEvent ev;
         server.poll(&ev, 2); // the host answers from inside its service loop
+        // Subnet broadcasts may answer from a LAN address too; wait for the
+        // loopback answer.
         while (scanner.poll(&room))
-            if (room.payload.size() == sizeof(payload)
-                && memcmp(room.payload.data(), payload, sizeof(payload)) == 0)
+            if (room.address == "127.0.0.1" && room.payload.size() == sizeof(payload)
+                && memcmp(room.payload.data(), payload, sizeof(payload)) == 0) {
                 found = true;
+                break;
+            }
     }
     CHECK(found);
     CHECK_EQ(room.port, (uint16_t)(kPort + 2));
-    CHECK_EQ(room.address, std::string("127.0.0.1"));
+}
+
+static bool isDotted(const std::string& s)
+{
+    unsigned a, b, c, d;
+    char tail;
+    return sscanf(s.c_str(), "%u.%u.%u.%u%c", &a, &b, &c, &d, &tail) == 4 && a < 256 && b < 256
+        && c < 256 && d < 256;
+}
+
+TEST(net_local_interfaces)
+{
+    std::vector<gosNetInterface> itfs = gos_NetLocalInterfaces();
+    printf("  %d interface(s): %s\n", (int)itfs.size(), gos_NetLocalAddressList().c_str());
+    CHECK(isDotted(gos_NetLocalAddress()));
+    for (const gosNetInterface& i : itfs) {
+        CHECK(isDotted(i.address));
+        CHECK(isDotted(i.broadcast));
+        CHECK(i.address.compare(0, 4, "127.") != 0);
+    }
+    if (!itfs.empty() && gos_NetLocalAddress() != "127.0.0.1")
+        CHECK_EQ(itfs[0].address, gos_NetLocalAddress());
+
+    // A host is reachable for discovery on each interface address (what a
+    // player on another machine types for "direct IP").
+    GosNetSession server;
+    CHECK(server.host(kPort + 3, 4));
+    const char payload[] = "room:Itf";
+    server.setDiscoveryPayload(payload, sizeof(payload));
+    GosNetScanner scanner;
+    CHECK(scanner.open());
+    for (const gosNetInterface& i : itfs) {
+        bool found = false;
+        const auto end = Clock::now() + std::chrono::seconds(2);
+        int round = 0;
+        while (!found && Clock::now() < end) {
+            if (round++ % 50 == 0)
+                scanner.query(i.address.c_str(), kPort + 3);
+            gosNetEvent ev;
+            server.poll(&ev, 2);
+            gosNetRoom room;
+            while (scanner.poll(&room))
+                if (room.payload.size() == sizeof(payload))
+                    found = true;
+        }
+        printf("  %s: %s\n", i.address.c_str(), found ? "answered" : "no answer");
+        CHECK(found);
+    }
 }
 
 TEST(net_join_unreachable_times_out)

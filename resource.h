@@ -4410,6 +4410,7 @@
 #define IDS_MP_NET_PAUSED               60050
 #define IDS_MP_NET_RESUMED              60051
 #define IDS_MP_NET_NO_PAUSES            60052
+#define IDS_MP_LOCAL_IP                 60053
 */
 
 #include "strings.res.h"

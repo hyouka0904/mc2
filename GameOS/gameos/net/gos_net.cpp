@@ -4,7 +4,18 @@
 #include <enet/enet.h>
 
 #include <algorithm>
+#include <chrono>
+#include <cstdio>
 #include <cstring>
+
+#ifdef _WIN32
+#include <iphlpapi.h>
+#else
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#endif
 
 const uint8_t gosNetQueryMagic[4] = {'M', 'C', '2', '?'};
 const uint8_t gosNetAnswerMagic[4] = {'M', 'C', '2', '!'};
@@ -79,6 +90,116 @@ std::string gos_NetLocalAddress()
     }
     enet_socket_destroy(s);
     return result;
+}
+
+namespace {
+
+// a.b.c.d from a host-order address
+std::string Dotted(uint32_t a)
+{
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%u.%u.%u.%u", (a >> 24) & 255, (a >> 16) & 255, (a >> 8) & 255,
+        a & 255);
+    return buf;
+}
+
+void AddInterface(std::vector<gosNetInterface>& out, uint32_t addr, uint32_t mask)
+{
+    if (addr == 0 || (addr >> 24) == 127)
+        return;
+    gosNetInterface itf;
+    itf.address = Dotted(addr);
+    itf.broadcast = Dotted(addr | ~mask);
+    for (const gosNetInterface& e : out)
+        if (e.address == itf.address)
+            return;
+    out.push_back(itf);
+}
+
+} // namespace
+
+static std::vector<gosNetInterface> QueryInterfaces()
+{
+    std::vector<gosNetInterface> out;
+#ifdef _WIN32
+    ULONG size = 16 * 1024;
+    std::vector<unsigned char> buf;
+    ULONG r = ERROR_BUFFER_OVERFLOW;
+    for (int tries = 0; tries < 3 && r == ERROR_BUFFER_OVERFLOW; ++tries) {
+        buf.resize(size);
+        r = GetAdaptersAddresses(AF_INET,
+            GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER, nullptr,
+            reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buf.data()), &size);
+    }
+    if (r == NO_ERROR) {
+        for (IP_ADAPTER_ADDRESSES* a = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buf.data()); a;
+             a = a->Next) {
+            if (a->OperStatus != IfOperStatusUp || a->IfType == IF_TYPE_SOFTWARE_LOOPBACK)
+                continue;
+            for (IP_ADAPTER_UNICAST_ADDRESS* u = a->FirstUnicastAddress; u; u = u->Next) {
+                if (!u->Address.lpSockaddr || u->Address.lpSockaddr->sa_family != AF_INET)
+                    continue;
+                const sockaddr_in* sin = reinterpret_cast<const sockaddr_in*>(u->Address.lpSockaddr);
+                unsigned prefix = u->OnLinkPrefixLength;
+                uint32_t mask = prefix == 0 ? 0 : prefix >= 32 ? 0xffffffffu : ~(0xffffffffu >> prefix);
+                AddInterface(out, ntohl(sin->sin_addr.s_addr), mask);
+            }
+        }
+    }
+#else
+    ifaddrs* list = nullptr;
+    if (getifaddrs(&list) == 0) {
+        for (ifaddrs* i = list; i; i = i->ifa_next) {
+            if (!i->ifa_addr || i->ifa_addr->sa_family != AF_INET)
+                continue;
+            if (!(i->ifa_flags & IFF_UP) || (i->ifa_flags & IFF_LOOPBACK))
+                continue;
+            uint32_t addr = ntohl(reinterpret_cast<sockaddr_in*>(i->ifa_addr)->sin_addr.s_addr);
+            uint32_t mask = i->ifa_netmask
+                ? ntohl(reinterpret_cast<sockaddr_in*>(i->ifa_netmask)->sin_addr.s_addr)
+                : 0xffffff00u;
+            AddInterface(out, addr, mask);
+        }
+        freeifaddrs(list);
+    }
+#endif
+    // The default-route interface first.
+    std::string primary = gos_NetLocalAddress();
+    for (size_t i = 1; i < out.size(); ++i)
+        if (out[i].address == primary) {
+            std::rotate(out.begin(), out.begin() + i, out.begin() + i + 1);
+            break;
+        }
+    return out;
+}
+
+std::vector<gosNetInterface> gos_NetLocalInterfaces()
+{
+    // The UI asks every frame; the system query is not free (Windows).
+    static std::vector<gosNetInterface> cache;
+    static std::chrono::steady_clock::time_point when;
+    static bool valid = false;
+    auto now = std::chrono::steady_clock::now();
+    if (!valid || now - when > std::chrono::seconds(2)) {
+        cache = QueryInterfaces();
+        when = now;
+        valid = true;
+    }
+    return cache;
+}
+
+std::string gos_NetLocalAddressList()
+{
+    std::vector<gosNetInterface> itfs = gos_NetLocalInterfaces();
+    if (itfs.empty())
+        return gos_NetLocalAddress();
+    std::string s;
+    for (const gosNetInterface& i : itfs) {
+        if (!s.empty())
+            s += ", ";
+        s += i.address;
+    }
+    return s;
 }
 
 // ---------------------------------------------------------------------------
@@ -352,6 +473,12 @@ void GosNetScanner::query(const char* address, uint16_t port)
     }
     to.host = ENET_HOST_BROADCAST;
     enet_socket_send((ENetSocket)socket_, &to, &buf, 1);
+    // Windows sends 255.255.255.255 out of one adapter only; with several
+    // (VPN, VirtualBox, Hyper-V) the LAN one may be missed. Subnet
+    // broadcasts go out of the matching adapter.
+    for (const gosNetInterface& itf : gos_NetLocalInterfaces())
+        if (enet_address_set_host_ip(&to, itf.broadcast.c_str()) == 0)
+            enet_socket_send((ENetSocket)socket_, &to, &buf, 1);
     // Hosts on this machine (useful for testing and when no broadcast route).
     enet_address_set_host_ip(&to, "127.0.0.1");
     enet_socket_send((ENetSocket)socket_, &to, &buf, 1);

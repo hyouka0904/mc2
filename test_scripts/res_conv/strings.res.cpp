@@ -3282,6 +3282,7 @@ StringResRecord StringRecords[] = {
 	{ IDS_MP_NET_PAUSED, "%s paused the game." },
 	{ IDS_MP_NET_RESUMED, "%s resumed the game." },
 	{ IDS_MP_NET_NO_PAUSES, "No pauses left (each player may pause 3 times per game)." },
+	{ IDS_MP_LOCAL_IP, "YOUR IP ADDRESS: %s" },
 	{ IDS_STRING26018, "Host IP Address" },
 	{ IDS_MP_PARAMETERS_LOCK_GAME_HELP, "LOCK GAME     Prevent players from joining the game. Only the host can select Lock Game." },
 	{ IDS_VEHICLE_DESCRIPTION_23, "Placeholder text:  The VTOL is a large flying transport capable of carrying the Repair Vehicle and other units summoned for reinforcements and repair.  It has a large bay door that opens and allows vehicles to roll out.  VTOLs may be destroyed either during travel or on the ground.  If the VTOL is destroyed while the summoned vehicle is rolling out then the vehicle is destroyed as well.  If the VTOL is destroyed after the summoned vehicle has rolled out, the vehicle is not affected by the VTOL's destruction.\n" },

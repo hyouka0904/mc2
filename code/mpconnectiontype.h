@@ -55,6 +55,7 @@ public:
 	aLanPanel(LogisticsScreen &refParentScreenParam)
 	{
 		pParentScreen = &refParentScreenParam;
+		ipRefresh = 0;
 	}
 	void init(FitIniFile* pFile);
 	virtual int			handleMessage( unsigned long, unsigned long );
@@ -64,6 +65,8 @@ private:
 	aAnimButton button0;
 	aAnimButton button1;
 	aText text;
+	aText ipText;		// this machine's LAN address(es)
+	int ipRefresh;
 };
 
 
