@@ -105,24 +105,61 @@ jobs:
             cp "$shots/capture_000300.png" shot_$renderer.png
           done
 
-      # Large uploads sometimes time out while finalizing; retry once.
-      - name: Upload packages
-        id: upload
+      # One artifact per file, not zipped (upload-artifact v7, archive: false):
+      # the run page downloads the installer itself. Large uploads sometimes
+      # time out while finalizing; each upload is retried once.
+      - name: Locate packages
+        id: pkg
+        shell: bash
+        run: |
+          echo "appimage=$(ls dist/*.AppImage | head -1)" >> "$GITHUB_OUTPUT"
+          echo "tarball=$(ls dist/*.tar.gz | head -1)" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+      - name: Upload appimage
+        id: up_appimage
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: packages-linux
-          path: dist/*.*
+          path: ${{ steps.pkg.outputs.appimage }}
+          archive: false
           retention-days: 7
 
-      - name: Upload packages (retry)
-        if: steps.upload.outcome == 'failure'
+      - name: Upload appimage (retry)
+        if: steps.up_appimage.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.pkg.outputs.appimage }}
+          archive: false
+          retention-days: 7
+          overwrite: true
+
+      - name: Upload tarball
+        id: up_tarball
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.pkg.outputs.tarball }}
+          archive: false
+          retention-days: 7
+
+      - name: Upload tarball (retry)
+        if: steps.up_tarball.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.pkg.outputs.tarball }}
+          archive: false
+          retention-days: 7
+          overwrite: true
+
+      # Tagged builds: also one zipped bundle per platform for the release job.
+      - name: Upload bundle for the release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: packages-linux
           path: dist/*.*
           retention-days: 7
-          overwrite: true
 
       - name: Upload test screenshots
         if: always()
@@ -210,24 +247,61 @@ jobs:
           for _ in $(seq 30); do [ -f /c/mc2test/mc2.exe ] || break; sleep 2; done
           test ! -f /c/mc2test/mc2.exe
 
-      # Large uploads sometimes time out while finalizing; retry once.
-      - name: Upload packages
-        id: upload
+      # One artifact per file, not zipped (upload-artifact v7, archive: false):
+      # the run page downloads the installer itself. Large uploads sometimes
+      # time out while finalizing; each upload is retried once.
+      - name: Locate packages
+        id: pkg
+        shell: bash
+        run: |
+          echo "installer=$(ls dist/*-setup.exe | head -1)" >> "$GITHUB_OUTPUT"
+          echo "zip=$(ls dist/*.zip | head -1)" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+      - name: Upload installer
+        id: up_installer
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: packages-windows
-          path: dist/*.*
+          path: ${{ steps.pkg.outputs.installer }}
+          archive: false
           retention-days: 7
 
-      - name: Upload packages (retry)
-        if: steps.upload.outcome == 'failure'
+      - name: Upload installer (retry)
+        if: steps.up_installer.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.pkg.outputs.installer }}
+          archive: false
+          retention-days: 7
+          overwrite: true
+
+      - name: Upload zip
+        id: up_zip
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.pkg.outputs.zip }}
+          archive: false
+          retention-days: 7
+
+      - name: Upload zip (retry)
+        if: steps.up_zip.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.pkg.outputs.zip }}
+          archive: false
+          retention-days: 7
+          overwrite: true
+
+      # Tagged builds: also one zipped bundle per platform for the release job.
+      - name: Upload bundle for the release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: packages-windows
           path: dist/*.*
           retention-days: 7
-          overwrite: true
 
   macos:
     needs: linux
@@ -274,24 +348,42 @@ jobs:
           plutil -p "$app/Contents/Info.plist" | grep -E "CFBundleShortVersionString|CFBundleIconFile"
           hdiutil detach "$mnt"
 
-      # Large uploads sometimes time out while finalizing; retry once.
-      - name: Upload packages
-        id: upload
+      # One artifact per file, not zipped (upload-artifact v7, archive: false):
+      # the run page downloads the installer itself. Large uploads sometimes
+      # time out while finalizing; each upload is retried once.
+      - name: Locate packages
+        id: pkg
+        shell: bash
+        run: |
+          echo "dmg=$(ls dist/*.dmg | head -1)" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+      - name: Upload dmg
+        id: up_dmg
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: packages-macos
-          path: dist/*.*
+          path: ${{ steps.pkg.outputs.dmg }}
+          archive: false
           retention-days: 7
 
-      - name: Upload packages (retry)
-        if: steps.upload.outcome == 'failure'
+      - name: Upload dmg (retry)
+        if: steps.up_dmg.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.pkg.outputs.dmg }}
+          archive: false
+          retention-days: 7
+          overwrite: true
+
+      # Tagged builds: also one zipped bundle per platform for the release job.
+      - name: Upload bundle for the release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: packages-macos
           path: dist/*.*
           retention-days: 7
-          overwrite: true
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
