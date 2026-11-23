@@ -2,13 +2,17 @@
 
 [English](README.md)
 
-| 平台 | 下載 |
-|---|---|
-| **Windows** 10 以上（x64） | [下載 Windows 版](https://github.com/hyouka0904/mc2/releases/latest)：`…-windows-x64-setup.exe`（安裝程式），或 `…-windows-x64.zip`（免安裝） |
-| **macOS** 13 以上（Apple Silicon） | [下載 macOS 版](https://github.com/hyouka0904/mc2/releases/latest)：`…-macos-arm64.dmg` |
-| **Linux** x86_64 | [下載 Linux 版](https://github.com/hyouka0904/mc2/releases/latest)：`…-linux-x86_64.AppImage`，或 `…-linux-x86_64.tar.gz` |
+## [⬇ 下載最新版](https://github.com/hyouka0904/mc2/releases/latest)
 
-連結會開啟最新版的 Release 頁面，在頁面下方的 Assets 選擇對應的檔案。每個安裝包都附完整的遊戲資料（約 600 MB），下載後就能玩。
+在 Release 頁面下方的 Assets 選擇你的平台：
+
+| 平台 | 檔案 |
+|---|---|
+| Windows 10 以上（x64） | `…-windows-x64-setup.exe`（安裝程式），或 `…-windows-x64.zip`（免安裝） |
+| macOS 13 以上（Apple Silicon） | `…-macos-arm64.dmg` |
+| Linux x86_64 | `…-linux-x86_64.AppImage`，或 `…-linux-x86_64.tar.gz` |
+
+每個安裝包都附完整的遊戲資料（約 600 MB），下載後就能玩。安裝步驟、存檔位置和常用參數見安裝包裡的 `README.txt`。
 
 > **本專案是 [alariq/mc2](https://github.com/alariq/mc2) 的獨立 fork，與原作者 alariq 無關，也未經其認可；與微軟無關。**
 > 問題請回報到本 repository，不要回報給原專案。
@@ -30,11 +34,9 @@
 
 ---
 
-## 遊戲說明書
+## 聯機模式說明書
 
-- **[原版遊戲說明書](docs/manual/original-game.zh-TW.md)**：安裝、主選單、戰役流程、整備、操作與熱鍵、存檔位置、常見問題。
-
-### 聯機模式
+單人遊戲的玩法和原版相同；任務中按 **F1** 可以看完整的熱鍵清單。
 
 | 模式 | 說明書 | 狀態 |
 |---|---|---|

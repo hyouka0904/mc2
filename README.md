@@ -2,13 +2,17 @@
 
 [中文版](README.zh-TW.md)
 
-| Platform | Download |
-|---|---|
-| **Windows** 10+ (x64) | [Download for Windows](https://github.com/hyouka0904/mc2/releases/latest): `…-windows-x64-setup.exe` (installer) or `…-windows-x64.zip` (portable) |
-| **macOS** 13+ (Apple Silicon) | [Download for macOS](https://github.com/hyouka0904/mc2/releases/latest): `…-macos-arm64.dmg` |
-| **Linux** x86_64 | [Download for Linux](https://github.com/hyouka0904/mc2/releases/latest): `…-linux-x86_64.AppImage` or `…-linux-x86_64.tar.gz` |
+## [⬇ Download the latest version](https://github.com/hyouka0904/mc2/releases/latest)
 
-The links open the latest release; pick your file under Assets at the bottom of the page. Every package contains the complete game data (about 600 MB) and is ready to play.
+Pick the file for your platform under Assets at the bottom of the release page:
+
+| Platform | File |
+|---|---|
+| Windows 10+ (x64) | `…-windows-x64-setup.exe` (installer) or `…-windows-x64.zip` (portable) |
+| macOS 13+ (Apple Silicon) | `…-macos-arm64.dmg` |
+| Linux x86_64 | `…-linux-x86_64.AppImage` or `…-linux-x86_64.tar.gz` |
+
+Every package contains the complete game data (about 600 MB) and is ready to play. See `README.txt` in the package for installation steps, where saves live and common options.
 
 > **This project is an independent fork of [alariq/mc2](https://github.com/alariq/mc2). It is not affiliated with or endorsed by alariq, nor by Microsoft.**
 > Please report issues here, not to the upstream project.
@@ -30,11 +34,9 @@ Microsoft released the game source under the Shared Source license, but its engi
 
 ---
 
-## Game manuals
+## Multiplayer manuals
 
-- **[Original game manual](docs/manual/original-game.md)**: installing, the main menu, the campaign, the 'Mech bay, controls and hotkeys, where saves live, troubleshooting.
-
-### Multiplayer modes
+Single player plays as in the original game; press **F1** in a mission for the full hotkey list.
 
 | Mode | Manual | Status |
 |---|---|---|

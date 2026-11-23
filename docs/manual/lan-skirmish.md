@@ -24,7 +24,7 @@
 - **P** pauses the whole game: 3 pauses per player per match, and anyone can unpause.
 - **Esc** only opens your own menu; the battle keeps going.
 - **Enter** chats with everyone, **Shift+Enter** with your team.
-- Everything else works as in single player, see the [original game manual](original-game.md#controls).
+- Everything else works as in single player; press **F1** for the full hotkey list.
 - If a player drops, the host's AI takes over their units; if the host drops, the mission ends for everyone.
 
 ## Finding your IP address
