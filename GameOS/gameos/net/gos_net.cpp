@@ -99,7 +99,7 @@ bool GosNetSession::host(uint16_t port, int maxPeers)
     ENetAddress addr;
     addr.host = ENET_HOST_ANY;
     addr.port = port;
-    ENetHost* h = enet_host_create(&addr, (size_t)std::max(1, maxPeers), 2, 0, 0);
+    ENetHost* h = enet_host_create(&addr, (size_t)(std::max)(1, maxPeers), 2, 0, 0);
     if (!h)
         return false;
     h->intercept = interceptCallback;
