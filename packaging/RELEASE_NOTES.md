@@ -12,6 +12,6 @@ The packages are not code-signed: Windows SmartScreen and macOS Gatekeeper ask o
 
 安裝包沒有數位簽章：第一次啟動時 Windows SmartScreen 與 macOS Gatekeeper 會先詢問一次（步驟見安裝包中的 `README.txt`）。檔案雜湊值：`SHA256SUMS.txt`。
 
-The GameOS engine reimplementation is the work of alariq and is licensed under the GNU GPL v3; this fork's changes are licensed under GPL v3 as well. Source code: this repository. Several bug fixes were ported from alariq's later upstream work (see "與原專案的差異" in `README.md`).
+The GameOS engine reimplementation is the work of alariq and is licensed under the GNU GPL v3; this fork's changes are licensed under GPL v3 as well. Source code: this repository. Several bug fixes were ported from alariq's later upstream work (see "Differences from upstream" in `README.md`).
 
-GameOS 引擎的重新實作出自原作者 alariq，以 GNU GPL v3 授權；本 fork 的修改同樣以 GPL v3 授權，原始碼即本 repository。部分錯誤修正移植自原作者後續的上游修改（見 `README.md` 的「與原專案的差異」）。
+GameOS 引擎的重新實作出自原作者 alariq，以 GNU GPL v3 授權；本 fork 的修改同樣以 GPL v3 授權，原始碼即本 repository。部分錯誤修正移植自原作者後續的上游修改（見 `README.zh-TW.md` 的「與原專案的差異」）。

@@ -6,4 +6,4 @@ DONE - 5) add support for .rsp files for pack/unpack tool
 DONE - 6) tgl/agl files are generated when running game, add generaton tool ase -> tgl/agl
 DONE - 7) objmgr.cpp Save/Load chnge watchSave to be int* instead of long*
 
-Open items are listed in README.md, section "已知限制與待辦事項".
+Open items are listed in DEVELOPMENT.md, section "Known limitations and open items".
