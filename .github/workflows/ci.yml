@@ -129,6 +129,9 @@ jobs:
           python3 scripts/run_flow_tests.py game --out flows --timeout 300
           python3 scripts/run_flow_tests.py game --renderer gpu --out flows_gpu --timeout 300
 
+      - name: LAN multiplayer (two instances, host + client)
+        run: python3 scripts/run_net_test.py game --out net --timeout 900
+
       - name: Upload screenshot and log
         if: always()
         uses: actions/upload-artifact@v4
@@ -141,6 +144,7 @@ jobs:
             shots_gpu/
             flows/
             flows_gpu/
+            net/
 
   build-macos:
     # Apple Silicon, Metal through SDL3 GPU. No GPU on the runner for the
