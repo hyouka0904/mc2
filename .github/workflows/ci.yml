@@ -2,8 +2,16 @@
 name: CI
 
 on:
+  # Documentation-only changes skip CI (a push that touches any other file
+  # still runs everything). Use "Run workflow" to force a run.
   push:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   workflow_dispatch:
 
 jobs:
