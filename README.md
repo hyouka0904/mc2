@@ -268,7 +268,7 @@ cd game && ./mc2
 ### 目前的限制
 
 - 回收車（Salvage Craft）與把單位撤出戰場的同步尚未完成；建議在房間設定中關閉 Salvage Craft。
-- 大廳的「模式」選擇（合作關卡、Roguelike）還沒有加入，見工作清單 M2–M5。
+- 大廳的「模式」選擇（合作關卡、Roguelike）還沒有加入，見工作清單 M2–M7。
 - 只在 Linux 上以兩個本機實例自動測試過；Windows 實機與跨平台連線需要人工測試。
 
 ## Mod / Modding / Modpack
