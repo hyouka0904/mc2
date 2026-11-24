@@ -186,9 +186,9 @@ def check_version(host_dir, client_dir, host_status, client_status):
             problems.append("%s exit status %s" % (what, status))
     for what, text in (("host", host_log), ("client", client_log)):
         problems += ["%s log has %r" % (what, b) for b in FORBIDDEN if b in text]
-    expect = '[net] room "room" is not compatible (version 9.9.9'
-    if expect not in client_log:
-        problems.append("client log lacks %r" % expect)
+    for expect in ('[net] found room "room"', '[net] room "room" is not compatible (version 9.9.9'):
+        if expect not in client_log:
+            problems.append("client log lacks %r" % expect)
     if "[net] joining" in client_log:
         problems.append("client tried to join an incompatible room")
     if re.search(r"\[net\] peer \d+ connected", host_log):
@@ -217,7 +217,8 @@ def main():
     try:
         version_test = args.scenario == "version"
         if version_test:
-            host, host_dir = start("host", host_script(), 2600, game_dir, out, args.renderer, display,
+            # The host keeps its room open until the client is done (stopped below)
+            host, host_dir = start("host", host_script(), HOST_FRAMES, game_dir, out, args.renderer, display,
                                    {"MC2_NET_TEST_VERSION": "9.9.9", "MC2_NET_TEST_PROTOCOL": "MC2NET-T"})
         else:
             host, host_dir = start("host", host_script(), HOST_FRAMES, game_dir, out, args.renderer,
@@ -234,7 +235,17 @@ def main():
             client, client_dir = start("client", client_script(), CLIENT_FRAMES, game_dir, out,
                                        args.renderer, display, {})
         statuses = {}
+        if version_test:
+            try:
+                statuses["client"] = client.wait(timeout=max(1, deadline - time.time()))
+            except subprocess.TimeoutExpired:
+                client.kill()
+                statuses["client"] = "timeout"
+            statuses["host"] = host.poll() if host.poll() not in (None, 0) else 0
+            host.kill()
         for name, proc in (("client", client), ("host", host)):
+            if name in statuses:
+                continue
             try:
                 statuses[name] = proc.wait(timeout=max(1, deadline - time.time()))
             except subprocess.TimeoutExpired:
