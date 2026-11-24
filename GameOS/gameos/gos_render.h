@@ -19,7 +19,8 @@ void                get_drawable_size       (RenderWindowHandle rw_handle, int* 
 void                swap_window             (RenderWindowHandle h);
 void                destroy_window          (RenderWindowHandle rw_handle);
 bool                set_window_fullscreen   (RenderWindowHandle rw_handle, bool fullscreen);
-bool                is_mode_supported       (int width, int height, int bpp);
+// display_index < 0 or out of range: the primary display
+bool                is_mode_supported       (int display_index, int width, int height, int bpp);
 int                 get_window_display_index(RenderContextHandle ctx_h);
 bool                get_desktop_display_mode(int display_index, int* width, int* height, int* bpp);
 int                 get_num_display_modes   (int display_index);

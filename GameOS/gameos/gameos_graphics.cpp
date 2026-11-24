@@ -2917,7 +2917,9 @@ size_t __stdcall gos_GetMachineInformation( MachineInfo mi, int Param1/*=0*/, in
         int xres = Param2;
         int yres = Param3;
         int bpp = Param4;
-        return graphics::is_mode_supported(xres, yres, bpp) ? 1 : 0;
+        // before the window exists, fall back to the primary display
+        const int display = g_gos_renderer ? gos_GetWindowDisplayIndex() : -1;
+        return graphics::is_mode_supported(display, xres, yres, bpp) ? 1 : 0;
     }
     if(mi == gos_Info_GetIMECaretStatus)
         return 1;

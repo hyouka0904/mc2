@@ -248,9 +248,14 @@ bool set_window_fullscreen(RenderWindowHandle rw_handle, bool fullscreen)
 }
 
 //==============================================================================
-bool is_mode_supported(int width, int height, int bpp) {
+bool is_mode_supported(int display_index, int width, int height, int bpp) {
 
-    SDL_DisplayID display = SDL_GetPrimaryDisplay();
+    // Check the display the window is on: with several monitors the options
+    // screen lists that display's modes, so validating them against the
+    // primary display could reject (or accept) the wrong ones.
+    SDL_DisplayID display = display_id_from_index(display_index);
+    if (!display)
+        display = SDL_GetPrimaryDisplay();
     SDL_DisplayMode closest;
     if(!SDL_GetClosestFullscreenDisplayMode(display, width, height, 0.0f, false, &closest)) {
         log_error("is_mode_supported: %s\n", SDL_GetError());
