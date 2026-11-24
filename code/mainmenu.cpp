@@ -28,6 +28,9 @@ struct DDSURFACEDESC2 {
 #include"multplyr.h"
 
 #include"prefs.h"
+#include "update/gos_update.h"
+#include "mc2_version.h"
+#include <math.h>
 extern CPrefs prefs;
 
 
@@ -84,6 +87,8 @@ MainMenu::MainMenu(  )
 	bLoadCampaign = 0;
 	introOver = 0;
 	bHostLeftDlg = 0;
+	bUpdateDlg = 0;
+	bUpdateNoticeHidden = 0;
 
 	introMovie = 0;
 }
@@ -173,6 +178,7 @@ void MainMenu::begin()
 	bLoadCampaign = 0;
 	promptToDisconnect = 0; 
 	bLegal = 0;
+	bUpdateDlg = 0;
 
 	// no host left dlg, sometimes we get this begin call 2x's due to netlib weirdness
 	if ( !introMovie )
@@ -648,6 +654,22 @@ void MainMenu::update()
 			MPlayer = NULL;
 		}
 	}
+	else if ( bUpdateDlg )
+	{
+		LogisticsOKDialog::instance()->update();
+		if ( LogisticsOKDialog::instance()->isDone() )
+		{
+			if ( YES == LogisticsOKDialog::instance()->getStatus() )
+			{
+				// Keep reminding on later starts until the new version runs
+				gos_OpenURL( gos_update::available().url.c_str() );
+				bUpdateNoticeHidden = true;
+			}
+			else
+				gos_update::snooze();
+			bUpdateDlg = 0;
+		}
+	}
 	else if ( promptToDisconnect )
 	{
 		LogisticsOKDialog::instance()->update();
@@ -708,6 +730,26 @@ void MainMenu::update()
 		endAnim.update();
 
 		LogisticsScreen::update();
+		if ( updateNoticeVisible() && userInput->isLeftClick() )
+		{
+			GUI_RECT r;
+			updateNoticeRect( r );
+			const long mx = userInput->getMouseX(), my = userInput->getMouseY();
+			if ( mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom )
+			{
+				const gos_update::Release rel = gos_update::available();
+				char fmt[512];
+				char text[1024];
+				cLoadString( IDS_UPDATE_PROMPT, fmt, 511 );
+				snprintf( text, sizeof(text), fmt, rel.version.c_str(), MC2_VERSION );
+				LogisticsOKDialog::instance()->setText( IDS_UPDATE_PROMPT, IDS_UPDATE_LATER, IDS_UPDATE_DOWNLOAD );
+				LogisticsOKDialog::instance()->setText( text );
+				LogisticsOKDialog::instance()->begin();
+				soundSystem->playDigitalSample( LOG_MAINMENUBUTTON );
+				bUpdateDlg = true;
+				return;
+			}
+		}
 		if ( (!bLoadSingle) && userInput->isLeftClick() && !inside( userInput->getMouseX(), userInput->getMouseY() ) )
 		{
 			handleMessage( 0, MM_MSG_RETURN_TO_GAME );
@@ -809,7 +851,24 @@ void MainMenu::render()
 	else
 		LogisticsSaveDialog::instance()->render();
  
-	if ( promptToQuit || promptToDisconnect )
+	if ( updateNoticeVisible() && !bUpdateDlg && !xDelta && !yDelta )
+	{
+		GUI_RECT r;
+		updateNoticeRect( r );
+		char fmt[256];
+		char text[512];
+		cLoadString( IDS_UPDATE_NOTICE, fmt, 255 );
+		snprintf( text, sizeof(text), fmt, gos_update::available().version.c_str() );
+		// Pulse gently so it is noticed without being in the way
+		const float t = (float)fmod( gos_GetElapsedTime( 1 ), 1.5 ) / 1.5f;
+		const float a = t < 0.5f ? t * 2.f : (1.f - t) * 2.f;
+		const long color = interpolateColor( 0xffc66600, 0xffffd040, a );
+		drawShadowText( color, 0xff000000, textObjects[1].font.getTempHandle(),
+			r.left, r.top, r.right, r.bottom,
+			true, text, false, textObjects[1].font.getSize(), 1, 1 );
+	}
+
+	if ( promptToQuit || promptToDisconnect || bUpdateDlg )
 	{
 		LogisticsOKDialog::instance()->render();
 	}
@@ -825,6 +884,27 @@ void MainMenu::render()
 
 
 	
+}
+
+// Only on the real main menu (not the in-mission menu), once the intro is
+// over and no other dialog is up.
+bool MainMenu::updateNoticeVisible()
+{
+	return bDrawBackground && introOver && !bUpdateNoticeHidden && !MPlayer
+		&& gos_update::status() == gos_update::Status::Available
+		&& !promptToQuit && !promptToDisconnect && !bLegal && !bHostLeftDlg
+		&& !bOptions && !bSave && !bLoad && !bLoadSingle && !bLoadCampaign && !bDrawMechlopedia;
+}
+
+// Over the earth in the bottom left corner, clear of the menu buttons
+void MainMenu::updateNoticeRect( GUI_RECT& rect )
+{
+	const float sx = Environment.screenWidth / 800.f;
+	const float sy = Environment.screenHeight / 600.f;
+	rect.left = (long)(20 * sx);
+	rect.right = (long)(215 * sx);
+	rect.top = (long)(470 * sy);
+	rect.bottom = (long)(530 * sy);
 }
 
 void MainMenu::setHostLeftDlg( const char* playerName )

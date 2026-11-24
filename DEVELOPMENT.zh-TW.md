@@ -10,10 +10,11 @@
 2. [在 Linux 上建置](#在-linux-上建置)
 3. [建置遊戲資料並執行](#建置遊戲資料並執行)
 4. [區網聯機的實作](#區網聯機的實作)
-5. [自動化測試](#自動化測試)
-6. [在 Windows 上建置](#在-windows-上建置)／[在 macOS 上建置](#在-macos-上建置)
-7. [安裝包與發佈](#安裝包與發佈)
-8. [已知限制與待辦事項](#已知限制與待辦事項)
+5. [版本檢查](#版本檢查)
+6. [自動化測試](#自動化測試)
+7. [在 Windows 上建置](#在-windows-上建置)／[在 macOS 上建置](#在-macos-上建置)
+8. [安裝包與發佈](#安裝包與發佈)
+9. [已知限制與待辦事項](#已知限制與待辦事項)
 
 - Mod 系統的格式、工具與程式介面：[docs/modding.zh-TW.md](docs/modding.zh-TW.md)
 - 聯機模式（合作、Roguelike、雙人對戰、機器學習接口）與中文補丁的工作清單：[ROADMAP_MULTIPLAYER_ZH.md](ROADMAP_MULTIPLAYER_ZH.md)
@@ -217,11 +218,35 @@ cd game && ./mc2
 | `MC2_NET_LOG=2` | 標準輸出列出每一則網路訊息（預設 `1` 只列連線、加入、載入步驟等事件，`0` 關閉） |
 | `MC2_NET_STATEFILE=<檔案>` | 任務中每秒寫下所有單位的位置與狀態、擊殺／損失（客端用主機的任務時鐘），用來比對兩台電腦是否一致 |
 | `MC2_NET_TEST_CHARGE=1` | 只給自動測試用：主機在第 10 秒命令自己的單位攻擊最近的敵人 |
+| `MC2_NET_TEST_VERSION=<版本>`、`MC2_NET_TEST_PROTOCOL=<stamp>` | 只給自動測試用：假裝成另一個版本（房間廣播裡的遊戲版本、網路協定 stamp） |
 
 ### 測試
 
 - `unit_net`（CTest）：本機開主機與客端，互傳 1000 個可靠封包（順序與內容）、64 KB 分片、廣播、房間探索（廣播與直接 IP）、本機網卡列舉（每個位址都能被直接 IP 查到）、連不上時的逾時。
 - `scripts/run_net_test.py game`：在同一台機器開兩個遊戲實例，用腳本操作主選單 → 開房／加入 → Ready → Launch，進入 WetWork 打一場 12 對 12；比對兩邊的擊毀單位、擊殺數與位置，客端中途離開後主機要繼續執行。
+- `scripts/run_net_test.py game --scenario version`：主機假裝成 9.9.9 版、協定也不同；客端的房間列表要顯示「VERSION 9.9.9」，按 Join 要跳出版本對話框，而且不能連上。
+
+### 房間裡的版本
+
+- 房間廣播的最後是主機的遊戲版本。0.2 以前的主機送的是較短的廣播，仍然收得到，版本顯示成「< 0.2」。客端在協定 stamp 和遊戲資料雜湊都和自己相同時，才把房間標成可加入。
+- 不能加入的房間，地圖欄改顯示 `VERSION x.y.z`（版本相同但資料不同時顯示 `DIFFERENT GAME DATA`）。按 Join 不會連線，直接顯示雙方的版本。主機比較新時，房間列表的對話框有 **Download**（打開 Release 頁面）；直接輸入 IP 的面板則寫出下載位置。主機比較舊時，提示主機要更新。
+- 能不能一起玩仍然由協定 stamp（`code/multplyr.cpp` 的 `MC2NET-1`）決定，版本字串只用來顯示。網路訊息有任何改動時，都要更新 stamp。
+
+---
+
+## 版本檢查
+
+程式在 `GameOS/gameos/update/gos_update.{h,cpp}`，引擎初始化後由 `gameosmain.cpp` 啟動，`code/mainmenu.cpp` 負責顯示。
+
+- 背景執行緒查詢 `https://api.github.com/repos/hyouka0904/mc2/releases/latest`（逾時 5 秒）。這個網址只回傳已發佈的正式版，不會有草稿或預覽版。取得的 tag 用語意化版本和 `MC2_VERSION` 比較（預覽版排在正式版之前）。
+- 結果存在使用者資料夾的 `update.ini`，**24 小時最多連網查一次**。請求只帶一個通用的 `User-Agent`。
+- HTTPS：Windows 用 WinHTTP；Linux 和 macOS 用 `dlopen` 載入系統的 libcurl（建置時不需要它，AppImage 也會用系統的憑證）。找不到 libcurl 就跳過檢查。
+- 開發版不檢查：解析不了的版本、`0.0.0*`（本機和 CI 的測試建置），以及 `git describe` 產生、在 tag 之後的版本（`1.2.0-14-gabc1234`）。
+- 主選單：左下角一行會閃爍的「NEW VERSION x.y.z AVAILABLE - CLICK HERE」，只在真正的主選單出現。對話框有 **Download**（打開 GitHub 的 Release 頁面；在跑新版之前，下次啟動還會提示）和 **Later**（這個版本 7 天內不再提示；有更新的版本時立刻再提示）。
+- 關閉方式：`-noupdatecheck`、`MC2_NO_UPDATE_CHECK=1`（CI 有設）、`update.ini` 裡的 `check=0`，以及決定性或腳本模式（`-fixedstep`、`-input-script`）。
+- `MC2_UPDATE_URL=<網址>` 讓檢查改連測試伺服器（可以用 http）；設了它，開發版和腳本模式也會檢查。
+- 測試：`unit_update`（CTest）涵蓋版本解析與排序、Release JSON（草稿、預覽版、格式錯誤、不是 GitHub 的網址）、`update.ini`、延後提示的規則，以及對 127.0.0.1 上小型 HTTP 伺服器的完整背景檢查（快取、伺服器錯誤、`check=0`、開發版）。
+- 下載與安裝更新（工作清單的 U4–U6）還沒做。
 
 ---
 
@@ -244,6 +269,7 @@ ctest --test-dir build --output-on-failure
 | `unit_heap` | GameOS 記憶體堆積：`gos_Malloc` / `new` 依目前 heap 記錄、`gos_DestroyMemoryHeap(heap, false)` 釋放剩餘配置、`(heap, true)` 只回報洩漏且區塊仍可用 |
 | `unit_render_state` | 由 GameOS 渲染狀態推出的管線描述、32 位元管線鍵（可逆、互不重複）、管線快取 |
 | `unit_net` | 區網傳輸層，見[區網聯機的實作](#區網聯機的實作) |
+| `unit_update` | 版本檢查，見[版本檢查](#版本檢查) |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
 | `shader_validation` | 以 glslangValidator 離線編譯並連結所有著色器變體（與執行時相同的 `#version 420`、`ALPHA_TEST` 定義與 `#include` 展開），不需要 GPU；未安裝 `glslang-tools` 時略過 |
 | `shader_spirv` | 所有變體編成 Vulkan SPIR-V 並通過 `spirv-val`、兩個階段的介面能連結、轉出 MSL / HLSL，並檢查 `PerDraw` uniform block 與 C++ 結構的位移一致；`-DMC2_SHADER_REQUIRE=msl,hlsl` 可要求轉換器必須存在（CI 使用） |

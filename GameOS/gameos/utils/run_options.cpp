@@ -101,6 +101,8 @@ bool parse(int argc, const char* const* argv, Options& out, std::string* error)
             ++i;
         } else if (!strcmp(a, "-version") || !strcmp(a, "--version")) {
             out.print_version = true;
+        } else if (!strcmp(a, "-noupdatecheck")) {
+            out.no_update_check = true;
         } else if (!strcmp(a, "-windowed")) {
             out.windowed = true;
         } else if (!strcmp(a, "-renderer")) {

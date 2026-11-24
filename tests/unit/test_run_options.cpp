@@ -245,6 +245,14 @@ TEST(run_options_windowed_flag)
     CHECK(o.windowed);
 }
 
+TEST(run_options_no_update_check_flag)
+{
+    Options o;
+    CHECK(!o.no_update_check);
+    CHECK(parseArgs({"-noupdatecheck"}, o));
+    CHECK(o.no_update_check);
+}
+
 TEST(run_options_shader_reload_flag)
 {
     Options o;

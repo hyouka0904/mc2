@@ -10,10 +10,11 @@ For people who want to build the game, change the code or contribute. To just pl
 2. [Building on Linux](#building-on-linux)
 3. [Building the game data and running](#building-the-game-data-and-running)
 4. [How LAN multiplayer works](#how-lan-multiplayer-works)
-5. [Automated tests](#automated-tests)
-6. [Building on Windows](#building-on-windows) / [Building on macOS](#building-on-macos)
-7. [Packages and releases](#packages-and-releases)
-8. [Known limitations and open items](#known-limitations-and-open-items)
+5. [Update check](#update-check)
+6. [Automated tests](#automated-tests)
+7. [Building on Windows](#building-on-windows) / [Building on macOS](#building-on-macos)
+8. [Packages and releases](#packages-and-releases)
+9. [Known limitations and open items](#known-limitations-and-open-items)
 
 - Mod format, tool and API: [docs/modding.md](docs/modding.md)
 - Roadmap for the multiplayer modes (co-op, roguelike, 1v1, ML interface) and the Chinese translation: [ROADMAP_MULTIPLAYER_ZH.md](ROADMAP_MULTIPLAYER_ZH.md) (Chinese only)
@@ -224,11 +225,35 @@ For playing, see the [LAN skirmish manual](docs/manual/lan-skirmish.md).
 | `MC2_NET_LOG=2` | Print every network message to stdout (default `1` prints only connection, join and load events; `0` turns it off) |
 | `MC2_NET_STATEFILE=<file>` | Every second in a mission, write every unit's position and state plus kills / losses (clients use the host's mission clock), to compare two machines |
 | `MC2_NET_TEST_CHARGE=1` | Test only: at 10 seconds the host orders its units to attack the nearest enemy |
+| `MC2_NET_TEST_VERSION=<v>`, `MC2_NET_TEST_PROTOCOL=<stamp>` | Test only: pretend to be another release (game version in the room beacon, network protocol stamp) |
 
 ### Tests
 
 - `unit_net` (CTest): host and client in one process; 1000 reliable packets each way (order and contents), 64 KB fragmentation, broadcast, room discovery (broadcast and direct IP), local interface enumeration (every address answers a direct IP query), timeout when nobody is listening.
 - `scripts/run_net_test.py game`: two game instances on one machine, driven by script through main menu → host / join → Ready → Launch, into WetWork for a 12 vs 12 battle; compares destroyed units, kill counts and positions on both sides, and the host must keep running after the client leaves.
+- `scripts/run_net_test.py game --scenario version`: the host pretends to be release 9.9.9 with another protocol; the client must show the room as "VERSION 9.9.9", show the version dialog on Join and never connect.
+
+### Versions in the lobby
+
+- The room beacon ends with the host's game version (hosts before 0.2 send the shorter beacon; it is still accepted and shown as "< 0.2"). The client marks a room compatible when the protocol stamp and the game data hash match its own.
+- Incompatible rooms show `VERSION x.y.z` (or `DIFFERENT GAME DATA`) in the map column. Join does not connect; it shows both versions. If the host is newer the room list dialog offers **Download** (opens the release page); the direct IP panel says where to download it. If the host is older it says the host needs to update.
+- The protocol stamp (`MC2NET-1` in `code/multplyr.cpp`) still decides whether two games can play together; the version string is only shown. Bump the stamp whenever a network message changes.
+
+---
+
+## Update check
+
+`GameOS/gameos/update/gos_update.{h,cpp}`, started from `gameosmain.cpp` after the engine initialises, shown by `code/mainmenu.cpp`.
+
+- A background thread asks `https://api.github.com/repos/hyouka0904/mc2/releases/latest` (5 s timeout). That endpoint only returns published releases, never drafts or pre-releases. The tag is compared with `MC2_VERSION` (SemVer, pre-releases sort first).
+- The answer is kept in `update.ini` in the user directory; the network is asked **at most once every 24 hours**. The request carries only a generic `User-Agent`.
+- HTTPS: WinHTTP on Windows; on Linux and macOS the system libcurl is loaded with `dlopen` (no build dependency; the AppImage uses the system's certificates). Without libcurl the check is skipped.
+- No check for development builds: versions that do not parse, `0.0.0*` (local and CI test builds) and `git describe` versions past a tag (`1.2.0-14-gabc1234`).
+- Main menu: a pulsing line in the bottom left, "NEW VERSION x.y.z AVAILABLE - CLICK HERE", only on the real main menu. The dialog offers **Download** (opens the GitHub release page; the notice comes back on the next start until the new version runs) and **Later** (hides that version for 7 days; a newer release shows again at once).
+- Turned off by `-noupdatecheck`, `MC2_NO_UPDATE_CHECK=1` (set in CI), `check=0` in `update.ini`, and in deterministic or scripted runs (`-fixedstep`, `-input-script`).
+- `MC2_UPDATE_URL=<url>` points the check at a test server (plain http allowed); with it development builds and scripted runs check too.
+- Tests: `unit_update` (CTest) covers version parsing and ordering, the release JSON (drafts, pre-releases, malformed input, non-GitHub page URLs), `update.ini`, the snooze rule, and full background checks against a small HTTP server on 127.0.0.1 (caching, server errors, `check=0`, development builds).
+- Downloading and installing updates (U4–U6 in the roadmap) are not done yet.
 
 ---
 
@@ -251,6 +276,7 @@ ctest --test-dir build --output-on-failure
 | `unit_heap` | GameOS memory heaps: `gos_Malloc` / `new` are tracked per current heap, `gos_DestroyMemoryHeap(heap, false)` frees what is left, `(heap, true)` only reports leaks and the blocks stay usable |
 | `unit_render_state` | Pipeline descriptions derived from GameOS render state, 32-bit pipeline keys (reversible, unique), pipeline cache |
 | `unit_net` | LAN transport, see [How LAN multiplayer works](#how-lan-multiplayer-works) |
+| `unit_update` | Update check, see [Update check](#update-check) |
 | `render_isolation` | Checks that OpenGL appears only in `GameOS/gameos/render/gl/` |
 | `shader_validation` | Compiles and links every shader variant offline with glslangValidator (same `#version 420`, `ALPHA_TEST` define and `#include` expansion as at run time), no GPU needed; skipped without `glslang-tools` |
 | `shader_spirv` | Every variant compiles to Vulkan SPIR-V and passes `spirv-val`, the two stages' interfaces link, conversion to MSL / HLSL works, and the `PerDraw` uniform block offsets match the C++ struct; `-DMC2_SHADER_REQUIRE=msl,hlsl` makes the converters mandatory (CI uses it) |

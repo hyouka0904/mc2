@@ -105,6 +105,9 @@ private:
 
 	bool					bHosting;
 	bool					bShowErrorDlg;
+	bool					bVersionDlg;	// version mismatch with a download button
+	// True when the room cannot be joined; shows why.
+	bool					showIncompatibleSession( const MC2Session* session, bool afterRefusal );
 
 	int						sortOrder;
 

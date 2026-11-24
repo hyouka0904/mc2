@@ -227,7 +227,17 @@ typedef struct _MC2Session {
 	char			versionStamp[15];
 	GUID			handle;
 	char			address[16];	// host IPv4 address (LAN scan / direct IP)
+	char			gameVersion[24];	// host's game version ("" from hosts before 0.2)
+	bool			compatible;		// same network protocol and game data as ours
 } MC2Session;
+
+// Why a room cannot be joined, for the error dialog: false when it can.
+// *offerDownload is set when the host runs a newer release than this game
+// (the text then asks whether to open the download page); with
+// offerDownload NULL the text says where to download it instead.
+bool MPDescribeIncompatibleSession (const MC2Session* session, char* text, int textLen, bool* offerDownload);
+// Short text for the room list's map column ("VERSION 0.3.0"); false when compatible.
+bool MPIncompatibleSessionLabel (const MC2Session* session, char* text, int textLen);
 
 #pragma pack(1)
 typedef struct _MC2SessionData {

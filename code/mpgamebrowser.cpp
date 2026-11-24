@@ -14,6 +14,7 @@ MPGameBrowser.cpp			: Implementation of the MPGameBrowser component.
 #include"multplyr.h"
 #include"mechbayscreen.h"
 #include "net/gos_net.h"
+#include "update/gos_update.h"
 
 #ifndef GAMESOUND_H
 #include"gamesound.h"
@@ -45,6 +46,7 @@ MPGameBrowser::MPGameBrowser()
 	bSortUpward = 1;
 	bHosting = 0;
 	bShowErrorDlg = 0;
+	bVersionDlg = 0;
 
 }
 
@@ -143,6 +145,7 @@ void MPGameBrowser::begin()
 	ipRefresh = 0;
 	bHosting = 0;
 	bShowErrorDlg = 0;
+	bVersionDlg = 0;
 	
 
 	if ( MPlayer )
@@ -182,6 +185,11 @@ void MPGameBrowser::render(int xOffset, int yOffset )
 	if ( bShowErrorDlg )
 	{
 		LogisticsOneButtonDialog::instance()->render();
+		return;
+	}
+	if ( bVersionDlg )
+	{
+		LogisticsOKDialog::instance()->render();
 		return;
 	}
 
@@ -232,9 +240,17 @@ int	MPGameBrowser::handleMessage( unsigned long message, unsigned long who)
 					aGameListItem* pItem = (aGameListItem*)gameList.GetItem( index );
 					if ( pItem )
 					{
+						if ( MPlayer && showIncompatibleSession( pItem->getSession(), false ) )
+							return 1;
 						if ( MPlayer )
 						{
 							long retVal = MPlayer->joinSession ( (MC2Session*)pItem->getSession(), &prefs.playerName[0][0] );
+							if ( retVal == MPLAYER_ERR_BAD_VERSION )
+							{
+								// The host refused us after all: explain with what we know
+								showIncompatibleSession( pItem->getSession(), true );
+								return 1;
+							}
 							if ( retVal == MPLAYER_NO_ERR ) {
 								MPlayer->setMode(MULTIPLAYER_MODE_PARAMETERS);
 								status = NEXT;
@@ -312,6 +328,33 @@ int	MPGameBrowser::handleMessage( unsigned long message, unsigned long who)
 
 }
 
+bool MPGameBrowser::showIncompatibleSession( const MC2Session* session, bool afterRefusal )
+{
+	MC2Session s = *session;
+	if ( afterRefusal )
+		s.compatible = false;
+	char text[1024];
+	bool offerDownload = false;
+	if ( !MPDescribeIncompatibleSession( &s, text, sizeof(text), &offerDownload ) )
+		return false;
+	if ( offerDownload )
+	{
+		LogisticsOKDialog::instance()->setText( IDS_MP_CONNECTION_ERROR_WRONG_VERSION, IDS_PM_CANCEL, IDS_UPDATE_DOWNLOAD );
+		LogisticsOKDialog::instance()->setText( text );
+		LogisticsOKDialog::instance()->begin();
+		bVersionDlg = true;
+	}
+	else
+	{
+		LogisticsOneButtonDialog::instance()->begin();
+		LogisticsOneButtonDialog::instance()->setText( IDS_MP_CONNECTION_ERROR_WRONG_VERSION, IDS_DIALOG_OK, IDS_DIALOG_OK );
+		LogisticsOneButtonDialog::instance()->setText( text );
+		LogisticsOneButtonDialog::instance()->setFont( IDS_MP_CONNECTION_ERROR_WRONG_VERSION_FONT );
+		bShowErrorDlg = true;
+	}
+	return true;
+}
+
 bool MPGameBrowser::isDone()
 {
 	return status != RUNNING;
@@ -340,6 +383,17 @@ void MPGameBrowser::update()
 			bShowErrorDlg = 0;
 		}
 
+		return;
+	}
+	else if ( bVersionDlg )
+	{
+		LogisticsOKDialog::instance()->update();
+		if ( LogisticsOKDialog::instance()->isDone() )
+		{
+			if ( YES == LogisticsOKDialog::instance()->getStatus() )
+				gos_OpenURL( gos_update::kReleasesPage );
+			bVersionDlg = 0;
+		}
 		return;
 	}
 
@@ -682,7 +736,12 @@ void aGameListItem::setSessionInfo( MC2Session* pSession )
 {
 	memcpy(&session, pSession, sizeof(MC2Session));
 	gameName.setText( pSession->name );
-	mapName.setText( pSession->map );
+	char label[256];
+	// A room we cannot join shows the host's version instead of its map
+	if ( MPIncompatibleSessionLabel( pSession, label, sizeof(label) ) )
+		mapName.setText( label );
+	else
+		mapName.setText( pSession->map );
 	
 	char tmp[256];
 	sprintf( tmp, "%d/%d", pSession->numPlayers, pSession->maxPlayers );

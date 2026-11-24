@@ -106,6 +106,8 @@
 
 #include"mpparameterscreen.h"
 #include "net/gos_net.h"
+#include "update/gos_update.h"
+#include "mc2_version.h"
 
 //sebi: commented include
 //#ifndef VERSION_H
@@ -239,8 +241,21 @@ void ShutdownNetworking (void) {
 //***************************************************************************
 
 #include <chrono>
+#include <cstddef>
 
 #define MC2_NET_PROTOCOL_STAMP	"MC2NET-1"		// bump when the wire format changes
+
+// Tests pretend to be another release with MC2_NET_TEST_VERSION and
+// MC2_NET_TEST_PROTOCOL (scripts/run_net_test.py --scenario version).
+static const char* NetProtocolStamp (void) {
+	static const char* stamp = getenv("MC2_NET_TEST_PROTOCOL") ? getenv("MC2_NET_TEST_PROTOCOL") : MC2_NET_PROTOCOL_STAMP;
+	return(stamp);
+}
+
+static const char* NetGameVersion (void) {
+	static const char* version = getenv("MC2_NET_TEST_VERSION") ? getenv("MC2_NET_TEST_VERSION") : MC2_VERSION;
+	return(version);
+}
 #define HOST_NETPLAYER			((NETPLAYER)1)
 
 static inline NETPLAYER PeerToNetPlayer (int peer) {
@@ -291,7 +306,10 @@ typedef struct _NetBeacon {
 	unsigned char	inProgress;
 	unsigned int	dataHash;
 	unsigned int	sessionId;				// random per hosted session
+	// Added in 0.2; hosts before that send the beacon without it.
+	char			gameVersion[24];
 } NetBeacon;
+#define NET_BEACON_MIN_SIZE		offsetof(NetBeacon, gameVersion)
 
 static unsigned int HostSessionId = 0;
 #pragma pack()
@@ -555,10 +573,11 @@ void MultiPlayer::updateSessionScan (void) {
 
 	gosNetRoom room;
 	while (scanner->poll(&room)) {
-		if (room.payload.size() < sizeof(NetBeacon))
+		if (room.payload.size() < NET_BEACON_MIN_SIZE)
 			continue;
 		NetBeacon beacon;
-		memcpy(&beacon, room.payload.data(), sizeof(NetBeacon));
+		memset(&beacon, 0, sizeof(beacon));
+		memcpy(&beacon, room.payload.data(), (room.payload.size() < sizeof(NetBeacon)) ? room.payload.size() : sizeof(NetBeacon));
 		if (memcmp(beacon.magic, "MC2S", 4) != 0)
 			continue;
 		// The same host can answer twice (LAN broadcast and loopback).
@@ -573,6 +592,7 @@ void MultiPlayer::updateSessionScan (void) {
 			sessionSeenTime[index] = now;
 			continue;
 		}
+		const bool newRoom = index < 0;
 		if (index < 0) {
 			if (numSessions >= MAX_SESSIONS)
 				continue;
@@ -589,6 +609,18 @@ void MultiPlayer::updateSessionScan (void) {
 		s.inProgress = beacon.inProgress != 0;
 		CopyString(s.versionStamp, beacon.protocol, sizeof(s.versionStamp));
 		CopyString(s.address, room.address.c_str(), sizeof(s.address));
+		{
+			char version[sizeof(beacon.gameVersion) + 1];
+			CopyString(version, beacon.gameVersion, sizeof(version));
+			CopyString(s.gameVersion, version, sizeof(s.gameVersion));
+		}
+		// The data hash only depends on the installed data, so once is enough.
+		static unsigned int localDataHash = ComputeDataHash();
+		s.compatible = (strncmp(beacon.protocol, NetProtocolStamp(), sizeof(beacon.protocol)) == 0)
+			&& (beacon.dataHash == localDataHash);
+		if (!s.compatible && newRoom)
+			NETLOG(1, "room \"%s\" is not compatible (version %s, protocol %.15s)", beacon.name,
+				s.gameVersion[0] ? s.gameVersion : "unknown", beacon.protocol);
 		s.handle.Data1 = beacon.sessionId;
 		s.ping = (int)((now - scanQueryTime) * 1000.0);
 		sessionSeenTime[index] = now;
@@ -604,6 +636,63 @@ void MultiPlayer::updateSessionScan (void) {
 				}
 				numSessions--;
 			}
+}
+
+//---------------------------------------------------------------------------
+
+bool MPIncompatibleSessionLabel (const MC2Session* session, char* text, int textLen) {
+
+	if (!session || session->compatible)
+		return(false);
+	char format[256];
+	if (session->gameVersion[0] && strcmp(session->gameVersion, NetGameVersion()) != 0) {
+		cLoadString(IDS_MP_ROOM_OTHER_VERSION, format, 255);
+		snprintf(text, textLen, format, session->gameVersion);
+	}
+	else if (session->gameVersion[0])
+		cLoadString(IDS_MP_ROOM_OTHER_DATA, text, textLen - 1);
+	else {
+		// A host from before 0.2 does not say which version it runs.
+		cLoadString(IDS_MP_ROOM_OTHER_VERSION, format, 255);
+		snprintf(text, textLen, format, "< 0.2");
+	}
+	return(true);
+}
+
+bool MPDescribeIncompatibleSession (const MC2Session* session, char* text, int textLen, bool* offerDownload) {
+
+	if (offerDownload)
+		*offerDownload = false;
+	if (!session || session->compatible)
+		return(false);
+	char format[512];
+	if (session->gameVersion[0] && strcmp(session->gameVersion, NetGameVersion()) != 0) {
+		cLoadString(IDS_MP_VERSION_MISMATCH, format, 511);
+		snprintf(text, textLen, format, session->gameVersion, NetGameVersion());
+		gos_update::Version host, mine;
+		const bool hostOk = gos_update::parseVersion(session->gameVersion, &host);
+		const bool mineOk = gos_update::parseVersion(NetGameVersion(), &mine);
+		char extra[512] = "";
+		if (hostOk && (!mineOk || gos_update::compareVersions(host, mine) > 0)) {
+			cLoadString(offerDownload ? IDS_MP_VERSION_HOST_NEWER : IDS_MP_VERSION_HOST_NEWER_INFO, format, 511);
+			snprintf(extra, sizeof(extra), format, session->gameVersion);
+			if (offerDownload)
+				*offerDownload = true;
+		}
+		else if (mineOk) {
+			cLoadString(IDS_MP_VERSION_HOST_OLDER, format, 511);
+			snprintf(extra, sizeof(extra), format, NetGameVersion());
+		}
+		if (extra[0]) {
+			const size_t used = strlen(text);
+			snprintf(text + used, textLen - used, "\n\n%s", extra);
+		}
+	}
+	else if (session->gameVersion[0])
+		cLoadString(IDS_MP_DATA_MISMATCH, text, textLen - 1);
+	else
+		cLoadString(IDS_MP_CONNECTION_ERROR_WRONG_VERSION, text, textLen - 1);
+	return(true);
 }
 
 //---------------------------------------------------------------------------
@@ -624,7 +713,7 @@ void MultiPlayer::refreshDiscoveryInfo (void) {
 	NetBeacon beacon;
 	memset(&beacon, 0, sizeof(beacon));
 	memcpy(beacon.magic, "MC2S", 4);
-	CopyString(beacon.protocol, MC2_NET_PROTOCOL_STAMP, sizeof(beacon.protocol));
+	CopyString(beacon.protocol, NetProtocolStamp(), sizeof(beacon.protocol));
 	CopyString(beacon.name, sessionName, MAXLEN_SESSION_NAME);
 	CopyString(beacon.map, missionSettings.name[0] ? missionSettings.name : missionSettings.map, MAXLEN_MAP_NAME);
 	beacon.maxPlayers = (unsigned char)missionSettings.maxPlayers;
@@ -633,6 +722,7 @@ void MultiPlayer::refreshDiscoveryInfo (void) {
 	beacon.inProgress = (inProgress || (mode != MULTIPLAYER_MODE_PARAMETERS)) ? 1 : 0;
 	beacon.dataHash = dataHash;
 	beacon.sessionId = HostSessionId;
+	CopyString(beacon.gameVersion, NetGameVersion(), sizeof(beacon.gameVersion));
 	net->setDiscoveryPayload(&beacon, sizeof(beacon));
 }
 
@@ -1184,7 +1274,7 @@ void MultiPlayer::handlePeerConnected (int peer) {
 	// Client connected to the host: ask to join.
 	MCMSG_PlayerUpdate msg;
 	msg.stage = 0;
-	CopyString(msg.versionStamp, MC2_NET_PROTOCOL_STAMP, sizeof(msg.versionStamp));
+	CopyString(msg.versionStamp, NetProtocolStamp(), sizeof(msg.versionStamp));
 	msg.dataHash = dataHash;
 	FillPlayerInfoFromPrefs(msg.info, playerName);
 	sendMessage(MCGROUP_SERVER, &msg, sizeof(msg), true);
@@ -1231,7 +1321,7 @@ void MultiPlayer::hostHandleJoinRequest (NETPLAYER sender, MCMSG_PlayerUpdate* m
 			freeCID = i;
 			break;
 		}
-	if ((strcmp(stamp, MC2_NET_PROTOCOL_STAMP) != 0) || (msg->dataHash != dataHash))
+	if ((strcmp(stamp, NetProtocolStamp()) != 0) || (msg->dataHash != dataHash))
 		error = MPLAYER_ERR_BAD_VERSION;
 	else if (locked)
 		error = MPLAYER_ERR_SESSION_LOCKED;
@@ -1485,7 +1575,7 @@ void MultiPlayer::sendPlayerUpdate (NETPLAYER receiver, long stage, long newComm
 	MCMSG_PlayerUpdate msg;
 	msg.stage = (char)(iAmHost ? 1 : 5);
 	msg.senderTime = scenarioTime;
-	CopyString(msg.versionStamp, MC2_NET_PROTOCOL_STAMP, sizeof(msg.versionStamp));
+	CopyString(msg.versionStamp, NetProtocolStamp(), sizeof(msg.versionStamp));
 	msg.dataHash = dataHash;
 	msg.info = playerInfo[cid];
 	sendMessage(iAmHost ? receiver : MCGROUP_SERVER, &msg, sizeof(msg), true);

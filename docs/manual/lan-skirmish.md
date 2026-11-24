@@ -6,7 +6,7 @@
 
 ## Before you start
 
-- Everyone needs the **same version** of the game. A different version or different game data shows a version mismatch when joining.
+- Everyone needs the **same version** of the game. In the room list, a room you cannot join shows the host's version (`VERSION x.y.z`) in the map column, or `DIFFERENT GAME DATA` when the versions match but the data or mods differ. Pressing **Join** shows both versions; if the host's version is newer you can open the download page from there. The main menu also tells you when a new version is out.
 - Only the **hosting computer** must accept incoming connections; players who join need no setup. See [Firewall](#firewall) below.
 
 ## How to play

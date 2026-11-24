@@ -39,6 +39,9 @@
 //   -windowed                stay in a window even if the game asks for
 //                            fullscreen (fullscreen depends on the window
 //                            manager, which makes captures environment specific)
+//   -noupdatecheck           do not look for a newer release on GitHub (also
+//                            MC2_NO_UPDATE_CHECK=1; deterministic and scripted
+//                            runs never check)
 
 #include <stdint.h>
 #include <string>
@@ -69,6 +72,7 @@ struct Options {
     std::string modpack;            // empty = none
     std::string data_path;          // empty = search (see -datapath)
     bool print_version = false;     // -version
+    bool no_update_check = false;   // -noupdatecheck
 
     bool should_capture(uint32_t frame) const;
 };

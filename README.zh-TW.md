@@ -12,7 +12,7 @@
 | macOS 13 以上（Apple Silicon） | `…-macos-arm64.dmg` |
 | Linux x86_64 | `…-linux-x86_64.AppImage`，或 `…-linux-x86_64.tar.gz` |
 
-每個安裝包都附完整的遊戲資料（約 600 MB），下載後就能玩。安裝步驟、存檔位置和常用參數見安裝包裡的 `README.txt`。
+每個安裝包都附完整的遊戲資料（約 600 MB），下載後就能玩。安裝步驟、存檔位置和常用參數見安裝包裡的 `README.txt`。遊戲啟動時會檢查有沒有新版本（一天最多一次），有的話在主選單提示；加上 `-noupdatecheck` 就不檢查。
 
 > **本專案是 [alariq/mc2](https://github.com/alariq/mc2) 的獨立 fork，與原作者 alariq 無關，也未經其認可；與微軟無關。**
 > 問題請回報到本 repository，不要回報給原專案。

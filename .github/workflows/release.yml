@@ -29,6 +29,8 @@ on:
 
 env:
   VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version || '0.0.0-test' }}
+  # The package tests never ask GitHub for a newer release
+  MC2_NO_UPDATE_CHECK: "1"
 
 jobs:
   linux:

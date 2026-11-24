@@ -39,6 +39,7 @@ extern void gos_SetGPUShapes(bool enable);
 #include "gameos_sound.h"
 #include "mods/gos_mods.h"
 #include "mc2_version.h"
+#include "update/gos_update.h"
 
 static bool g_exit = false;
 #if 0
@@ -398,6 +399,20 @@ int main(int argc, char** argv)
     }
 
     Environment.InitializeGameEngine();
+
+    // Look for a newer release in the background; the main menu shows it.
+    // Never in deterministic or scripted runs (tests).
+    // MC2_UPDATE_URL (a test server) checks in every kind of run.
+    const bool update_test = SDL_getenv("MC2_UPDATE_URL") != NULL;
+    if (!run_opts.no_update_check && (update_test || (!run_opts.fixed_step_us && run_opts.input_script.empty()))) {
+        char user_dir[1024];
+        if (gos_GetUserDataDirectory(user_dir, sizeof(user_dir))) {
+            gos_update::Config cfg;
+            cfg.currentVersion = MC2_VERSION;
+            cfg.statePath = std::string(user_dir) + "/update.ini";
+            gos_update::startCheck(cfg);
+        }
+    }
 
 #if 0
 	float aspect = (float)w/(float)h;

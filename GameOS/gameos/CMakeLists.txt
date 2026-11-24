@@ -33,6 +33,7 @@ set(SOURCES ${SOURCES}
     utils/png_writer.cpp
     utils/input_script.cpp
     net/gos_net.cpp
+    update/gos_update.cpp
     )
 
 set(MAIN_SRC gameosmain.cpp)
@@ -51,6 +52,12 @@ target_include_directories(mc2mods PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/mods)
 
 add_library(gameos ${SOURCES})
 target_link_libraries(gameos MC2::SDL MC2::Mixer mc2mods ZLIB::ZLIB MC2::ENet)
+# Update check: WinHTTP on Windows; libcurl is loaded with dlopen elsewhere.
+find_package(Threads REQUIRED)
+target_link_libraries(gameos Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+    target_link_libraries(gameos winhttp)
+endif()
 
 # The OpenGL backend (-renderer gl) is a separate library: only the game
 # links it (and with it GLEW / OpenGL); the data tools and tests do not.

@@ -1716,6 +1716,8 @@ void __stdcall gos_SaveStringToRegistry( const char* keyName,  char* pData,  DWO
 
 // sebi:
 bool __stdcall gos_GetUserDataDirectory(char* user_dir, const int len);
+// Opens a web page in the user's browser. Returns false if it could not.
+bool __stdcall gos_OpenURL(const char* url);
 
 
 

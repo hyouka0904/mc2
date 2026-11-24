@@ -4411,6 +4411,17 @@
 #define IDS_MP_NET_RESUMED              60051
 #define IDS_MP_NET_NO_PAUSES            60052
 #define IDS_MP_LOCAL_IP                 60053
+#define IDS_UPDATE_NOTICE               60054
+#define IDS_UPDATE_PROMPT               60055
+#define IDS_UPDATE_LATER                60056
+#define IDS_UPDATE_DOWNLOAD             60057
+#define IDS_MP_ROOM_OTHER_VERSION       60058
+#define IDS_MP_ROOM_OTHER_DATA          60059
+#define IDS_MP_VERSION_MISMATCH         60060
+#define IDS_MP_VERSION_HOST_NEWER       60061
+#define IDS_MP_VERSION_HOST_OLDER       60062
+#define IDS_MP_DATA_MISMATCH            60063
+#define IDS_MP_VERSION_HOST_NEWER_INFO  60064
 */
 
 #include "strings.res.h"

@@ -3,6 +3,7 @@
 """LAN multiplayer end to end: two game instances on this machine.
 
     run_net_test.py <game_dir> [--renderer gl|gpu] [--out DIR] [--timeout S]
+                    [--scenario battle|version]
 
 Both instances run headless (Xvfb, fixed time step, scripted mouse and
 keys), each with its own user data directory, and talk over 127.0.0.1:
@@ -22,10 +23,17 @@ step of the loading handshake, there was a fight (units destroyed, kills
 counted), both machines agree on which units are destroyed and on the
 kill/loss tallies, live units are within a couple of map cells of each
 other, and neither game logged a STOP, assertion or crash.
+
+--scenario version: the host pretends to be release 9.9.9 with another
+network protocol (MC2_NET_TEST_VERSION / MC2_NET_TEST_PROTOCOL). The client
+must list the room as incompatible, show the version dialog when Join is
+pressed and never connect. Captures: client/capture_001380.png (room list)
+and client/capture_001560.png (dialog).
 """
 
 import argparse
 import math
+import re
 import os
 import shutil
 import subprocess
@@ -67,7 +75,12 @@ def client_script():
             click(1400, *FIRST_ROOM) + click(1450, *LAUNCH) + click(2200, *CLIENT_READY))
 
 
-def start(name, script, frames, game_dir, out, renderer, display, extra_env):
+def version_client_script():
+    return (click(600, *MP_BUTTON) + click(800, *LAN) + click(900, *LAN_BROWSER) +
+            click(1400, *FIRST_ROOM) + click(1450, *LAUNCH))
+
+
+def start(name, script, frames, game_dir, out, renderer, display, extra_env, captures=None):
     work = os.path.join(out, name)
     shutil.rmtree(work, ignore_errors=True)
     user_dir = os.path.join(work, "User Data", "MechCommander2")
@@ -82,7 +95,7 @@ def start(name, script, frames, game_dir, out, renderer, display, extra_env):
                MC2_NET_STATEFILE=os.path.join(work, "state.txt"), **extra_env)
     cmd = ([os.path.join(game_dir, "mc2")] + FIXED_ARGS +
            ["-renderer", renderer, "-input-script", script_path, "-exit-after", str(frames),
-            "-capture-frames", "%d" % (frames - 10), "-capture-dir", work])
+            "-capture-frames", captures or "%d" % (frames - 10), "-capture-dir", work])
     log = open(os.path.join(work, "game.log"), "w")
     proc = subprocess.Popen(cmd, cwd=game_dir, env=env, stdout=log, stderr=subprocess.STDOUT)
     return proc, work
@@ -164,12 +177,35 @@ def check(host_dir, client_dir, host_status, client_status):
     return problems
 
 
+def check_version(host_dir, client_dir, host_status, client_status):
+    problems = []
+    host_log = open(os.path.join(host_dir, "game.log"), errors="replace").read()
+    client_log = open(os.path.join(client_dir, "game.log"), errors="replace").read()
+    for what, status in (("host", host_status), ("client", client_status)):
+        if status != 0:
+            problems.append("%s exit status %s" % (what, status))
+    for what, text in (("host", host_log), ("client", client_log)):
+        problems += ["%s log has %r" % (what, b) for b in FORBIDDEN if b in text]
+    expect = '[net] room "room" is not compatible (version 9.9.9'
+    if expect not in client_log:
+        problems.append("client log lacks %r" % expect)
+    if "[net] joining" in client_log:
+        problems.append("client tried to join an incompatible room")
+    if re.search(r"\[net\] peer \d+ connected", host_log):
+        problems.append("a client connected to the host")
+    for frame in (1380, 1560):
+        if not os.path.exists(os.path.join(client_dir, "capture_%06d.png" % frame)):
+            problems.append("client frame %d was not captured" % frame)
+    return problems
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("game_dir")
     ap.add_argument("--renderer", default="gl")
     ap.add_argument("--out", default=None, help="logs, state files and captures (default: temporary)")
     ap.add_argument("--timeout", type=int, default=900, help="seconds for the whole test")
+    ap.add_argument("--scenario", choices=("battle", "version"), default="battle")
     args = ap.parse_args()
     game_dir = os.path.abspath(args.game_dir)
     out = os.path.abspath(args.out) if args.out else tempfile.mkdtemp(prefix="mc2net-")
@@ -179,15 +215,24 @@ def main():
     deadline = time.time() + args.timeout
     host = client = None
     try:
-        host, host_dir = start("host", host_script(), HOST_FRAMES, game_dir, out, args.renderer,
-                               display, {"MC2_NET_TEST_CHARGE": "1"})
+        version_test = args.scenario == "version"
+        if version_test:
+            host, host_dir = start("host", host_script(), 2600, game_dir, out, args.renderer, display,
+                                   {"MC2_NET_TEST_VERSION": "9.9.9", "MC2_NET_TEST_PROTOCOL": "MC2NET-T"})
+        else:
+            host, host_dir = start("host", host_script(), HOST_FRAMES, game_dir, out, args.renderer,
+                                   display, {"MC2_NET_TEST_CHARGE": "1"})
         host_log = os.path.join(host_dir, "game.log")
         while time.time() < deadline and host.poll() is None:
             if "[net] hosting" in open(host_log, errors="replace").read():
                 break
             time.sleep(0.5)
-        client, client_dir = start("client", client_script(), CLIENT_FRAMES, game_dir, out,
-                                   args.renderer, display, {})
+        if version_test:
+            client, client_dir = start("client", version_client_script(), 1600, game_dir, out,
+                                       args.renderer, display, {}, captures="1380,1560")
+        else:
+            client, client_dir = start("client", client_script(), CLIENT_FRAMES, game_dir, out,
+                                       args.renderer, display, {})
         statuses = {}
         for name, proc in (("client", client), ("host", host)):
             try:
@@ -201,8 +246,9 @@ def main():
                 proc.kill()
         xvfb.kill()
 
-    print("net test (%s): logs in %s" % (args.renderer, out))
-    problems = check(host_dir, client_dir, statuses["host"], statuses["client"])
+    print("net test (%s, %s): logs in %s" % (args.scenario, args.renderer, out))
+    checker = check_version if args.scenario == "version" else check
+    problems = checker(host_dir, client_dir, statuses["host"], statuses["client"])
     for p in problems:
         print("  FAIL: " + p)
     print("PASS" if not problems else "FAILED")

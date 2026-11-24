@@ -33,6 +33,15 @@ mc2 -renderer gl        use OpenGL instead of the default (Vulkan / D3D12 /
                         Metal through SDL3 GPU), e.g. for old graphics drivers
 mc2 -windowed           stay in a window
 mc2 -mods <dir>         load mods (see the project README)
+mc2 -noupdatecheck      do not look for a new version
+
+New versions
+------------
+At start the game asks GitHub whether a newer version has been released
+(at most once a day; nothing about you or your computer is sent). If there
+is one, the main menu shows "NEW VERSION ... AVAILABLE" in the bottom left
+corner; click it to open the download page. To turn the check off for good,
+put check=0 in update.ini in the saved games folder above.
 
 -------------------------------------------------------------------------
 
@@ -67,3 +76,11 @@ mc2 -renderer gl        改用 OpenGL（預設為 SDL3 GPU：Vulkan / D3D12 / Me
                         適合舊的顯示卡驅動程式
 mc2 -windowed           以視窗模式執行
 mc2 -mods <資料夾>      載入 Mod（說明見專案 README）
+mc2 -noupdatecheck      不檢查新版本
+
+新版本
+------
+遊戲啟動時會向 GitHub 查詢有沒有新版本（一天最多一次，不會送出任何關於你
+或你電腦的資料）。有新版時，主選單左下角會顯示「NEW VERSION ... AVAILABLE」，
+點一下就會打開下載頁面。想永久關閉檢查，在上面的存檔資料夾裡的 update.ini
+寫入 check=0。

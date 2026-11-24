@@ -655,6 +655,21 @@ void aTcpipPanel::update()
 				{
 					long sessionCount;
 					MC2Session* pSessions =  MPlayer->getSessions( sessionCount );
+					char mismatch[1024];
+					if ( sessionCount && MPDescribeIncompatibleSession( &pSessions[0], mismatch, sizeof(mismatch), NULL ) )
+					{
+						// Same dialog the room list uses, with both versions
+						MPlayer->endSessionScan();
+						bConnectingDlg = 0;
+						bFoundConnection = 0;
+						LogisticsOneButtonDialog::instance()->end();
+						LogisticsOneButtonDialog::instance()->setText( IDS_MP_CONNECTION_ERROR_WRONG_VERSION, IDS_DIALOG_OK, IDS_DIALOG_OK );
+						LogisticsOneButtonDialog::instance()->setText( mismatch );
+						LogisticsOneButtonDialog::instance()->setFont( IDS_MP_CONNECTION_ERROR_WRONG_VERSION_FONT );
+						LogisticsOneButtonDialog::instance()->begin();
+						bErrorDlg = 1;
+						return;
+					}
 					if ( sessionCount )
 					{
 						bConnectingDlg = 0;

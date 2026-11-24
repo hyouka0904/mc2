@@ -8,6 +8,7 @@
 #  unit_render_state  pipeline keys / cache derived from GameOS render states
 #  render_isolation   OpenGL is only used under GameOS/gameos/render/gl/
 #  unit_net           LAN transport: connect, ordered reliable delivery, discovery
+#  unit_update        update check: versions, release JSON, update.ini, local HTTP
 #  unit_mods          mod system: versions, manifests, modpacks, load order, overlay
 #  tool_mc2mod        modding workflow through the mc2mod command line tool
 #  shader_validation  every shader variant compiles and links (glslangValidator)
@@ -109,6 +110,15 @@ mc2_add_unit_test(unit_net
     SOURCES unit/test_net.cpp ${MC2_GAMEOS_DIR}/net/gos_net.cpp
     INCLUDES ${MC2_GAMEOS_DIR}
     LIBS MC2::ENet)
+
+find_package(Threads REQUIRED)
+mc2_add_unit_test(unit_update
+    SOURCES unit/test_update.cpp ${MC2_GAMEOS_DIR}/update/gos_update.cpp
+    INCLUDES ${MC2_GAMEOS_DIR}
+    LIBS Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+    target_link_libraries(unit_update ws2_32 winhttp)
+endif()
 
 mc2_add_unit_test(unit_mods
     SOURCES unit/test_mods.cpp

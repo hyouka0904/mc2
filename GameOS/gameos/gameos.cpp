@@ -573,6 +573,17 @@ void __stdcall gos_SaveStringToRegistry( const char* keyName,  char* pData,  DWO
 
 // Saved games and settings: SDL_GetPrefPath, or $MC2_USER_DIR if set (tests
 // use it to start from an empty directory). See utils/user_dir.h.
+bool __stdcall gos_OpenURL(const char* url)
+{
+    if (!url || !*url)
+        return false;
+    if (!SDL_OpenURL(url)) {
+        SPEW(("gos_OpenURL", "cannot open %s: %s\n", url, SDL_GetError()));
+        return false;
+    }
+    return true;
+}
+
 bool __stdcall gos_GetUserDataDirectory(char* user_dir, const int len)
 {
     static std::mutex m;

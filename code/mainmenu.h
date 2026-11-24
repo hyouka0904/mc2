@@ -104,6 +104,12 @@ class MainMenu: public LogisticsScreen
 		MPLoadMap				singleLoadDlg;
 		bool					bHostLeftDlg;
 
+		// New version notice (bottom left) and its dialog
+		bool					bUpdateDlg;
+		bool					bUpdateNoticeHidden;	// for this session
+		bool					updateNoticeVisible();
+		void					updateNoticeRect( GUI_RECT& rect );
+
 		MC2MoviePtr			introMovie;
 			
 		
