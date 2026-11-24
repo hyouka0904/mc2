@@ -26,6 +26,7 @@ LogisticsOneButtonDialog* LogisticsOneButtonDialog::s_instance = NULL;
 LogisticsLegalDialog* LogisticsLegalDialog::s_instance = NULL;
 
 extern long SaveGameVersionNumber;
+extern long OldestSaveGameVersionNumber;
 
 #define DELETE_BUTTON 40
 #define MAP_STATIC 10
@@ -622,7 +623,8 @@ bool LogisticsSaveDialog::isCorrectVersionSaveGame( char* fileName )
 
 	long testVersionNum = 0;
 	result = file.readIdLong( "VersionNumber", testVersionNum );
-	if ( (result == NO_ERR) && (testVersionNum == SaveGameVersionNumber))
+	if ( (result == NO_ERR) && testVersionNum >= OldestSaveGameVersionNumber &&
+		 testVersionNum <= SaveGameVersionNumber )
 		return true;
 
 	return false;

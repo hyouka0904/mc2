@@ -10,7 +10,7 @@
 2. [在 Linux 上建置](#在-linux-上建置)
 3. [建置遊戲資料並執行](#建置遊戲資料並執行)
 4. [區網聯機的實作](#區網聯機的實作)
-5. [版本檢查](#版本檢查)
+5. [版本檢查](#版本檢查)／[存檔相容性](#存檔相容性)
 6. [自動化測試](#自動化測試)
 7. [在 Windows 上建置](#在-windows-上建置)／[在 macOS 上建置](#在-macos-上建置)
 8. [安裝包與發佈](#安裝包與發佈)
@@ -250,6 +250,29 @@ cd game && ./mc2
 
 ---
 
+## 存檔相容性
+
+存檔放在使用者目錄的 `savegame/`，共有兩種，跨版本時的表現差很多。
+
+| | 戰役存檔（`*.fit`，任務之間） | 任務中快速存檔（`testgame.ims`） |
+|---|---|---|
+| 內容 | C-Bills、駕駛員、機甲設計與庫存、戰役進度 | 整個戰場 |
+| 格式 | 文字，`名稱 = 值` | 遊戲的資料結構（`MechData`、`MoverData`…）整塊寫入 |
+| 版本 | `VersionNumber`（`code/logisticsdata.cpp` 的 `SaveGameVersionNumber`） | `versionStamp` 加上格式指紋 |
+| 跨版本 | 必須一直能讀 | 資料結構改變後可能不能讀；會顯示訊息拒絕 |
+
+**戰役存檔**：`load()` 接受 `OldestSaveGameVersionNumber` 到 `SaveGameVersionNumber` 之間的格式（目前都是 10004），「讀取遊戲」清單也顯示同樣範圍。要改格式時：把 `SaveGameVersionNumber` 加 1，在 `load()` 裡繼續讀舊號碼並轉換改變的部分，`OldestSaveGameVersionNumber` 不動。存檔裡提到、但這個版本沒有的東西不再讓讀檔失敗：找不到底盤的設計、不存在或放不下的零件、用了不存在設計的機甲都會略過，並在 stderr 印一行 `[save]`。讀檔成功會印 `[save] campaign save loaded (format N): ...`。
+
+**快速存檔**：檔頭是 `00.06.01.0614 L<雜湊>`。雜湊（`code/savelayout.cpp`）是快速存檔寫入的每個資料結構大小的 FNV-1a；讀檔時也是靠封包大小分辨物件種類。雜湊不同的檔案會被拒絕，顯示「Cannot load Quick Save. Version does not match game」，任務繼續進行，不會讀進錯誤的資料。加指紋之前的檔案（只有 `00.06.01.0614`）在結構仍和當時相同時照樣能讀：判斷依據是 `SaveLayoutIsLegacy()` 裡凍結的數值。指紋依平台而不同（Windows 的 `long` 是 4 位元組），所以快速存檔也不能在 Windows 和 Linux 之間搬。
+
+存進檔案的結構改變大小時，`unit_savelayout` 會刻意失敗：更新 `tests/unit/test_savelayout.cpp` 的 `kCurrent`（不要改 legacy 數值），並在發佈說明寫明舊的快速存檔不能再讀。
+
+**測試裡的舊存檔**：`tests/saves/<版本>/` 放每個版本的戰役存檔和一份 Linux 快速存檔，CI 的流程測試 `old_campaign_save`、`old_quick_save`、`foreign_quick_save` 會讀它們。存檔格式有改變的版本，就新增一個資料夾。
+
+之後的自動更新（U4–U6）會在安裝新版前先複製一份 `savegame/`。
+
+---
+
 ## 自動化測試
 
 ### 單元與工具測試（CTest）
@@ -270,6 +293,7 @@ ctest --test-dir build --output-on-failure
 | `unit_render_state` | 由 GameOS 渲染狀態推出的管線描述、32 位元管線鍵（可逆、互不重複）、管線快取 |
 | `unit_net` | 區網傳輸層，見[區網聯機的實作](#區網聯機的實作) |
 | `unit_update` | 版本檢查，見[版本檢查](#版本檢查) |
+| `unit_savelayout` | 快速存檔寫入的資料結構大小，見[存檔相容性](#存檔相容性) |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
 | `shader_validation` | 以 glslangValidator 離線編譯並連結所有著色器變體（與執行時相同的 `#version 420`、`ALPHA_TEST` 定義與 `#include` 展開），不需要 GPU；未安裝 `glslang-tools` 時略過 |
 | `shader_spirv` | 所有變體編成 Vulkan SPIR-V 並通過 `spirv-val`、兩個階段的介面能連結、轉出 MSL / HLSL，並檢查 `PerDraw` uniform block 與 C++ 結構的位移一致；`-DMC2_SHADER_REQUIRE=msl,hlsl` 可要求轉換器必須存在（CI 使用） |
@@ -372,6 +396,9 @@ scripts/run_flow_tests.py game --only pause_menu      # 只跑指定的流程
 | `solo_mission` | Solo Mission 要列出已完成的任務，選取後進入簡報、機甲庫、駕駛員畫面 |
 | `quick_save` | 用快捷鍵：沒有存檔時先 Quick Load（滑鼠不能被鎖住），再 Quick Save、Quick Load；記錄檔要有 `Saved game` / `Loaded game` |
 | `pause_menu` | 先框選單位，再用暫停選單 Quick Save、Quick Load、Options → Accept、Exit → Yes |
+| `old_campaign_save` | 用 `tests/saves` 裡每個版本的戰役存檔「讀取遊戲」；log 必須顯示格式、3 台機甲、80000 C-Bills，且沒有任何東西被略過 |
+| `old_quick_save` | Quick Load 0.1.0 的快速存檔；必須印出 `Loaded game` |
+| `foreign_quick_save` | Quick Load 一份帶別的版本標記的快速存檔；必須顯示訊息拒絕、沒有 `Loaded game`、任務繼續 |
 
 `load_game` 和 `solo_mission` 會用到 `campaign` 留下的存檔，所以要和它一起跑，或排在它之後。
 

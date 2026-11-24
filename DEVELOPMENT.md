@@ -10,7 +10,7 @@ For people who want to build the game, change the code or contribute. To just pl
 2. [Building on Linux](#building-on-linux)
 3. [Building the game data and running](#building-the-game-data-and-running)
 4. [How LAN multiplayer works](#how-lan-multiplayer-works)
-5. [Update check](#update-check)
+5. [Update check](#update-check) / [Save game compatibility](#save-game-compatibility)
 6. [Automated tests](#automated-tests)
 7. [Building on Windows](#building-on-windows) / [Building on macOS](#building-on-macos)
 8. [Packages and releases](#packages-and-releases)
@@ -257,6 +257,29 @@ For playing, see the [LAN skirmish manual](docs/manual/lan-skirmish.md).
 
 ---
 
+## Save game compatibility
+
+Saves live in `savegame/` in the user directory. There are two kinds, and they age very differently.
+
+| | Campaign save (`*.fit`, between missions) | In-mission quick save (`testgame.ims`) |
+|---|---|---|
+| Content | C-Bills, pilots, 'mech designs and inventory, campaign progress | The whole battlefield |
+| Format | Text, `name = value` | Game structures (`MechData`, `MoverData`, ...) written byte for byte |
+| Version | `VersionNumber` (`SaveGameVersionNumber` in `code/logisticsdata.cpp`) | `versionStamp` plus a layout fingerprint |
+| Across versions | Must keep loading | May stop loading after a change to the structures; refused with a message |
+
+**Campaign saves.** `load()` accepts every format from `OldestSaveGameVersionNumber` to `SaveGameVersionNumber` (both 10004 today); the Load Game list shows the same range. To change the format: raise `SaveGameVersionNumber`, keep reading the older number in `load()` and convert what changed, and leave `OldestSaveGameVersionNumber` alone. Things a save names that this version lacks no longer stop the load: a design whose chassis is missing, a component that does not exist or fit, and a 'mech built on a missing design are left out, each with a `[save]` line on stderr. A successful load prints `[save] campaign save loaded (format N): ...`.
+
+**Quick saves.** The file starts with `00.06.01.0614 L<hash>`; the hash (`code/savelayout.cpp`) is FNV-1a over the sizes of every structure the quick save stores, and the loader also tells objects apart by packet size. A file with another hash is refused with "Cannot load Quick Save. Version does not match game" and the mission goes on, instead of loading garbage. Files from before the fingerprint (`00.06.01.0614` alone) load while the layout is still the one those builds had: the frozen values in `SaveLayoutIsLegacy()`. The fingerprint is per platform (Windows has 4-byte `long`), so a quick save does not move between Windows and Linux either.
+
+When a saved structure changes size, `unit_savelayout` fails on purpose: update `kCurrent` in `tests/unit/test_savelayout.cpp` (never the legacy values), and say in the release notes that older quick saves no longer load.
+
+**Old saves in the tests.** `tests/saves/<version>/` holds a campaign save and a Linux quick save of each release. The flows `old_campaign_save`, `old_quick_save` and `foreign_quick_save` load them in CI. Add a directory for each release whose save format changed.
+
+The updater (U4–U6) will copy `savegame/` before installing a new version.
+
+---
+
 ## Automated tests
 
 ### Unit and tool tests (CTest)
@@ -277,6 +300,7 @@ ctest --test-dir build --output-on-failure
 | `unit_render_state` | Pipeline descriptions derived from GameOS render state, 32-bit pipeline keys (reversible, unique), pipeline cache |
 | `unit_net` | LAN transport, see [How LAN multiplayer works](#how-lan-multiplayer-works) |
 | `unit_update` | Update check, see [Update check](#update-check) |
+| `unit_savelayout` | Sizes of the structures the quick save stores, see [Save game compatibility](#save-game-compatibility) |
 | `render_isolation` | Checks that OpenGL appears only in `GameOS/gameos/render/gl/` |
 | `shader_validation` | Compiles and links every shader variant offline with glslangValidator (same `#version 420`, `ALPHA_TEST` define and `#include` expansion as at run time), no GPU needed; skipped without `glslang-tools` |
 | `shader_spirv` | Every variant compiles to Vulkan SPIR-V and passes `spirv-val`, the two stages' interfaces link, conversion to MSL / HLSL works, and the `PerDraw` uniform block offsets match the C++ struct; `-DMC2_SHADER_REQUIRE=msl,hlsl` makes the converters mandatory (CI uses it) |
@@ -379,6 +403,9 @@ Scripted mouse and keyboard input plays through every screen for real. Each flow
 | `solo_mission` | Solo Mission must list completed missions; selecting one enters the briefing, 'Mech bay and pilot screens |
 | `quick_save` | With hotkeys: Quick Load before any save exists (the mouse must not stay locked), then Quick Save and Quick Load; the log must contain `Saved game` / `Loaded game` |
 | `pause_menu` | Box-select units, then use the pause menu: Quick Save, Quick Load, Options → Accept, Exit → Yes |
+| `old_campaign_save` | Load Game with the campaign save of every release in `tests/saves`; the log must show the format, 3 'mechs and 80000 C-Bills and nothing left out |
+| `old_quick_save` | Quick Load of the 0.1.0 quick save; must print `Loaded game` |
+| `foreign_quick_save` | Quick Load of a quick save with another build's stamp; must be refused with a message, no `Loaded game`, the mission goes on |
 
 `load_game` and `solo_mission` use the save left by `campaign`, so run them together with it or after it.
 

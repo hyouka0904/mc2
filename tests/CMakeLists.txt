@@ -9,6 +9,7 @@
 #  render_isolation   OpenGL is only used under GameOS/gameos/render/gl/
 #  unit_net           LAN transport: connect, ordered reliable delivery, discovery
 #  unit_update        update check: versions, release JSON, update.ini, local HTTP
+#  unit_savelayout    in-mission save structures keep their sizes
 #  unit_mods          mod system: versions, manifests, modpacks, load order, overlay
 #  tool_mc2mod        modding workflow through the mc2mod command line tool
 #  shader_validation  every shader variant compiles and links (glslangValidator)
@@ -119,6 +120,11 @@ mc2_add_unit_test(unit_update
 if(WIN32)
     target_link_libraries(unit_update ws2_32 winhttp)
 endif()
+
+# Compiled against the game headers only: sizeof() needs no game code.
+mc2_add_unit_test(unit_savelayout
+    SOURCES unit/test_savelayout.cpp ${CMAKE_SOURCE_DIR}/code/savelayout.cpp
+    INCLUDES ${CMAKE_SOURCE_DIR}/code)
 
 mc2_add_unit_test(unit_mods
     SOURCES unit/test_mods.cpp

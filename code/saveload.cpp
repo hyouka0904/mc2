@@ -234,6 +234,25 @@ bool IsGateOpen (int objectWID);
 DWORD elfHash (char *name);
 
 extern char versionStamp[];
+
+#include "savelayout.h"
+
+// "00.06.01.0614 L1234abcd": versionStamp plus the layout fingerprint.
+static void QuickSaveStamp (char* out, size_t len)
+{
+	snprintf(out, len, "%s L%08x", versionStamp, (unsigned)SaveLayoutHash());
+}
+
+// A file written by this build, or by one from before the fingerprint
+// whose structures had the same sizes.
+static bool QuickSaveStampMatches (const char* stamp)
+{
+	char mine[64];
+	QuickSaveStamp(mine, sizeof(mine));
+	if (strcmp(stamp, mine) == 0)
+		return true;
+	return strcmp(stamp, versionStamp) == 0 && SaveLayoutIsLegacy(SaveLayoutHash());
+}
 //----------------------------------------------------------------------------------------------------
 // Save.
 void Part::Save (FitIniFilePtr file, long partNum)
@@ -331,7 +350,9 @@ void Mission::save (const char *saveFileName)
 	saveFile.reserve(20000);
 	DWORD currentPacket = 0;
 
-	saveFile.writePacket(currentPacket,(MemoryPtr)versionStamp,strlen(versionStamp)+1,STORAGE_TYPE_RAW);
+	char stamp[64];
+	QuickSaveStamp(stamp, sizeof(stamp));
+	saveFile.writePacket(currentPacket,(MemoryPtr)stamp,strlen(stamp)+1,STORAGE_TYPE_RAW);
 	currentPacket++;
 
 	saveFile.writePacket(currentPacket,(MemoryPtr)cmpName,strlen(cmpName)+1, STORAGE_TYPE_RAW);
@@ -684,12 +705,17 @@ void Mission::load (const char *loadFileName)
 
 	DWORD currentPacket = 0;
 
-	char versionCheck[1024];
-	loadFile.readPacket(currentPacket,(MemoryPtr)versionCheck);
+	char versionCheck[1024] = "";
+	loadFile.seekPacket(currentPacket);
+	long stampSize = loadFile.getPacketSize();
+	if (stampSize > 0 && stampSize < (long)sizeof(versionCheck))
+		loadFile.readPacket(currentPacket,(MemoryPtr)versionCheck);
+	versionCheck[sizeof(versionCheck) - 1] = 0;
 	currentPacket++;
 
-	if (strcmp(versionCheck,versionStamp) != 0)
+	if (!QuickSaveStampMatches(versionCheck))
 	{
+		fprintf(stderr, "[save] quick save %s is from another build (%s)\n", loadFileName, versionCheck);
 		char msg[2048];
 		cLoadString(IDS_QUICKSAVE_VERSION_WRONG,msg,2047);
 		PAUSE((msg));

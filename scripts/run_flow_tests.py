@@ -23,6 +23,12 @@ STOP, assertion or crash in the log:
   pause_menu     after a box selection: pause menu Quick Save, Quick Load,
                  Options -> Accept, Exit -> Yes
 
+  old_campaign_save  Load Game with the campaign save of every release in
+                 tests/saves (the oldest format must keep loading)
+  old_quick_save     quick load of a release's in-mission save
+  foreign_quick_save quick load of a save from another build: refused with a
+                 message, the mission goes on
+
 load_game and solo_mission use the save the campaign flow leaves. A
 capture every 100 frames (capture_NNNNNN.png) and game.log are kept in
 <out>/<flow>.
@@ -123,6 +129,33 @@ FLOWS["solo_mission"] = {
               click(1210, *NEXT) + click(1410, *NEXT),
     "frames": 1900,
 }
+# Saves written by released versions (tests/saves/<version>/) must keep
+# loading. The quick save is a Linux x86_64 one: its layout is per platform.
+SAVES = os.path.join(REPO, "tests", "saves")
+FLOWS["old_campaign_save"] = {
+    "args": [],
+    "seed_dir": "*/After_Mission_mc2_01.fit",
+    "script": menu(600, "load") + click(710, 550, 436) + click(910, *NEXT),
+    "frames": 1200,
+    "expect": ["[save] campaign save loaded (format 10004): ", " 3 mechs, 80000 C-Bills"],
+    "forbid": ["[save] save game:"],
+}
+FLOWS["old_quick_save"] = {
+    "args": ["-mission", "mc2_01"],
+    "seed_dir": "0.1.0/testgame.ims",
+    "script": ["1 move 512 300"] + combo(300, "Z"),
+    "frames": 500,
+    "expect": ["Loaded game"],
+}
+FLOWS["foreign_quick_save"] = {
+    "args": ["-mission", "mc2_01"],
+    "seed_dir": "0.1.0/testgame.ims",
+    "foreign": True,
+    "script": ["1 move 512 300"] + combo(300, "Z"),
+    "frames": 500,
+    "expect": ["[save] quick save", "is from another build (00.06.01.0615)"],
+    "forbid": ["Loaded game"],
+}
 # Quick save / load shortcuts; a quick load before any save must not
 # leave the mouse off (lower-casing the user directory used to make every
 # save write fail)
@@ -174,6 +207,24 @@ def run_flow(name, flow, game_dir, out, renderer, display, timeout):
         if not os.path.isdir(saves):
             return ["needs the saves of flow %r (run it first)" % flow["seed_from"]]
         shutil.copytree(saves, os.path.join(user_dir, "savegame"))
+    if "seed_dir" in flow:
+        import glob
+        dest = os.path.join(user_dir, "savegame")
+        os.makedirs(dest, exist_ok=True)
+        found = sorted(glob.glob(os.path.join(SAVES, flow["seed_dir"])))
+        if not found:
+            return ["no saves match tests/saves/%s" % flow["seed_dir"]]
+        for src in found:
+            shutil.copy(src, dest)
+        if flow.get("foreign"):
+            # another build's stamp (same length, so the packet table stays)
+            path = os.path.join(dest, "testgame.ims")
+            data = open(path, "rb").read()
+            old = b"00.06.01.0614\0"
+            if data.count(old) != 1:
+                return ["%s has no single version stamp" % path]
+            data = data.replace(old, b"00.06.01.0615\0")
+            open(path, "wb").write(data)
     script = os.path.join(work, "input.txt")
     with open(script, "w") as f:
         f.write("\n".join(flow["script"]) + "\n")
@@ -204,6 +255,7 @@ def run_flow(name, flow, game_dir, out, renderer, display, timeout):
         problems.append("no capture of frame %d" % frames)
     problems += ["log lacks %r" % e for e in flow.get("expect", []) if e not in text]
     problems += ["log has %r" % b for b in FORBIDDEN if b in text]
+    problems += ["log has %r" % b for b in flow.get("forbid", []) if b in text]
     problems += ["no %s" % f for f in flow.get("expect_files", [])
                  if not os.path.exists(os.path.join(user_dir, f))]
     if "expect_cfg" in flow:

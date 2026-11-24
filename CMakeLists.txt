@@ -157,6 +157,7 @@ set(SOURCES
     "code/mission2.cpp"
     "code/objective.cpp"
     "code/saveload.cpp"
+    "code/savelayout.cpp"
     "code/trigger.cpp"
     "code/weather.cpp"
     "gui/aanimobject.cpp"

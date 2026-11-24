@@ -37,6 +37,10 @@ extern CPrefs prefs;
 // WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //PLEASE CHANGE THIS IF THE SAVEGAME FILE FORMAT CHANGES!!!!!!!!!!!!!
 long SaveGameVersionNumber = 10004;
+// The oldest format load() still reads. When the format changes, raise
+// SaveGameVersionNumber, keep reading the old one in load() (convert what
+// changed) and leave this alone; tests/saves holds a save of every release.
+long OldestSaveGameVersionNumber = 10004;
 //----------------------------------------------------------------------
 
 LogisticsData* LogisticsData::instance = NULL;
@@ -1131,7 +1135,7 @@ long	LogisticsData::load( FitIniFile& file )
 		return -1;
 	}
 
-	if (testVersionNum != SaveGameVersionNumber)
+	if (testVersionNum < OldestSaveGameVersionNumber || testVersionNum > SaveGameVersionNumber)
 	{
 		PAUSE(("SaveGame is not Version %d.  It was Version %d which is not valid!",SaveGameVersionNumber,testVersionNum));
 		return -1;
@@ -1154,12 +1158,9 @@ long	LogisticsData::load( FitIniFile& file )
 	{
 		sprintf( tmp, "Variant%d", i );
 		file.seekBlock( tmp );
-		result = loadVariant( file );
-		if ( result != NO_ERR )
-		{
-			gosASSERT( 0 );
-			return -1;
-		}
+		// a design whose chassis this version lacks is left out; the
+		// mechs built on it are left out below
+		loadVariant( file );
 	}
 
 	// load pilots
@@ -1200,6 +1201,9 @@ long	LogisticsData::load( FitIniFile& file )
 
 	updateAvailability();
 
+	fprintf(stderr, "[save] campaign save loaded (format %ld): %d designs, %d mechs, %ld C-Bills\n",
+		testVersionNum, (int)variants.Count(), (int)inventory.Count(), (long)missionInfo->getCBills());
+
 
 	//Start finding the Leaks
 	//systemHeap->dumpRecordLog();
@@ -1225,7 +1229,7 @@ long LogisticsData::loadVariant( FitIniFile& file )
 
 	if ( !pChassis ) // we can always try and make it ourseleves, but it should have been loaded by now
 	{
-		gosASSERT( 0 );
+		fprintf(stderr, "[save] save game: no chassis %s, design left out\n", tmp);
 		return INVALID_FILE_NAME;
 	}
 
@@ -1266,7 +1270,8 @@ long LogisticsData::loadVariant( FitIniFile& file )
 		strcat( tmp2, "Location" );
 		file.readIdLong( tmp2, location );
 
-		pVariant->addComponent( id, x, y );
+		if ( !pVariant->addComponent( id, x, y ) )
+			fprintf(stderr, "[save] save game: component %ld does not exist or fit, left out\n", id);
 	}
 
 	return 0;
@@ -1302,6 +1307,7 @@ long LogisticsData::loadMech( FitIniFile& file, int& count )
 		}
 	}
 
+	fprintf(stderr, "[save] save game: no design %s, mech left out\n", tmp);
 	return -1; // failed in finding the variant
 }
 
