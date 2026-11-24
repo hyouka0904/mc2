@@ -70,7 +70,7 @@
 | `scripts/` | `prepare_game_dir.sh`（建置遊戲資料並組出可執行的遊戲目錄）、`smoke_test.sh`（無頭端到端測試），以及測試、打包、效能量測腳本。 |
 | `cmake/MC2Dependencies.cmake` | 取得 SDL3 / SDL3_mixer / SDL3_ttf：優先用已安裝的版本，否則自動下載固定版本並靜態編譯。 |
 | `.github/workflows/ci.yml` | GitHub Actions：建置、單元測試、實際執行遊戲的冒煙測試。 |
-| `test_scripts/` | 原作者移植時用的轉換腳本（字串資源轉換、檔名轉小寫等）。 |
+| `test_scripts/res_conv/` | 介面字串原始檔（`strings.res.cpp`、`resource.h`）和原作者的轉換腳本 `res_conv.pl`。 |
 | `docs/` | 玩家說明書與 Mod 說明。 |
 
 ### 遊戲資料流程

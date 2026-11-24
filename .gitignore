@@ -14,7 +14,6 @@ CMakeFiles/
 *.a
 *.swp
 *.dll
-*.exe
 *.cfg
 *.tga
 Editor
@@ -32,10 +31,7 @@ Tools
 *.lib
 *.LIB
 *.so
-*.a
-viewer
 mc2
-text_tool
 .ycm_extra_conf.py
 .ycm_extra_conf.pyc
 *.ico
@@ -47,8 +43,6 @@ vidcard.csv
 longpath.dbg
 tmp/
 dump/
-test_code/
-test_sound/
 # Source repository should not track built resources
 *.fst
 

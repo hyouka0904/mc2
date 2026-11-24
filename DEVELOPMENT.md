@@ -78,7 +78,7 @@ The code has four layers; each depends only on the ones below it:
 | `scripts/` | `prepare_game_dir.sh` (build the game data and assemble a runnable game directory), `smoke_test.sh` (headless end-to-end test), and the test, packaging and benchmark scripts. |
 | `cmake/MC2Dependencies.cmake` | Gets SDL3 / SDL3_mixer / SDL3_ttf: an installed version if there is one, otherwise a pinned version downloaded and built statically. |
 | `.github/workflows/ci.yml` | GitHub Actions: build, unit tests, smoke test that runs the game. |
-| `test_scripts/` | Conversion scripts the upstream author used for the port (string resources, lower-casing file names, etc.). |
+| `test_scripts/res_conv/` | UI string sources (`strings.res.cpp`, `resource.h`) and the upstream conversion script `res_conv.pl`. |
 | `docs/` | Player manuals and the modding guide. |
 
 ### Game data pipeline
