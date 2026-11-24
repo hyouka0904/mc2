@@ -8,6 +8,7 @@
 #include "update/gos_update.h"
 
 #include <atomic>
+#include <cstdlib>
 #include <cstdio>
 #include <string>
 #include <thread>
@@ -247,6 +248,14 @@ TEST(update_should_notify)
 
 TEST(update_check_against_local_server)
 {
+    // CI sets MC2_NO_UPDATE_CHECK=1 for the game; this test needs the check.
+#ifdef _WIN32
+    _putenv("MC2_NO_UPDATE_CHECK=");
+    _putenv("MC2_UPDATE_URL=");
+#else
+    unsetenv("MC2_NO_UPDATE_CHECK");
+    unsetenv("MC2_UPDATE_URL");
+#endif
     TinyServer server;
     CHECK(server.start());
     server.body = kReleaseJson;
