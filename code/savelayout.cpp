@@ -46,7 +46,8 @@ bool SaveLayoutIsLegacy(uint32_t hash)
     // The layouts of 0.1.0 (the last release without the fingerprint) on
     // each platform CI builds. Never edit these: they describe old files.
     static const uint32_t legacy[] = {
-        0x98d5de0eu, // Linux x86_64
+        0x98d5de0eu, // Linux x86_64 (and macOS arm64, also LP64)
+        0x46be2647u, // Windows x64
     };
     for (uint32_t l : legacy)
         if (l == hash)

@@ -9,7 +9,7 @@
 #include <cstdio>
 
 #if defined(_WIN32)
-static const uint32_t kCurrent = 0x00000000u; // Windows x64
+static const uint32_t kCurrent = 0x46be2647u; // Windows x64
 #elif defined(__APPLE__)
 static const uint32_t kCurrent = 0x98d5de0eu; // macOS arm64 (LP64 like Linux)
 #else

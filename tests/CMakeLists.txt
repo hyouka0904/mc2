@@ -123,7 +123,7 @@ endif()
 
 # Compiled against the game headers only: sizeof() needs no game code.
 mc2_add_unit_test(unit_savelayout
-    SOURCES unit/test_savelayout.cpp ${CMAKE_SOURCE_DIR}/code/savelayout.cpp
+    SOURCES unit/test_savelayout.cpp unit/savelayout_stubs.cpp ${CMAKE_SOURCE_DIR}/code/savelayout.cpp
     INCLUDES ${CMAKE_SOURCE_DIR}/code)
 
 mc2_add_unit_test(unit_mods
