@@ -28,6 +28,7 @@
 typedef SOCKET sock_t;
 #define CLOSESOCK closesocket
 #else
+#include <signal.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -79,6 +80,11 @@ struct TinyServer {
 #ifdef _WIN32
         WSADATA wsa;
         WSAStartup(MAKEWORD(2, 2), &wsa);
+#endif
+#ifndef _WIN32
+        // A client that stops early (the cancel test) closes the socket
+        // while send() still runs; without this macOS kills the test.
+        signal(SIGPIPE, SIG_IGN);
 #endif
         listener = socket(AF_INET, SOCK_STREAM, 0);
         sockaddr_in addr = {};
