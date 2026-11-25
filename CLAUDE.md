@@ -9,6 +9,7 @@ MechCommander 2 source port: the original game code on a reimplemented GameOS pl
 - Reply to the user in Traditional Chinese.
 - Always run the game under `timeout` (it can hang; test scripts have their own timeouts).
 - Do not work on DXIL (D3D12 shaders) without the user's go-ahead.
+- Keep `HANDOFF.md` up to date (goal, done, open items, decisions, test commands and results, next steps) after every significant stage, not only at the end.
 - Roadmap work stops at each milestone in `ROADMAP_MULTIPLAYER_ZH.md` until the user reports real-machine test results.
 
 ## Build

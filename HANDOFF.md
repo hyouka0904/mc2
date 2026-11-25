@@ -1,0 +1,151 @@
+# 交接資訊（HANDOFF）
+
+> 每完成一個重要階段就更新這份文件，不等到任務結束。
+> 最後更新：2026-11-25（commit 67c5a31 之後）
+
+## 任務目標
+
+MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Linux、Windows（MSVC）、macOS（Apple Silicon）。目前在做 `ROADMAP_MULTIPLAYER_ZH.md` 的聯機路線圖，分成三條線：
+
+- **M 線（聯機）**：M1 區網聯機 → M2 共通系統 → M3 合作關卡 → M4 地圖生成 → M5 合作任務擴充 → M6 Roguelike → M7 雙人對戰 → M8 機器學習接口。
+- **U 線（更新）**：版本檢查和自動更新。
+- **L 線（中文化）**：繁體中文補丁。
+
+詳細計畫在 `ROADMAP_MULTIPLAYER_ZH.md`。
+
+### 工作規則（使用者指定）
+
+- **溝通**
+  - 用繁體中文回覆。
+  - 給測試步驟時要附完整指令。
+  - 每個里程碑結束就停下來，等使用者回報實機測試結果。
+- **Git**
+  - 工作分支 `claude/admiring-maxwell-3xhqba`，只 push 到這條分支。master 和 tag 由使用者處理。
+  - 不開 PR，除非使用者要求。
+  - commit 用 Conventional Commits（見 `CLAUDE.md`），不要寫進模型名稱。
+- **執行與範圍**
+  - 遊戲一律在 `timeout` 下執行。
+  - 沒有使用者同意，不做 DXIL（D3D12 shader）。
+
+## 已完成事項
+
+### 移植與基礎（早期）
+
+- 平台與渲染：
+  - SDL2 換成 SDL3。
+  - 新增渲染後端抽象層，有 SDL3 GPU 和 OpenGL 兩個後端。
+  - 支援 macOS 和 Windows，三平台都有 CI。
+- 遊戲內容與修正：
+  - Mod 系統。
+  - 影片播放（pl_mpeg）。
+  - 修好音效爆音。
+- 版本與發佈：
+  - 版本號系統。
+  - 打包腳本 `scripts/package.py`，加上 `release.yml`。
+- 測試：
+  - 截圖比對測試（`tests/golden`）。
+  - 流程測試（`scripts/run_flow_tests.py`）。
+- 存檔安全：
+  - 快速存檔記錄結構佈局的指紋（`code/savelayout.cpp`）。
+  - 戰役存檔讀取時能容忍格式差異。
+  - CI 會讀舊版存檔（`tests/saves/`）。
+
+### M1 區網聯機（N1–N9）
+
+- 傳輸層用 ENet（`GameOS/gameos/net/gos_net.*`）。
+- 房間探索、大廳、遊戲內同步、指令歸屬、斷線處理、暫停、結算都已完成。
+- `scripts/run_net_test.py` 會開兩個遊戲實例，一台開房、一台加入來測試。
+- N9：
+  - 畫面上顯示本機 IP。
+  - 有多張網卡時，對每張網卡的子網廣播位址送出搜尋。
+
+### U 線（使用者要求提前做）
+
+- **U1–U3**：
+  - 啟動時查詢 GitHub 最新版（`GameOS/gameos/update/`），24 小時查一次，結果記在 `update.ini`。
+  - 主選單顯示新版通知。
+  - 房間列表顯示版本，版本不符時提示。
+- **測試版頻道**：
+  - 選項「RECEIVE TEST VERSIONS」打開後，遊戲也會收到預發布版。
+  - 在 GitHub 上手動按 Run workflow 會發布預發布版 `v<next>-test.<run>`。
+- **遊戲內下載安裝**：依安裝方式下載對應的安裝包，用 SHA256SUMS 驗證，裝好後自動重開。
+- **區塊更新**（commit b312106）：
+  - 安裝包拆成兩種區塊：
+    - 每個平台一個程式區塊。
+    - 六個資料區塊，所有平台共用。
+  - 另附一份 manifest，列出每個區塊、每個檔案和它的 SHA-256。
+  - 遊戲只下載內容有變的區塊，也只替換有變的檔案；要嘛全部換成功，要嘛完全不動。
+  - Windows 遊戲資料夾沒有寫入權限時（裝在 Program Files），會用管理員權限執行 `mc2.exe -apply-update <plan>`，跳一次 UAC，並同步更新「已安裝的應用程式」裡的版本號。
+  - AppImage、macOS，以及沒有 manifest 的 release，仍然下載整包。
+- **資料建置可重現**（commit 6dc5355）：
+  - tgl.fst 原本有沒清零的欄位，現已改掉。
+  - 兩次乾淨建置產出的 571 個檔案完全相同，所以資料區塊在不同版本之間不會變。
+- **Linux 打包**：會 strip 掉除錯資訊，mc2 從 67 MB 降到 9 MB。
+
+## 未完成事項
+
+1. **等使用者實測（最優先）**：M1、N9、U1–U3 在 Windows 和 Linux 實機上的測試結果。**收到回報前不開始 M2。**
+2. **等使用者實測區塊更新**：
+   - 先按兩次 Run workflow，產生兩個測試版。
+   - 第二次更新應該只下載程式區塊：Linux 約幾 MB，Windows 是 mc2.exe 加上 DLL。
+   - 裝在 Program Files 時會跳 UAC。
+3. **macOS CI 待確認**：
+   - commit 67c5a31 修了 `unit_update` 在 macOS 上的 SIGPIPE 問題。
+   - 但 macOS 的 job 連續幾次 15 分鐘內排不到機器、被取消，所以這個修正還沒在 macOS 上跑過。
+   - 需要按 Re-run failed jobs：https://github.com/hyouka0904/mc2/actions/runs/45632610803
+4. **U4 minisign 簽章**：要使用者建立 secret `MINISIGN_KEY`（建議同時開 2FA）。不急。
+5. **之後的里程碑**：M2–M8、U5–U7、L 線，見 ROADMAP 和下面的「下一步」。
+
+## 重要決策
+
+- **聯機設計**：
+  - 主機權威的星狀拓撲。
+  - 訊息改動時要更新協定標記 `MC2NET-1`。
+  - 搜尋房間共用 UDP 27015。
+- **房間人數**：1–4 人，一人也能開。
+- **玩法設計**：
+  - 「改裝」取代原本的武器特性：每台機甲只能裝一個；要付解鎖費和安裝費，換掉時安裝費不退。
+  - M7 佔領模式用勝利條；指揮中心被毀直接判負。
+  - M8 不提供畫面影像；做 M8 之前要先完成 A0（模擬和畫面幀率脫鉤）。
+  - 里程碑順序 M5 → M6 → M7 → M8。
+- **更新機制**：
+  - 用平台內建的 HTTPS：Windows 用 WinHTTP，Linux 和 macOS 執行時才載入 libcurl。
+  - 開發版不會查詢更新。
+  - `MC2_UPDATE_URL` 可指向本機假伺服器做測試。
+- **區塊切法**：
+  - 資料區塊：textures、models（tgl.fst）、archives（其他 .fst）、sound、movies、misc。
+  - zip 裡的檔案日期固定、排序固定，所以同樣內容產出的區塊位元組完全相同。
+- **簽章金鑰**：只有負責發佈的機器需要，或放在 GitHub Secrets；多台開發機不必各放一份。
+- **macOS CI 被取消**：是 GitHub 那邊 Mac 機器不夠用，不是程式問題。
+
+## 測試指令與結果
+
+```bash
+cmake -S . -B build && cmake --build build -j"$(nproc)"
+ctest --test-dir build --output-on-failure
+MC2_PLACEHOLDER_MOVIES=1 scripts/prepare_game_dir.sh build mc2srcdata game
+scripts/run_screenshot_tests.py game shots
+scripts/run_flow_tests.py game --renderer gl
+timeout 900 python3 scripts/run_net_test.py game
+```
+
+最近一次結果（2026-11-25，commit b312106 和 67c5a31）：
+
+- **本機**：
+  - ctest 23/23 通過。
+  - 截圖測試 18/18 和 golden 一致。
+  - 流程測試（gl）全部通過。
+  - 區塊更新端對端測試：用本機伺服器發 0.2.0-test.1 → test.2，只下載 1/7 個區塊（28.8 MB，未 strip），重開後版本正確。
+- **CI（67c5a31）**：
+  - Linux（Debug 和 RelWithDebInfo）、Windows、截圖、流程、聯機測試都通過。
+  - macOS 排不到機器，被取消。
+- **Release workflow（b312106）**：
+  - Linux：「Test a part update」通過。
+  - Windows：「Test a part update in Program Files」通過，包含提權套用、正在執行的 exe 改名、登錄檔版本號、最後解除安裝。
+  - macOS：dmg 打包通過。
+
+## 下一步
+
+1. 等使用者回報 M1、U1–U3 和區塊更新的實機測試；有問題就先修。
+2. macOS CI 有排到機器時，確認 `unit_update` 通過。
+3. 使用者確認 M1 後開始 **M2**，順序 S5 → S1 → S4 → S2 → S3 → S6（詳見 ROADMAP 第 4 節）。M2 做完後同樣停下來等實測。
