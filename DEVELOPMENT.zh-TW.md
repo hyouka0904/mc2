@@ -257,9 +257,17 @@ cd game && ./mc2
   | Linux 壓縮檔（`<根目錄>/usr/bin/mc2`） | `-linux-x86_64.tar.gz` | 和 zip 一樣直接取代 |
   | macOS | `-macos-arm64.dmg` | 打開磁碟映像，由玩家把 app 拖到「應用程式」 |
 
+- **區塊更新**（Windows 安裝版和免安裝版、Linux 壓縮檔）：Release 有對應安裝方式的 `<安裝包>-manifest.json` 時，遊戲只下載有變動的部分，不再下載整包（約 600 MB）：
+  - `scripts/package.py` 把每個安裝包拆成區塊：`-<平台>-program.zip`（執行檔、shader、授權檔，所有不屬於遊戲資料的檔案），以及遊戲資料的 `-data-<名稱>.zip`（`textures`、`models` = `tgl.fst`、`archives` = 其他 `.fst`、`sound`、`movies`、`misc`）。資料區塊只由 Linux job 產生一次，各平台共用（`--write-data-parts`／`--data-parts`；Windows 會檢查自己的資料是否相同）。清單列出每個區塊（檔名、大小、SHA-256、在安裝目錄下的資料夾）和其中每個檔案（路徑、大小、SHA-256、可執行位元）。
+  - 遊戲先用 `SHA256SUMS.txt` 驗證清單，再計算已安裝檔案的雜湊（先比大小；`updates/filehash.txt` 依大小和修改時間記住算過的雜湊），只下載含有缺少或不同檔案的區塊，每個區塊都用清單驗證。只解出這些區塊裡有變動的檔案，替換前再驗證一次，和整包安裝一樣「全部成功或完全不動」。跳過好幾個版本也可以，因為比對的是目前安裝的檔案，不是上一版。
+  - 只改程式時只下載程式區塊：Linux 約 5 MB（打包時拿掉執行檔的除錯資訊，保留函式名稱），Windows 是 `mc2.exe` 加上 DLL 的大小。資料沒改時，每個 Release 的資料區塊都相同：遊戲資料的建置現在每次逐位元組相同（以前 `aseconv` 會寫出未初始化的位元組，讓 `tgl.fst` 每次建置都不一樣；`mclib/tgl.*`、`msl.cpp` 現在會先清零）。
+  - 遊戲資料夾不能寫入時（Windows 裝在 Program Files 給所有使用者）：遊戲用系統管理員權限啟動 `mc2.exe -apply-update <計畫檔>`（跳一次 UAC），等它完成再重新啟動。這個輔助程式負責寫入檔案、把舊檔排定在 Windows 下次重新開機時刪除，並更新「已安裝的應用程式」顯示的版本。
+  - 區塊更新新增的檔案不在安裝程式的解除安裝清單裡，解除安裝後會留在遊戲資料夾。
+  - AppImage 和 macOS 仍然下載整包；沒有清單的 Release 也一樣。
+
   所有新檔案都先寫成 `*.mc2new`，全部寫完才開始改名，所以下載壞掉時什麼都不會改。只接受 `https://github.com/hyouka0904/mc2/releases/download/` 的下載（或 `MC2_UPDATE_URL` 的測試伺服器）。其他情況（不認得的安裝方式、資料夾唯讀、沒有對應安裝包、失敗）都退回打開 Release 頁面。下載好但還沒安裝的安裝包，下次啟動會直接使用；比較舊的會刪掉。
 - 檢查碼只能防下載損壞，防不了 GitHub 帳號被盜；簽章（minisign，工作清單的 U4）還沒做。
-- 測試：`unit_update` 另外涵蓋版本清單（頻道、草稿、安裝包名稱）、SHA-256 測試向量、`SHA256SUMS.txt`、挑選安裝包、辨認壓縮檔安裝、解開 zip 和 tar.gz（長檔名、符號連結、`..` 項目、損壞的壓縮檔必須什麼都不改）以及下載（錯誤和取消時會刪掉檔案）。
+- 測試：`unit_update` 另外涵蓋版本清單（頻道、草稿、安裝包名稱）、SHA-256 測試向量、`SHA256SUMS.txt`、挑選安裝包、辨認壓縮檔安裝、解開 zip 和 tar.gz（長檔名、符號連結、`..` 項目、損壞的壓縮檔必須什麼都不改）以及下載（錯誤和取消時會刪掉檔案）；區塊更新方面涵蓋清單（離開遊戲資料夾的路徑、錯誤的雜湊）、找出有變動的檔案和雜湊快取、套用區塊（雜湊錯誤或缺檔時什麼都不改；可執行位元）以及輔助程式的計畫檔。Release workflow 會對壓縮檔版和裝在 Program Files 的 Windows 全使用者安裝各套用一次區塊更新（`scripts/part_plan.py` 產生計畫檔；輔助程式會取代自己正在執行的 exe，並更新「已安裝的應用程式」的版本）。
 
 ---
 
@@ -511,7 +519,7 @@ git push origin v0.1.0
 4. 三個平台都通過後，建立一個**草稿** GitHub Release，附上所有安裝包與 `SHA256SUMS.txt`，說明取自 `packaging/RELEASE_NOTES.md`。確認無誤後再到 GitHub 上按「Publish」。
 
 遊戲資料和編譯好的著色器（SPIR-V / MSL / HLSL）與平台無關，只在 Linux 建置一次，再交給 Windows 和 macOS 使用。
-**測試版**：在 Actions 頁面手動執行（Actions > Release > Run workflow，選分支），會發佈一個**預發布版** `v<下一個修訂號>-test.<執行編號>`（例如 `v0.1.0` 之後是 `v0.1.1-test.42`），附上安裝包和 `SHA256SUMS.txt`，tag 打在該分支的 commit 上。打開「Receive test versions」的遊戲會提示更新到它；其他人看不到（`releases/latest` 不回傳預發布版，而且 `0.1.1-test.42` 排在 `0.1.1` 之前）。只保留最新 5 個測試版和它們的 tag。選項：`version` 手動指定版本；取消 `publish` 只保留 workflow artifact；取消 `macos` 跳過 macOS（測試版本來就不等 macOS）。修改 `packaging/`、`scripts/package.py` 時，會以 `0.0.0-test` 建置並測試安裝包但不發佈，每個安裝包各自保留為一個 workflow artifact（不再另外壓縮）。
+**測試版**：在 Actions 頁面手動執行（Actions > Release > Run workflow，選分支），會發佈一個**預發布版** `v<下一個修訂號>-test.<執行編號>`（例如 `v0.1.0` 之後是 `v0.1.1-test.42`），附上安裝包和 `SHA256SUMS.txt`，tag 打在該分支的 commit 上。打開「Receive test versions」的遊戲會提示更新到它；其他人看不到（`releases/latest` 不回傳預發布版，而且 `0.1.1-test.42` 排在 `0.1.1` 之前）。只保留最新 5 個測試版和它們的 tag。選項：`version` 手動指定版本；取消 `publish` 只保留 workflow artifact；取消 `macos` 跳過 macOS（測試版本來就不等 macOS）。修改 `packaging/`、`scripts/package.py` 時，會以 `0.0.0-test` 建置並測試安裝包但不發佈，每個安裝包各自保留為一個 workflow artifact（不再另外壓縮）。Release 另外附上區塊更新用的區塊和清單（見[版本檢查](#版本檢查)）。
 
 Windows 與 macOS 的 CI 機器沒有可用的 GPU，所以那兩個平台只測安裝流程與程式能否啟動，沒有實際進入遊戲。
 

@@ -14,7 +14,8 @@
 //
 // Installing (gos_update_install.cpp): the package for the way the game was
 // installed is downloaded into <user dir>/updates, checked against the
-// release's SHA256SUMS.txt and put in place; the game then restarts.
+// release's SHA256SUMS.txt and put in place; the game then restarts. With a
+// part manifest (see Manifest below) only the changed parts are downloaded.
 //
 // HTTPS uses what the platform already has: WinHTTP on Windows, the system
 // libcurl (loaded at run time with dlopen) on Linux and macOS. Without
@@ -163,6 +164,55 @@ bool extractZip(const std::string& archive, const std::string& destDir, bool str
                 std::vector<std::string>* oldFiles, std::string* error);
 bool extractTarGz(const std::string& archive, const std::string& destDir, bool stripTop,
                   std::vector<std::string>* oldFiles, std::string* error);
+
+// Part updates. A release carries, per platform, <package>-manifest.json:
+// the package split into parts (the program, and data parts shared by every
+// platform), each a zip with the list of its files. The game downloads only
+// the parts holding a file that differs from what is installed, and puts in
+// only those files. Installs without a manifest (AppImage, macOS) and
+// releases without one get the whole package.
+struct PartFile {
+    std::string path;   // inside the part's zip
+    int64_t size = 0;
+    std::string sha256; // lower-case hex
+    bool exec = false;  // Unix: executable
+};
+struct Part {
+    std::string name;   // release asset name
+    int64_t size = 0;
+    std::string sha256;
+    std::string dest;   // folder below the install root ("" or "usr/share/mechcommander2/")
+    std::vector<PartFile> files;
+};
+struct Manifest {
+    std::string version;
+    std::vector<Part> parts;
+};
+// The manifest asset name for a package name ("" when kind has none).
+std::string manifestSuffix(InstallKind kind);
+bool parseManifest(const std::string& json, Manifest* out);
+// The files of each part that are missing in root or differ from it (same
+// order as manifest.parts). hashCache: optional file of known hashes (keyed
+// by path, size and modification time), read and rewritten.
+std::vector<std::vector<PartFile>> changedFiles(const Manifest& manifest, const std::string& root,
+                                                const std::string& hashCache = std::string());
+struct PartInstall {
+    std::string archive;  // the downloaded part
+    std::string dest;     // Part::dest
+    std::vector<PartFile> files;
+};
+// Puts the listed files of each part into root, all or nothing (like
+// extractZip): each new file is checked against its hash before anything is
+// replaced.
+bool applyParts(const std::string& root, const std::vector<PartInstall>& parts,
+                std::vector<std::string>* oldFiles, std::string* error);
+// The plan file the elevated helper (mc2 -apply-update <plan>) reads.
+bool writeApplyPlan(const std::string& path, const std::string& root, const std::string& version,
+                    const std::vector<PartInstall>& parts);
+// mc2 -apply-update <plan>: run by the game with administrator rights when
+// the game folder is not writable (Windows, all-users install). Returns the
+// process exit code; the error goes to <plan>.err.
+int runApplyPlan(const std::string& planPath);
 
 enum class DownloadStatus { Idle, Downloading, Ready, Failure };
 // The newer release can be installed by the game (known install kind and a

@@ -42,7 +42,8 @@ At start the game asks GitHub whether a newer version has been released
 is one, the main menu shows "NEW VERSION ... AVAILABLE" in the bottom left
 corner. Click it and choose UPDATE: the game downloads the new version,
 checks it, installs it and starts again (saved games and settings are
-kept). On macOS it opens the downloaded disk image; drag the app to
+kept). The Windows versions and the Linux .tar.gz download only the files
+that changed (usually a few MB, not the whole game). On macOS it opens the downloaded disk image; drag the app to
 Applications. If that is not possible it opens the download page instead.
 Options > Gameplay > "Receive test versions" also offers unreleased test
 builds (they may have bugs). To turn the check off for good, put check=0
@@ -88,6 +89,7 @@ mc2 -noupdatecheck      不檢查新版本
 遊戲啟動時會向 GitHub 查詢有沒有新版本（一天最多一次，不會送出任何關於你
 或你電腦的資料）。有新版時，主選單左下角會顯示「NEW VERSION ... AVAILABLE」，
 點一下再選 UPDATE：遊戲會下載新版、驗證、安裝後重新啟動（存檔和設定都保留）。
+Windows 版和 Linux 的 .tar.gz 只下載有變動的檔案（通常只有幾 MB，不是整個遊戲）。
 macOS 會打開下載好的磁碟映像，請把 app 拖到「應用程式」。無法自動更新時改為
 打開下載頁面。選項 > Gameplay 勾選「Receive test versions」也會收到尚未正式
 發佈的測試版（可能有問題）。想永久關閉檢查，在上面的存檔資料夾裡的 update.ini

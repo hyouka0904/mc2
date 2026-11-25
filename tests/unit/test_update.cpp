@@ -8,6 +8,7 @@
 #include "update/gos_update.h"
 
 #include <atomic>
+#include <chrono>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -793,4 +794,155 @@ TEST(update_test_channel_check)
     CHECK_EQ(updatesDir(), std::string("./updates"));
     remove(path.c_str());
     resetForTests();
+}
+
+namespace {
+
+std::string hexOf(const std::string& s) { return sha256Hex(s.data(), s.size()); }
+
+// ["path",size,"sha256",exec]
+std::string fileJson(const std::string& path, const std::string& content, int exec = 0)
+{
+    return "[\"" + path + "\"," + std::to_string(content.size()) + ",\"" + hexOf(content) + "\"," +
+           std::to_string(exec) + "]";
+}
+
+} // namespace
+
+TEST(update_parse_manifest)
+{
+    const std::string a(64, 'a');
+    Manifest m;
+    CHECK(parseManifest("{\"format\":1,\"version\":\"1.2.3\",\"parts\":[{\"name\":\"p.zip\",\"size\":10,"
+                        "\"sha256\":\"" + a + "\",\"dest\":\"usr/share/x/\",\"files\":[[\"bin/mc2\",5,\"" + a +
+                            "\",1],[\"data/a.txt\",0,\"" + a + "\",0]]}]}",
+                        &m));
+    CHECK_EQ(m.version, std::string("1.2.3"));
+    CHECK_EQ(m.parts.size(), (size_t)1);
+    CHECK_EQ(m.parts[0].dest, std::string("usr/share/x/"));
+    CHECK_EQ(m.parts[0].files.size(), (size_t)2);
+    CHECK(m.parts[0].files[0].exec);
+    CHECK(!m.parts[0].files[1].exec);
+    CHECK_EQ(m.parts[0].files[0].size, (int64_t)5);
+    // Paths that leave the game folder, bad hashes, other formats
+    auto one = [&](const std::string& dest, const std::string& path, const std::string& sha) {
+        return parseManifest("{\"format\":1,\"parts\":[{\"name\":\"p.zip\",\"size\":1,\"sha256\":\"" + a +
+                                 "\",\"dest\":\"" + dest + "\",\"files\":[[\"" + path + "\",1,\"" + sha + "\"]]}]}",
+                             nullptr);
+    };
+    CHECK(one("", "ok/file", a));
+    CHECK(!one("", "../evil", a));
+    CHECK(!one("", "a/../../evil", a));
+    CHECK(!one("", "/etc/passwd", a));
+    CHECK(!one("", "C:/x", a));
+    CHECK(!one("../", "x", a));
+    CHECK(!one("sub", "x", a)); // a folder ends with '/'
+    CHECK(!one("", "x", std::string(64, 'A')));
+    CHECK(!one("", "x", "abc"));
+    CHECK(!parseManifest("{\"format\":2,\"parts\":[]}", nullptr));
+    CHECK(!parseManifest("[]", nullptr));
+    CHECK_EQ(manifestSuffix(InstallKind::LinuxTarball), std::string("-linux-x86_64-manifest.json"));
+    CHECK_EQ(manifestSuffix(InstallKind::WindowsInstaller), std::string("-windows-x64-manifest.json"));
+    CHECK_EQ(manifestSuffix(InstallKind::LinuxAppImage), std::string());
+}
+
+TEST(update_parts_changed_and_apply)
+{
+    const std::string root = "unit_update_parts";
+    std::error_code ec;
+    std::filesystem::remove_all(root, ec);
+    makeDir(root);
+    makeDir(root + "/usr");
+    makeDir(root + "/usr/share");
+    makeDir(root + "/usr/share/mc2");
+    makeDir(root + "/usr/share/mc2/data");
+    // Installed: an old program, data that is already current
+    writeFile(root + "/mc2", "old program");
+    writeFile(root + "/readme.txt", "same readme");
+    writeFile(root + "/usr/share/mc2/big.fst", std::string(100000, 'b'));
+    writeFile(root + "/usr/share/mc2/data/a.txt", "data a");
+    // The new release
+    const std::string prog = "new program", readme = "same readme", added = "a new file";
+    const std::string big(100000, 'b'), da = "data a";
+    const std::string progZip = makeZip({{"mc2", prog}, {"readme.txt", readme}, {"lib/added.so", added}});
+    const std::string dataZip = makeZip({{"big.fst", big}, {"data/a.txt", da}});
+    writeFile("unit_update_prog.zip", progZip);
+    writeFile("unit_update_data.zip", dataZip);
+    const std::string json =
+        "{\"format\":1,\"version\":\"2.0.0\",\"parts\":["
+        "{\"name\":\"prog.zip\",\"size\":" + std::to_string(progZip.size()) + ",\"sha256\":\"" + hexOf(progZip) +
+        "\",\"dest\":\"\",\"files\":[" + fileJson("mc2", prog, 1) + "," + fileJson("readme.txt", readme) + "," +
+        fileJson("lib/added.so", added) + "]},"
+        "{\"name\":\"data.zip\",\"size\":" + std::to_string(dataZip.size()) + ",\"sha256\":\"" + hexOf(dataZip) +
+        "\",\"dest\":\"usr/share/mc2/\",\"files\":[" + fileJson("big.fst", big) + "," + fileJson("data/a.txt", da) +
+        "]}]}";
+    Manifest m;
+    CHECK(parseManifest(json, &m));
+    const std::string cache = "unit_update_filehash.txt";
+    remove(cache.c_str());
+    // Files written long ago go into the hash cache; fresh ones are hashed again
+    const auto past = std::filesystem::file_time_type::clock::now() - std::chrono::hours(1);
+    std::filesystem::last_write_time(root + "/usr/share/mc2/big.fst", past, ec);
+    std::vector<std::vector<PartFile>> changed = changedFiles(m, root, cache);
+    CHECK(readFile(cache).find("big.fst") != std::string::npos);
+    CHECK(readFile(cache).find("a.txt") == std::string::npos);
+    CHECK_EQ(changed.size(), (size_t)2);
+    CHECK_EQ(changed[0].size(), (size_t)2); // mc2 (other content), lib/added.so (missing)
+    CHECK_EQ(changed[1].size(), (size_t)0); // the data part is not needed
+    CHECK(exists(cache));
+
+    // A wrong hash in the plan: nothing changes
+    std::vector<PartInstall> bad = {{"unit_update_prog.zip", "", changed[0]}};
+    bad[0].files[0].sha256 = std::string(64, '0');
+    std::vector<std::string> old;
+    std::string err;
+    CHECK(!applyParts(root, bad, &old, &err));
+    CHECK(!err.empty());
+    CHECK_EQ(readFile(root + "/mc2"), std::string("old program"));
+    CHECK(!exists(root + "/mc2.mc2new"));
+    CHECK(!exists(root + "/lib/added.so"));
+
+    // A file the part does not have: nothing changes
+    std::vector<PartInstall> missing = {{"unit_update_data.zip", "", changed[0]}};
+    CHECK(!applyParts(root, missing, &old, &err));
+    CHECK_EQ(readFile(root + "/mc2"), std::string("old program"));
+
+    std::vector<PartInstall> plan = {{"unit_update_prog.zip", "", changed[0]}};
+    err.clear();
+    CHECK(applyParts(root, plan, &old, &err));
+    CHECK_EQ(err, std::string());
+    CHECK_EQ(readFile(root + "/mc2"), prog);
+    CHECK_EQ(readFile(root + "/lib/added.so"), added);
+    CHECK_EQ(readFile(root + "/readme.txt"), readme);
+    CHECK_EQ(old.size(), (size_t)1);
+    CHECK_EQ(readFile(old[0]), std::string("old program"));
+#ifndef _WIN32
+    struct stat st;
+    CHECK(stat((root + "/mc2").c_str(), &st) == 0 && (st.st_mode & 0100));
+    CHECK(stat((root + "/lib/added.so").c_str(), &st) == 0 && !(st.st_mode & 0100));
+#endif
+    // Up to date now (the cache must not hide the change)
+    changed = changedFiles(m, root, cache);
+    CHECK_EQ(changed[0].size() + changed[1].size(), (size_t)0);
+
+    // The helper's plan file, as the elevated process reads it
+    writeFile(root + "/usr/share/mc2/data/a.txt", "damaged");
+    changed = changedFiles(m, root, cache);
+    CHECK_EQ(changed[1].size(), (size_t)1);
+    const std::string planFile = "unit_update_plan.txt";
+    std::vector<PartInstall> plan2 = {{"unit_update_data.zip", "usr/share/mc2/", changed[1]}};
+    CHECK(writeApplyPlan(planFile, root, "2.0.0", plan2));
+    CHECK_EQ(runApplyPlan(planFile), 0);
+    CHECK_EQ(readFile(root + "/usr/share/mc2/data/a.txt"), da);
+    CHECK(!exists(planFile + ".err"));
+    writeFile(planFile, "not a plan");
+    CHECK(runApplyPlan(planFile) != 0);
+    CHECK(exists(planFile + ".err"));
+
+    remove(planFile.c_str());
+    remove((planFile + ".err").c_str());
+    remove((planFile + ".old").c_str());
+    remove(cache.c_str());
+    remove("unit_update_prog.zip");
+    remove("unit_update_data.zip");
 }

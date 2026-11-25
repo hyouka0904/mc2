@@ -469,6 +469,82 @@ bool parseReleases(const std::string& json, bool includePrereleases, Release* ou
     return found;
 }
 
+// {"format":1,"version":"..","parts":[{"name","size","sha256","dest",
+//   "files":[["path",size,"sha256",exec],...]}]}
+bool parseManifest(const std::string& json, Manifest* out)
+{
+    JNode root;
+    if (!parseJson(json, &root) || root.kind != 'o' || root.getInt("format") != 1)
+        return false;
+    const JNode* parts = root.get("parts");
+    if (!parts || parts->kind != 'a')
+        return false;
+    auto isHex = [](const std::string& s) {
+        if (s.size() != 64)
+            return false;
+        for (char c : s)
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
+                return false;
+        return true;
+    };
+    // Relative, no "..", no drive or absolute path, no line breaks
+    auto safePath = [](const std::string& p, bool folder) {
+        if (p.empty())
+            return folder;
+        if (p[0] == '/' || p[0] == '\\' || p.find(':') != std::string::npos ||
+            p.find_first_of("\r\n|") != std::string::npos)
+            return false;
+        if (folder && p.back() != '/')
+            return false;
+        size_t start = 0;
+        while (start <= p.size()) {
+            size_t end = p.find_first_of("/\\", start);
+            if (end == std::string::npos)
+                end = p.size();
+            const std::string seg = p.substr(start, end - start);
+            if (seg == ".." || seg == "." || (seg.empty() && end != p.size()))
+                return false;
+            start = end + 1;
+        }
+        return true;
+    };
+    Manifest m;
+    m.version = root.getString("version");
+    for (const JNode& pn : parts->items) {
+        if (pn.kind != 'o')
+            return false;
+        Part p;
+        p.name = pn.getString("name");
+        p.size = pn.getInt("size");
+        p.sha256 = pn.getString("sha256");
+        p.dest = pn.getString("dest");
+        if (p.name.empty() || p.name.find_first_of("/\\|\r\n") != std::string::npos || p.name[0] == '.' ||
+            !isHex(p.sha256) || !safePath(p.dest, true))
+            return false;
+        const JNode* files = pn.get("files");
+        if (!files || files->kind != 'a')
+            return false;
+        for (const JNode& fn : files->items) {
+            if (fn.kind != 'a' || fn.items.size() < 3 || fn.items[0].kind != 's' || fn.items[1].kind != 'd' ||
+                fn.items[2].kind != 's')
+                return false;
+            PartFile f;
+            f.path = fn.items[0].str;
+            f.size = strtoll(fn.items[1].str.c_str(), nullptr, 10);
+            f.sha256 = fn.items[2].str;
+            f.exec = fn.items.size() > 3 && ((fn.items[3].kind == 'b' && fn.items[3].b) ||
+                                             (fn.items[3].kind == 'd' && fn.items[3].str != "0"));
+            if (!safePath(f.path, false) || f.size < 0 || !isHex(f.sha256))
+                return false;
+            p.files.push_back(f);
+        }
+        m.parts.push_back(p);
+    }
+    if (out)
+        *out = m;
+    return true;
+}
+
 //==============================================================================
 // update.ini: key=value lines
 

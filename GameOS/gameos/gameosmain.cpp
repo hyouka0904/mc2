@@ -2,6 +2,7 @@
 #include "gos_render.h"
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 
 #include <SDL3/SDL.h>
 #include "gos_input.h"
@@ -266,6 +267,10 @@ int main(int argc, char** argv)
 #ifdef _WIN32
     gos_AttachParentConsole();
 #endif
+    // The game started again with administrator rights to put a part update
+    // into a folder it cannot write (see gos_update.h); nothing else runs.
+    if (argc == 3 && strcmp(argv[1], "-apply-update") == 0)
+        return gos_update::runApplyPlan(argv[2]);
     gos_run_options::Options run_opts;
     {
         std::string error;

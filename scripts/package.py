@@ -20,6 +20,17 @@ Output in <dist_dir> (<v> = version):
            MechCommander2-<v>-windows-x64.zip
   macos    MechCommander2-<v>-macos-arm64.dmg
 
+Part updates (see GameOS/gameos/update/gos_update.h), in <dist_dir>/parts:
+  linux    MechCommander2-<v>-data-<name>.zip    the game data, in a few parts
+                                                 (the same on every platform)
+           MechCommander2-<v>-linux-x86_64-program.zip   everything else
+           MechCommander2-<v>-linux-x86_64-manifest.json (for the tarball)
+  windows  MechCommander2-<v>-windows-x64-program.zip
+           MechCommander2-<v>-windows-x64-manifest.json  (installer and zip)
+The Linux run writes the data parts and --write-data-parts <json> (their
+files and hashes); the Windows run reads that file (--data-parts) and checks
+that its data is the same.
+
 Layouts (the game finds its data next to the executable, in
 ../share/mechcommander2, or in the .app's Resources):
   linux    usr/bin/{mc2,libmc2res.so}, usr/lib/ (bundled libraries),
@@ -30,6 +41,8 @@ Layouts (the game finds its data next to the executable, in
 
 import argparse
 import glob
+import hashlib
+import json
 import os
 import shutil
 import stat
@@ -117,6 +130,127 @@ def make_zip(src_dir, out_path):
                 z.write(p, os.path.relpath(p, base))
 
 
+# ---------------------------------------------------------------- Parts
+def sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def data_part_of(rel):
+    """The data part of a file (path relative to the data folder), or None
+    for the program part. Big archives that rarely change get their own part."""
+    top = rel.split("/")[0]
+    if rel == "textures.fst":
+        return "textures"
+    if rel == "tgl.fst":
+        return "models"
+    if "/" not in rel and rel.endswith(".fst"):
+        return "archives"
+    if rel.startswith("data/sound/"):
+        return "sound"
+    if rel.startswith("data/movies/"):
+        return "movies"
+    if top in DATA_DIRS:
+        return "misc"
+    if "/" not in rel and (rel.endswith(".cfg") or rel == "testtxm.tga"):
+        return "misc"
+    return None
+
+
+def tree_files(root):
+    """Regular files below root (relative, '/'), sorted; symlinks are left
+    out (the part zips cannot hold them; they stay from the first install)."""
+    out = []
+    for d, dirs, files in os.walk(root):
+        dirs.sort()
+        for f in files:
+            p = os.path.join(d, f)
+            if os.path.islink(p) or not os.path.isfile(p):
+                continue
+            out.append(os.path.relpath(p, root).replace(os.sep, "/"))
+    return sorted(out)
+
+
+def write_part_zip(out_path, entries):
+    """entries: [(zip name, source path)]. Fixed dates and order, so the same
+    files give the same zip."""
+    with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, src in sorted(entries):
+            info = zipfile.ZipInfo(name, date_time=(2020, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = (0o755 if os.access(src, os.X_OK) else 0o644) << 16
+            with open(src, "rb") as f:
+                z.writestr(info, f.read())
+
+
+def file_entry(path, rel, windows):
+    return [rel, os.path.getsize(path), sha256_file(path),
+            0 if windows else int(os.access(path, os.X_OK))]
+
+
+def write_parts(a, tree, data_rel, platform):
+    """Splits the package tree into parts in <out>/parts and writes the
+    manifest. data_rel: the data folder inside the tree ("" on Windows)."""
+    parts_dir = os.path.join(a.out, "parts")
+    os.makedirs(parts_dir, exist_ok=True)
+    windows = platform.startswith("windows")
+    prefix = data_rel + "/" if data_rel else ""
+    data = {}     # part name -> [(rel in data folder, path)]
+    program = []  # (rel in tree, path)
+    for rel in tree_files(tree):
+        path = os.path.join(tree, rel)
+        part = data_part_of(rel[len(prefix):]) if rel.startswith(prefix) else None
+        if part:
+            data.setdefault(part, []).append((rel[len(prefix):], path))
+        else:
+            program.append((rel, path))
+
+    if a.write_data_parts:
+        meta = []
+        for name in sorted(data):
+            zname = "%s-%s-data-%s.zip" % (NAME, a.version, name)
+            zpath = os.path.join(parts_dir, zname)
+            log("writing " + zpath)
+            write_part_zip(zpath, data[name])
+            meta.append({"name": zname, "size": os.path.getsize(zpath), "sha256": sha256_file(zpath),
+                         "files": [file_entry(p, r, True)[:3] for r, p in sorted(data[name])]})
+        with open(a.write_data_parts, "w") as f:
+            json.dump(meta, f, indent=0)
+    elif a.data_parts:
+        meta = json.load(open(a.data_parts))
+    else:
+        sys.exit("parts: --write-data-parts or --data-parts is needed")
+
+    # The data must be what the data parts hold
+    mine = {r: p for files in data.values() for r, p in files}
+    theirs = {f[0]: f for m in meta for f in m["files"]}
+    if set(mine) != set(theirs):
+        sys.exit("parts: the data files differ from the data parts (%s)" %
+                 sorted(set(mine) ^ set(theirs))[:5])
+    for r, p in mine.items():
+        if os.path.getsize(p) != theirs[r][1] or sha256_file(p) != theirs[r][2]:
+            sys.exit("parts: %s differs from the data parts" % r)
+
+    pname = "%s-%s-%s-program.zip" % (NAME, a.version, platform)
+    ppath = os.path.join(parts_dir, pname)
+    log("writing " + ppath)
+    write_part_zip(ppath, program)
+    manifest = {"format": 1, "version": a.version, "parts": [
+        {"name": pname, "size": os.path.getsize(ppath), "sha256": sha256_file(ppath), "dest": "",
+         "files": [file_entry(p, r, windows) for r, p in sorted(program)]}]}
+    for m in meta:
+        files = [f + [0] for f in m["files"]]
+        manifest["parts"].append({"name": m["name"], "size": m["size"], "sha256": m["sha256"],
+                                  "dest": prefix, "files": files})
+    mpath = os.path.join(parts_dir, "%s-%s-%s-manifest.json" % (NAME, a.version, platform))
+    with open(mpath, "w") as f:
+        json.dump(manifest, f, separators=(",", ":"))
+    log("wrote %s (%d parts)" % (mpath, len(manifest["parts"])))
+
+
 def chmod_x(path):
     os.chmod(path, os.stat(path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
@@ -130,6 +264,10 @@ def package_linux(a, work):
     shutil.copy2(os.path.join(a.build, "mc2"), bindir)
     shutil.copy2(os.path.join(a.build, "out", "res", "libmc2res_64.so"),
                  os.path.join(bindir, "libmc2res.so"))
+    # Without the debug information (67 MB -> 9 MB; function names stay for
+    # backtraces): smaller packages and program parts
+    if shutil.which("strip"):
+        run(["strip", "--strip-debug", os.path.join(bindir, "mc2"), os.path.join(bindir, "libmc2res.so")])
     copy_payload(a.game, a.shaders, os.path.join(share, "mechcommander2"))
     copy_dep_licenses(a.build, os.path.join(share, "mechcommander2"))
     os.makedirs(os.path.join(share, "applications"))
@@ -163,6 +301,8 @@ def package_linux(a, work):
     chmod_x(launcher)
     shutil.copy2(os.path.join(PKG, "README.txt"), appdir)
     make_tar(appdir, os.path.join(a.out, os.path.basename(appdir) + ".tar.gz"))
+    if a.parts:
+        write_parts(a, appdir, "usr/share/mechcommander2", "linux-x86_64")
 
 
 # ---------------------------------------------------------------- Windows
@@ -183,6 +323,8 @@ def package_windows(a, work):
     copy_payload(a.game, a.shaders, stage)
     copy_dep_licenses(a.build, stage)
     make_zip(stage, os.path.join(a.out, os.path.basename(stage) + ".zip"))
+    if a.parts:
+        write_parts(a, stage, "", "windows-x64")
 
     iscc = a.iscc or shutil.which("iscc") or shutil.which("ISCC")
     if not iscc:
@@ -249,6 +391,10 @@ def main():
                     help="Windows: build configuration subdirectory")
     ap.add_argument("--linuxdeploy", help="Linux: linuxdeploy executable, for the AppImage")
     ap.add_argument("--iscc", help="Windows: Inno Setup compiler (default: search)")
+    ap.add_argument("--write-data-parts", metavar="JSON",
+                    help="write the data parts and their file list to JSON (Linux)")
+    ap.add_argument("--data-parts", metavar="JSON",
+                    help="the data parts another run wrote (Windows)")
     a = ap.parse_args()
     a.version = a.version[1:] if a.version.startswith("v") else a.version
     a.build = os.path.abspath(a.build)
@@ -257,6 +403,10 @@ def main():
     a.out = os.path.abspath(a.out)
     if a.linuxdeploy:
         a.linuxdeploy = os.path.abspath(a.linuxdeploy)
+    for k in ("write_data_parts", "data_parts"):
+        if getattr(a, k):
+            setattr(a, k, os.path.abspath(getattr(a, k)))
+    a.parts = bool(a.write_data_parts or a.data_parts) and a.platform != "macos"
     os.makedirs(a.out, exist_ok=True)
     work = os.path.join(a.out, "_work")
     shutil.rmtree(work, ignore_errors=True)

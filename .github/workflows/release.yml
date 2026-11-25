@@ -9,6 +9,10 @@
 # creates a draft GitHub release with the packages; publish it on GitHub
 # after a look.
 #
+# Every package also comes as parts (dist/parts): the program per platform,
+# the game data in a few zips shared by all platforms, and a manifest per
+# platform. Installed games download only the parts with changed files.
+#
 # Runs started by hand (Actions > Release > Run workflow) publish a test
 # pre-release v<next patch>-test.<run number> (e.g. v0.1.1-test.42) from the
 # chosen branch; games with "receive test versions" on offer it as an update.
@@ -26,6 +30,8 @@ on:
     paths:
       - "packaging/**"
       - "scripts/package.py"
+      - "scripts/part_plan.py"
+      - "GameOS/gameos/update/**"
       - ".github/workflows/release.yml"
   workflow_dispatch:
     inputs:
@@ -117,7 +123,23 @@ jobs:
           curl -fsSL -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy
           python3 scripts/package.py --platform linux --build build --game game \
-            --version "$VERSION" --out dist --linuxdeploy ./linuxdeploy
+            --version "$VERSION" --out dist --linuxdeploy ./linuxdeploy \
+            --write-data-parts data-parts.json
+
+      - name: Test a part update
+        # What the game does after downloading the parts it needs: put the
+        # listed files in (here the helper mode, which shares the code)
+        run: |
+          set -e
+          mkdir parttest && tar -xzf dist/*.tar.gz -C parttest
+          root=$(ls -d "$PWD"/parttest/*)
+          echo damaged > "$root/README.txt"
+          python3 scripts/part_plan.py dist/parts "$root" linux-x86_64 plan.txt README.txt usr/bin/mc2
+          "$root/usr/bin/mc2" -apply-update plan.txt
+          cmp "$root/README.txt" packaging/README.txt
+          "$root/usr/bin/mc2" -version | grep -qF "${VERSION#v}"
+          test -x "$root/usr/bin/mc2"
+          rm -rf parttest plan.txt*
 
       - name: Test the AppImage
         run: |
@@ -200,7 +222,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: packages-linux
-          path: dist/*.*
+          path: |
+            dist/*.*
+            dist/parts/*
           retention-days: 7
 
       - name: Upload test screenshots
@@ -225,6 +249,7 @@ jobs:
             game/*.cfg
             game/testtxm.tga
             build/shaders_out/
+            data-parts.json
 
   windows:
     needs: linux
@@ -265,8 +290,9 @@ jobs:
         shell: bash
         run: |
           python scripts/package.py --platform windows --build build --game shared/game \
-            --shaders shared/build/shaders_out --version "$VERSION" --out dist
-          ls dist/*-setup.exe dist/*.zip
+            --shaders shared/build/shaders_out --version "$VERSION" --out dist \
+            --data-parts shared/data-parts.json
+          ls dist/*-setup.exe dist/*.zip dist/parts/*
 
       - name: Test the installer and the zip
         shell: bash
@@ -289,6 +315,29 @@ jobs:
           /c/mc2test/unins000.exe //VERYSILENT //SUPPRESSMSGBOXES
           for _ in $(seq 30); do [ -f /c/mc2test/mc2.exe ] || break; sleep 2; done
           test ! -f /c/mc2test/mc2.exe
+
+      - name: Test a part update in Program Files
+        # An all-users install: the game starts itself with administrator
+        # rights (-apply-update) to put the parts in. The runner is already
+        # an administrator, so this runs the helper directly. It replaces its
+        # own running exe and sets the version in "Installed apps".
+        shell: bash
+        run: |
+          set -e
+          ./dist/*-setup.exe //VERYSILENT //SUPPRESSMSGBOXES //ALLUSERS //DIR='C:\Program Files\MC2 Part Test' //LOG=install2.log
+          root='/c/Program Files/MC2 Part Test'
+          test -f "$root/unins000.exe"
+          echo damaged > "$root/README.txt"
+          python scripts/part_plan.py dist/parts 'C:\Program Files\MC2 Part Test' windows-x64 plan.txt \
+            README.txt mc2.exe --version 9.9.9-ci
+          "$root/mc2.exe" -apply-update plan.txt || { cat plan.txt.err; exit 1; }
+          unzip -p dist/parts/*-windows-x64-program.zip README.txt | cmp - "$root/README.txt"
+          cat plan.txt.old
+          grep -q "mc2.exe.mc2old" plan.txt.old
+          reg query 'HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6F0E8C52-3B7A-4E2B-9C1D-5A7F2E4B8D31}_is1' //v DisplayVersion | tee reg.txt
+          grep -q "9.9.9-ci" reg.txt
+          "$root/mc2.exe" -version | grep -qF "${VERSION#v}"
+          "$root/unins000.exe" //VERYSILENT //SUPPRESSMSGBOXES
 
       # One artifact per file, not zipped (upload-artifact v7, archive: false):
       # the run page downloads the installer itself. Large uploads sometimes
@@ -343,7 +392,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: packages-windows
-          path: dist/*.*
+          path: |
+            dist/*.*
+            dist/parts/*
           retention-days: 7
 
   macos:
@@ -457,6 +508,8 @@ jobs:
       - name: Checksums
         run: |
           cd dist
+          # The parts and manifests sit next to the packages in the release
+          if [ -d parts ]; then mv parts/* . && rmdir parts; fi
           sha256sum * > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
