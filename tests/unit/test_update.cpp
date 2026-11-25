@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <sstream>
@@ -634,6 +635,8 @@ TEST(update_pick_asset)
 TEST(update_extract_zip)
 {
     const std::string dest = "unit_update_zipdest";
+    std::error_code ec;
+    std::filesystem::remove_all(dest, ec); // from an earlier run
     makeDir(dest);
     makeDir(dest + "/data");
     writeFile(dest + "/mc2.exe", "old exe");
@@ -671,6 +674,8 @@ TEST(update_extract_zip)
 TEST(update_extract_tar_gz)
 {
     const std::string dest = "unit_update_tgzdest";
+    std::error_code ec;
+    std::filesystem::remove_all(dest, ec); // from an earlier run
     makeDir(dest);
     writeFile(dest + "/mc2", "old launcher");
     const std::string longName = "Top/usr/share/mechcommander2/" + std::string(90, 'n') + ".txt";

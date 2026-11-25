@@ -3300,7 +3300,7 @@ StringResRecord StringRecords[] = {
 	{ IDS_UPDATE_READY, "VERSION %s DOWNLOADED - CLICK TO INSTALL" },
 	{ IDS_UPDATE_READY_PROMPT, "Version %s has been downloaded and checked.\n\nInstall it and restart the game now?" },
 	{ IDS_UPDATE_FAILED, "The update did not work (%s).\n\nOpen the download page in your web browser instead?" },
-	{ IDS_UPDATE_TEST_CHANNEL, "RECEIVE TEST VERSIONS (UNRELEASED BUILDS)" },
+	{ IDS_UPDATE_TEST_CHANNEL, "RECEIVE TEST VERSIONS" },
 	{ IDS_UPDATE_READY_PROMPT_MAC, "Version %s has been downloaded and checked.\n\nOpen the disk image now? Drag MechCommander 2 to Applications to replace the old version." },
 	{ IDS_UPDATE_INSTALL_NOW, "INSTALL" },
 	{ IDS_STRING26018, "Host IP Address" },

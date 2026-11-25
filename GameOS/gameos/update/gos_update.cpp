@@ -1048,6 +1048,13 @@ void snooze()
     c.status = Status::UpToDate;
 }
 
+void setStatePath(const std::string& path)
+{
+    Checker& c = checker();
+    std::lock_guard<std::mutex> lock(c.m);
+    c.statePath = path;
+}
+
 bool testChannel()
 {
     Checker& c = checker();

@@ -404,17 +404,19 @@ int main(int argc, char** argv)
     // Never in deterministic or scripted runs (tests).
     // MC2_UPDATE_URL (a test server) checks in every kind of run.
     const bool update_test = SDL_getenv("MC2_UPDATE_URL") != NULL;
-    if (!run_opts.no_update_check && (update_test || (!run_opts.fixed_step_us && run_opts.input_script.empty()))) {
-        char user_dir[1024];
-        if (gos_GetUserDataDirectory(user_dir, sizeof(user_dir))) {
+    char user_dir[1024];
+    if (gos_GetUserDataDirectory(user_dir, sizeof(user_dir))) {
+        // The options screen keeps "receive test versions" in update.ini
+        gos_update::setStatePath(std::string(user_dir) + "/update.ini");
+        if (!run_opts.no_update_check && (update_test || (!run_opts.fixed_step_us && run_opts.input_script.empty()))) {
             gos_update::Config cfg;
             cfg.currentVersion = MC2_VERSION;
             cfg.statePath = std::string(user_dir) + "/update.ini";
             gos_update::startCheck(cfg);
-            // Files the previous update moved aside, old packages
-            gos_update::setLaunchCommand(argc, argv);
-            gos_update::cleanupAfterUpdate(MC2_VERSION);
         }
+        // Files the previous update moved aside, old packages
+        gos_update::setLaunchCommand(argc, argv);
+        gos_update::cleanupAfterUpdate(MC2_VERSION);
     }
 
 #if 0

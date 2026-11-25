@@ -111,6 +111,9 @@ struct Config {
 
 // Starts the background check (once). Config.statePath must be writable.
 void startCheck(const Config& config);
+// Where update.ini lives, for the option and the updates folder even when
+// no check runs (startCheck sets it too).
+void setStatePath(const std::string& path);
 Status status();
 // The newer release when status() is Available.
 Release available();

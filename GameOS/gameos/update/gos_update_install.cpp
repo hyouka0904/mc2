@@ -14,6 +14,7 @@
 // Saves and settings live in the user directory and are never touched.
 #include "gos_update.h"
 
+#include <cctype>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
