@@ -101,6 +101,8 @@ extern bool silentMode;			//Used for automated builds to keep errors from poppin
 void *TG_TypeMultiShape::operator new (size_t mySize)
 {
 	void *result = TG_Shape::tglHeap->Malloc(mySize);
+	if (result)
+		memset(result, 0, mySize); // zeroed: aseconv writes these structs to the data files byte for byte
 	return result;
 }
  

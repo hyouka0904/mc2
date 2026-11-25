@@ -414,7 +414,10 @@ class TG_TypeNode
 			
  		virtual void init (void)
 		{
-			nodeId[0] = parentId[0] = '\0';
+			// Whole arrays: SaveBinaryCopy writes all TG_NODE_ID bytes, so
+			// leftovers would make every data build different
+			memset(nodeId, 0, sizeof(nodeId));
+			memset(parentId, 0, sizeof(parentId));
 			relativeNodeCenter.x = relativeNodeCenter.y = relativeNodeCenter.z = 0.0f;
 			nodeCenter.x = nodeCenter.y = nodeCenter.z = 0.0f;
 		}

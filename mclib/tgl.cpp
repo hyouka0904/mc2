@@ -171,6 +171,8 @@ void GetNameData (char *rawData, char *result)
  void *TG_TypeNode::operator new (size_t mySize)
  {
 	void *result = TG_Shape::tglHeap->Malloc(mySize);
+	if (result)
+		memset(result, 0, mySize); // zeroed: aseconv writes these structs to the data files byte for byte
 	return result;
  }
  
@@ -1497,6 +1499,7 @@ void TG_TypeShape::CreateListOfTextures (TG_TexturePtr list, DWORD numTxms)
 	{
 		listOfTextures = (TG_TinyTexturePtr)TG_Shape::tglHeap->Malloc(sizeof(TG_TinyTexture) * numTextures);
 		gosASSERT(listOfTextures != NULL);
+		memset(listOfTextures, 0, sizeof(TG_TinyTexture) * numTextures); // zeroed: aseconv writes these structs to the data files byte for byte
    
 	   for (long i=0;i<numTextures;i++)
 	   {
