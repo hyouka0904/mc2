@@ -4422,6 +4422,15 @@
 #define IDS_MP_VERSION_HOST_OLDER       60062
 #define IDS_MP_DATA_MISMATCH            60063
 #define IDS_MP_VERSION_HOST_NEWER_INFO  60064
+#define IDS_UPDATE_PROMPT_INSTALL       60065
+#define IDS_UPDATE_INSTALL              60066
+#define IDS_UPDATE_DOWNLOADING          60067
+#define IDS_UPDATE_READY                60068
+#define IDS_UPDATE_READY_PROMPT         60069
+#define IDS_UPDATE_FAILED               60070
+#define IDS_UPDATE_TEST_CHANNEL         60071
+#define IDS_UPDATE_READY_PROMPT_MAC     60072
+#define IDS_UPDATE_INSTALL_NOW          60073
 */
 
 #include "strings.res.h"

@@ -1,5 +1,7 @@
 #ifndef MAINMENU_H
 #define MAINMENU_H
+
+#include <string>
 /*************************************************************************************************\
 MainMenu.h			: Interface for the MainMenu component.
 //---------------------------------------------------------------------------//
@@ -104,11 +106,15 @@ class MainMenu: public LogisticsScreen
 		MPLoadMap				singleLoadDlg;
 		bool					bHostLeftDlg;
 
-		// New version notice (bottom left) and its dialog
-		bool					bUpdateDlg;
+		// New version notice (bottom left) and its dialogs
+		enum { UPDATE_DLG_NONE = 0, UPDATE_DLG_AVAILABLE, UPDATE_DLG_INSTALL, UPDATE_DLG_FAILED };
+		long					bUpdateDlg;				// UPDATE_DLG_*
 		bool					bUpdateNoticeHidden;	// for this session
+		bool					bUpdateResultShown;		// the download's end was announced
+		std::string				updateFailure;
 		bool					updateNoticeVisible();
 		void					updateNoticeRect( GUI_RECT& rect );
+		void					showUpdateDialog( long kind );
 
 		MC2MoviePtr			introMovie;
 			

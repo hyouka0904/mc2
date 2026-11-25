@@ -25,6 +25,7 @@ CPrefs prefs;
 CPrefs originalSettings;
 
 #include"mission.h"
+#include "update/gos_update.h"
 
 extern SoundSystem *sndSystem;
 
@@ -57,6 +58,7 @@ extern SoundSystem *sndSystem;
 
 #define MSG_UNLIMITED_AMMO	406
 #define MSG_LEFT_CLICK		407
+#define MSG_TEST_VERSIONS	408
 #define MSG_SAVE_TRANSCRIPT	408
 #define MSG_TUTORIALS		409
 
@@ -863,8 +865,32 @@ void OptionsGamePlay::init(long xOffset, long yOffset)
 
 	move( xOffset, yOffset );
 
+	aAnimButton* ammo = dynamic_cast<aAnimButton*>( getButton( MSG_UNLIMITED_AMMO ) );
+	aButton* click = getButton( MSG_LEFT_CLICK );
+	if ( ammo && click )
+	{
+		testVersions = *ammo;
+		testVersions.setID( MSG_TEST_VERSIONS );
+		testVersions.setText( IDS_UPDATE_TEST_CHANNEL );
+		testVersions.setHelpID( 0 );
+		testVersionsDY = 2.f * ( click->globalY() - ammo->globalY() );
+		placeTestVersions();
+	}
+
 	helpTextArrayID = 2;
 	
+}
+
+// Keeps the test versions box below the other two when the screen moves
+void OptionsGamePlay::placeTestVersions()
+{
+	aButton* ammo = getButton( MSG_UNLIMITED_AMMO );
+	if ( !ammo )
+		return;
+	const float dx = ammo->globalX() - testVersions.globalX();
+	const float dy = ammo->globalY() + testVersionsDY - testVersions.globalY();
+	if ( dx || dy )
+		testVersions.move( dx, dy );
 }
 
 int		OptionsGamePlay::handleMessage( unsigned long message, unsigned long fromWho )
@@ -923,6 +949,9 @@ void OptionsGamePlay::render()
 	rects[37].render();
 	rects[36].render();
 
+	placeTestVersions();
+	testVersions.render();
+
 	camera.render();
 
 }
@@ -932,6 +961,9 @@ void OptionsGamePlay::update()
 	camera.update();
 
 	LogisticsScreen::update();
+
+	placeTestVersions();
+	testVersions.update();
 	
 	aRect* pRect = getButton( MSG_BASE )->isPressed() ? 
 		&rects[36] : &rects[37];
@@ -988,6 +1020,8 @@ void OptionsGamePlay::end()
 
 	prefs.useUnlimitedAmmo = getButton( MSG_UNLIMITED_AMMO )->isPressed();
 	prefs.useLeftRightMouseProfile = getButton( MSG_LEFT_CLICK )->isPressed();
+	// Kept in update.ini with the rest of the update settings
+	gos_update::setTestChannel( testVersions.isPressed() );
 	//prefs.tutorials = getButton( MSG_TUTORIALS )->isPressed();
 
 	//Do NOT setup a camera in mission.
@@ -1018,6 +1052,7 @@ void OptionsGamePlay::reset(const CPrefs& newPrefs)
 
 	getButton( MSG_UNLIMITED_AMMO )->press( newPrefs.useUnlimitedAmmo );
 	getButton( MSG_LEFT_CLICK )->press( newPrefs.useLeftRightMouseProfile );
+	testVersions.press( gos_update::testChannel() );
 //	getButton( MSG_TUTORIALS )->press( newPrefs.tutorials );
 }
 

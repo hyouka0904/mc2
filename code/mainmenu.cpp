@@ -89,6 +89,7 @@ MainMenu::MainMenu(  )
 	bHostLeftDlg = 0;
 	bUpdateDlg = 0;
 	bUpdateNoticeHidden = 0;
+	bUpdateResultShown = 0;
 
 	introMovie = 0;
 }
@@ -659,15 +660,45 @@ void MainMenu::update()
 		LogisticsOKDialog::instance()->update();
 		if ( LogisticsOKDialog::instance()->isDone() )
 		{
-			if ( YES == LogisticsOKDialog::instance()->getStatus() )
+			const bool yes = YES == LogisticsOKDialog::instance()->getStatus();
+			const long kind = bUpdateDlg;
+			bUpdateDlg = 0;
+			if ( kind == UPDATE_DLG_AVAILABLE )
 			{
-				// Keep reminding on later starts until the new version runs
+				if ( !yes )
+					gos_update::snooze();
+				else if ( gos_update::canInstall() )
+				{
+					bUpdateResultShown = 0;
+					gos_update::startDownload();
+				}
+				else
+				{
+					// Keep reminding on later starts until the new version runs
+					gos_OpenURL( gos_update::available().url.c_str() );
+					bUpdateNoticeHidden = true;
+				}
+			}
+			else if ( kind == UPDATE_DLG_INSTALL && yes )
+			{
+				std::string error;
+				if ( gos_update::installDownloaded( &error ) )
+				{
+					gos_TerminateApplication(); // the new version starts by itself
+				}
+				else if ( !error.empty() )
+				{
+					updateFailure = error;
+					showUpdateDialog( UPDATE_DLG_FAILED );
+				}
+				else
+					bUpdateNoticeHidden = true; // macOS: the disk image is open
+			}
+			else if ( kind == UPDATE_DLG_FAILED && yes )
+			{
 				gos_OpenURL( gos_update::available().url.c_str() );
 				bUpdateNoticeHidden = true;
 			}
-			else
-				gos_update::snooze();
-			bUpdateDlg = 0;
 		}
 	}
 	else if ( promptToDisconnect )
@@ -730,23 +761,43 @@ void MainMenu::update()
 		endAnim.update();
 
 		LogisticsScreen::update();
+		if ( updateNoticeVisible() )
+		{
+			// The download finished (or failed) while the menu was up
+			const gos_update::DownloadStatus ds = gos_update::downloadStatus();
+			if ( !bUpdateResultShown && ds == gos_update::DownloadStatus::Ready )
+			{
+				bUpdateResultShown = true;
+				showUpdateDialog( UPDATE_DLG_INSTALL );
+				return;
+			}
+			if ( !bUpdateResultShown && ds == gos_update::DownloadStatus::Failure )
+			{
+				bUpdateResultShown = true;
+				updateFailure = gos_update::downloadError();
+				showUpdateDialog( UPDATE_DLG_FAILED );
+				return;
+			}
+		}
 		if ( updateNoticeVisible() && userInput->isLeftClick() )
 		{
 			GUI_RECT r;
 			updateNoticeRect( r );
 			const long mx = userInput->getMouseX(), my = userInput->getMouseY();
-			if ( mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom )
+			const gos_update::DownloadStatus ds = gos_update::downloadStatus();
+			if ( mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom
+				&& ds != gos_update::DownloadStatus::Downloading )
 			{
-				const gos_update::Release rel = gos_update::available();
-				char fmt[512];
-				char text[1024];
-				cLoadString( IDS_UPDATE_PROMPT, fmt, 511 );
-				snprintf( text, sizeof(text), fmt, rel.version.c_str(), MC2_VERSION );
-				LogisticsOKDialog::instance()->setText( IDS_UPDATE_PROMPT, IDS_UPDATE_LATER, IDS_UPDATE_DOWNLOAD );
-				LogisticsOKDialog::instance()->setText( text );
-				LogisticsOKDialog::instance()->begin();
+				if ( ds == gos_update::DownloadStatus::Ready )
+					showUpdateDialog( UPDATE_DLG_INSTALL );
+				else if ( ds == gos_update::DownloadStatus::Failure )
+				{
+					updateFailure = gos_update::downloadError();
+					showUpdateDialog( UPDATE_DLG_FAILED );
+				}
+				else
+					showUpdateDialog( UPDATE_DLG_AVAILABLE );
 				soundSystem->playDigitalSample( LOG_MAINMENUBUTTON );
-				bUpdateDlg = true;
 				return;
 			}
 		}
@@ -857,8 +908,18 @@ void MainMenu::render()
 		updateNoticeRect( r );
 		char fmt[256];
 		char text[512];
-		cLoadString( IDS_UPDATE_NOTICE, fmt, 255 );
-		snprintf( text, sizeof(text), fmt, gos_update::available().version.c_str() );
+		const gos_update::DownloadStatus ds = gos_update::downloadStatus();
+		const std::string version = gos_update::available().version;
+		if ( ds == gos_update::DownloadStatus::Downloading )
+		{
+			cLoadString( IDS_UPDATE_DOWNLOADING, fmt, 255 );
+			snprintf( text, sizeof(text), fmt, version.c_str(), (int)(gos_update::downloadProgress() * 100.f) );
+		}
+		else
+		{
+			cLoadString( ds == gos_update::DownloadStatus::Ready ? IDS_UPDATE_READY : IDS_UPDATE_NOTICE, fmt, 255 );
+			snprintf( text, sizeof(text), fmt, version.c_str() );
+		}
 		// Pulse gently so it is noticed without being in the way
 		const float t = (float)fmod( gos_GetElapsedTime( 1 ), 1.5 ) / 1.5f;
 		const float a = t < 0.5f ? t * 2.f : (1.f - t) * 2.f;
@@ -894,6 +955,42 @@ bool MainMenu::updateNoticeVisible()
 		&& gos_update::status() == gos_update::Status::Available
 		&& !promptToQuit && !promptToDisconnect && !bLegal && !bHostLeftDlg
 		&& !bOptions && !bSave && !bLoad && !bLoadSingle && !bLoadCampaign && !bDrawMechlopedia;
+}
+
+void MainMenu::showUpdateDialog( long kind )
+{
+	const gos_update::Release rel = gos_update::available();
+	char fmt[512];
+	char text[1024];
+	LogisticsOKDialog* dlg = LogisticsOKDialog::instance();
+	if ( kind == UPDATE_DLG_AVAILABLE )
+	{
+		const bool install = gos_update::canInstall();
+		const long prompt = install ? IDS_UPDATE_PROMPT_INSTALL : IDS_UPDATE_PROMPT;
+		cLoadString( prompt, fmt, 511 );
+		snprintf( text, sizeof(text), fmt, rel.version.c_str(), MC2_VERSION );
+		dlg->setText( prompt, IDS_UPDATE_LATER, install ? IDS_UPDATE_INSTALL : IDS_UPDATE_DOWNLOAD );
+	}
+	else if ( kind == UPDATE_DLG_INSTALL )
+	{
+#ifdef __APPLE__
+		const long prompt = IDS_UPDATE_READY_PROMPT_MAC;
+#else
+		const long prompt = IDS_UPDATE_READY_PROMPT;
+#endif
+		cLoadString( prompt, fmt, 511 );
+		snprintf( text, sizeof(text), fmt, rel.version.c_str() );
+		dlg->setText( prompt, IDS_UPDATE_LATER, IDS_UPDATE_INSTALL_NOW );
+	}
+	else
+	{
+		cLoadString( IDS_UPDATE_FAILED, fmt, 511 );
+		snprintf( text, sizeof(text), fmt, updateFailure.c_str() );
+		dlg->setText( IDS_UPDATE_FAILED, IDS_UPDATE_LATER, IDS_UPDATE_DOWNLOAD );
+	}
+	dlg->setText( text );
+	dlg->begin();
+	bUpdateDlg = kind;
 }
 
 // Over the earth in the bottom left corner, clear of the menu buttons

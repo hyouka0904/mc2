@@ -243,7 +243,7 @@ For playing, see the [LAN skirmish manual](docs/manual/lan-skirmish.md).
 
 ## Update check
 
-`GameOS/gameos/update/gos_update.{h,cpp}`, started from `gameosmain.cpp` after the engine initialises, shown by `code/mainmenu.cpp`.
+`GameOS/gameos/update/gos_update.{h,cpp}` (check) and `gos_update_install.cpp` (download and install), started from `gameosmain.cpp` after the engine initialises, shown by `code/mainmenu.cpp`.
 
 - A background thread asks `https://api.github.com/repos/hyouka0904/mc2/releases/latest` (5 s timeout). That endpoint only returns published releases, never drafts or pre-releases. The tag is compared with `MC2_VERSION` (SemVer, pre-releases sort first).
 - The answer is kept in `update.ini` in the user directory; the network is asked **at most once every 24 hours**. The request carries only a generic `User-Agent`.
@@ -253,7 +253,20 @@ For playing, see the [LAN skirmish manual](docs/manual/lan-skirmish.md).
 - Turned off by `-noupdatecheck`, `MC2_NO_UPDATE_CHECK=1` (set in CI), `check=0` in `update.ini`, and in deterministic or scripted runs (`-fixedstep`, `-input-script`).
 - `MC2_UPDATE_URL=<url>` points the check at a test server (plain http allowed); with it development builds and scripted runs check too.
 - Tests: `unit_update` (CTest) covers version parsing and ordering, the release JSON (drafts, pre-releases, malformed input, non-GitHub page URLs), `update.ini`, the snooze rule, and full background checks against a small HTTP server on 127.0.0.1 (caching, server errors, `check=0`, development builds).
-- Downloading and installing updates (U4–U6 in the roadmap) are not done yet.
+- **Test channel**: Options > Gameplay > "Receive test versions" (`channel=test` in `update.ini`). The check then asks `releases?per_page=20` at every start (no 24-hour cache) and takes the newest release, pre-releases included; turning the option on or off checks again at once. Test builds come from running the Release workflow by hand (see [Publishing a release](#publishing-a-release)).
+- **Download and install**: the dialog's **Update** downloads the package that matches the installation into `updates/` in the user directory (the notice shows the progress), checks it against the release's `SHA256SUMS.txt`, then asks to install and restart:
+
+  | Installed as | Package | Install |
+  |---|---|---|
+  | Windows installer (`unins000.exe` next to `mc2.exe`) | `-windows-x64-setup.exe` | `/VERYSILENT /DIR=<game folder> /MC2RELAUNCH=1`; the game quits, the installer starts it again (`IsGameUpdate` in `mc2.iss`; `/ALLUSERS` and a UAC prompt when the folder is not writable) |
+  | Windows zip | `-windows-x64.zip` | files replaced in place; the running `mc2.exe` and DLLs are renamed to `*.mc2old` first and removed at the next start |
+  | Linux AppImage (`$APPIMAGE`) | `-linux-x86_64.AppImage` | written next to the old file and renamed over it |
+  | Linux tarball (`<root>/usr/bin/mc2`) | `-linux-x86_64.tar.gz` | files replaced in place like the zip |
+  | macOS | `-macos-arm64.dmg` | the disk image is opened; the player drags the app to Applications |
+
+  Every new file is written (`*.mc2new`) before anything is renamed, so a broken download changes nothing. Downloads are only taken from `https://github.com/hyouka0904/mc2/releases/download/` (or the `MC2_UPDATE_URL` test server). Anything else (other installs, a read-only folder, no package, a failure) falls back to opening the release page. A downloaded but not installed package is used again on the next start; older ones are removed.
+- The checksum guards against broken downloads, not against a compromised GitHub account; signing (minisign, U4 in the roadmap) is still to do.
+- Tests: `unit_update` also covers the release list (channels, drafts, asset names), SHA-256 test vectors, `SHA256SUMS.txt`, picking the package, finding a tarball install, unpacking zip and tar.gz (long names, symlinks, `..` entries, damaged archives that must change nothing) and downloads (errors and cancelling remove the file).
 
 ---
 
@@ -276,7 +289,7 @@ When a saved structure changes size, `unit_savelayout` fails on purpose: update 
 
 **Old saves in the tests.** `tests/saves/<version>/` holds a campaign save and a Linux quick save of each release. The flows `old_campaign_save`, `old_quick_save` and `foreign_quick_save` load them in CI. Add a directory for each release whose save format changed.
 
-The updater (U4–U6) will copy `savegame/` before installing a new version.
+Updates never touch the user directory, so saves and settings survive an update.
 
 ---
 
@@ -505,7 +518,7 @@ git push origin v0.1.0
 4. When all three pass, creates a **draft** GitHub Release with every package and `SHA256SUMS.txt`, using `packaging/RELEASE_NOTES.md` as the text. Check it, then press "Publish" on GitHub.
 
 The game data and the compiled shaders (SPIR-V / MSL / HLSL) are platform-independent, so they are built once on Linux and handed to Windows and macOS.
-Running the workflow by hand (workflow_dispatch, with an optional test version number), or changing `packaging/` or `scripts/package.py`, runs the first three steps too; each package is kept as a separate workflow artifact (not zipped again) and no Release is created.
+**Test versions.** Running the workflow by hand (Actions > Release > Run workflow, pick the branch) publishes a **pre-release** `v<next patch>-test.<run number>` (for example `v0.1.1-test.42` after `v0.1.0`) with the packages and `SHA256SUMS.txt`, tagged at the branch's commit. Games with "Receive test versions" on offer it as an update; everyone else never sees it (`releases/latest` skips pre-releases, and `0.1.1-test.42` sorts before `0.1.1`). Only the 5 newest test pre-releases and their tags are kept. Options: `version` sets the version by hand, unticking `publish` only keeps workflow artifacts, unticking `macos` skips the macOS job (a test pre-release does not wait for macOS anyway). Changing `packaging/` or `scripts/package.py` builds and tests the packages as `0.0.0-test` without publishing; each package is kept as a separate workflow artifact (not zipped again).
 
 The Windows and macOS CI machines have no usable GPU, so on those platforms only installation and startup are tested, not actual play.
 

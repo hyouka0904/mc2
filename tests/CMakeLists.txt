@@ -114,9 +114,9 @@ mc2_add_unit_test(unit_net
 
 find_package(Threads REQUIRED)
 mc2_add_unit_test(unit_update
-    SOURCES unit/test_update.cpp ${MC2_GAMEOS_DIR}/update/gos_update.cpp
+    SOURCES unit/test_update.cpp ${MC2_GAMEOS_DIR}/update/gos_update.cpp ${MC2_GAMEOS_DIR}/update/gos_update_install.cpp
     INCLUDES ${MC2_GAMEOS_DIR}
-    LIBS Threads::Threads ${CMAKE_DL_LIBS})
+    LIBS Threads::Threads ZLIB::ZLIB ${CMAKE_DL_LIBS})
 if(WIN32)
     target_link_libraries(unit_update ws2_32 winhttp)
 endif()

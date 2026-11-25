@@ -54,6 +54,8 @@ Name: "{autodesktop}\MechCommander 2"; Filename: "{app}\mc2.exe"; WorkingDir: "{
 
 [Run]
 Filename: "{app}\mc2.exe"; Description: "{cm:LaunchProgram,MechCommander 2}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+; Updates started by the game (/MC2RELAUNCH=1, silent): start it again
+Filename: "{app}\mc2.exe"; WorkingDir: "{app}"; Flags: nowait; Check: IsGameUpdate
 
 [Code]
 // Windows Firewall rule for LAN multiplayer: hosting a game means accepting
@@ -66,6 +68,12 @@ Filename: "{app}\mc2.exe"; Description: "{cm:LaunchProgram,MechCommander 2}"; Wo
 const
   FirewallRule = 'MechCommander2-LAN';
   FirewallMarker = 'firewall_rule_added.txt';
+
+// The game runs the installer silently with /MC2RELAUNCH=1 to update itself.
+function IsGameUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:MC2RELAUNCH|0}') = '1';
+end;
 
 function RunNetsh(const Commands: String): Boolean;
 var
@@ -80,7 +88,9 @@ procedure CurStepChanged(CurStep: TSetupStep);
 var
   Exe: String;
 begin
-  if (CurStep = ssPostInstall) and WizardIsTaskSelected('firewall') then
+  // An update keeps the rule (same mc2.exe path): no second UAC prompt.
+  if (CurStep = ssPostInstall) and WizardIsTaskSelected('firewall') and
+     not (IsGameUpdate and FileExists(ExpandConstant('{app}\' + FirewallMarker))) then
   begin
     Exe := ExpandConstant('{app}\mc2.exe');
     if RunNetsh('netsh advfirewall firewall delete rule name=' + FirewallRule + ' >nul 2>&1 & ' +

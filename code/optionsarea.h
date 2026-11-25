@@ -186,6 +186,11 @@ public:
 	private:
 
 	SimpleCamera	camera;
+	// "Receive test versions": a copy of the unlimited ammo check box, one
+	// row below the mouse control one (the layout file has no third box)
+	aAnimButton		testVersions;
+	float			testVersionsDY;
+	void			placeTestVersions();
 };
 
 class HotKeyListItem : public aListItem

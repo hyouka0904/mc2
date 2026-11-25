@@ -236,7 +236,7 @@ cd game && ./mc2
 
 ## 版本檢查
 
-程式在 `GameOS/gameos/update/gos_update.{h,cpp}`，引擎初始化後由 `gameosmain.cpp` 啟動，`code/mainmenu.cpp` 負責顯示。
+程式在 `GameOS/gameos/update/gos_update.{h,cpp}`（檢查）和 `gos_update_install.cpp`（下載與安裝），引擎初始化後由 `gameosmain.cpp` 啟動，`code/mainmenu.cpp` 負責顯示。
 
 - 背景執行緒查詢 `https://api.github.com/repos/hyouka0904/mc2/releases/latest`（逾時 5 秒）。這個網址只回傳已發佈的正式版，不會有草稿或預覽版。取得的 tag 用語意化版本和 `MC2_VERSION` 比較（預覽版排在正式版之前）。
 - 結果存在使用者資料夾的 `update.ini`，**24 小時最多連網查一次**。請求只帶一個通用的 `User-Agent`。
@@ -246,7 +246,20 @@ cd game && ./mc2
 - 關閉方式：`-noupdatecheck`、`MC2_NO_UPDATE_CHECK=1`（CI 有設）、`update.ini` 裡的 `check=0`，以及決定性或腳本模式（`-fixedstep`、`-input-script`）。
 - `MC2_UPDATE_URL=<網址>` 讓檢查改連測試伺服器（可以用 http）；設了它，開發版和腳本模式也會檢查。
 - 測試：`unit_update`（CTest）涵蓋版本解析與排序、Release JSON（草稿、預覽版、格式錯誤、不是 GitHub 的網址）、`update.ini`、延後提示的規則，以及對 127.0.0.1 上小型 HTTP 伺服器的完整背景檢查（快取、伺服器錯誤、`check=0`、開發版）。
-- 下載與安裝更新（工作清單的 U4–U6）還沒做。
+- **測試版頻道**：選項 > Gameplay >「Receive test versions」（`update.ini` 的 `channel=test`）。打開後每次啟動都查詢 `releases?per_page=20`（不受 24 小時限制），取最新的版本，預發布版也算；切換這個選項會立刻重新檢查。測試版來自手動執行 Release workflow（見[發佈新版本](#發佈新版本)）。
+- **下載與安裝**：對話框的 **Update** 會把對應安裝方式的安裝包下載到使用者資料夾的 `updates/`（提示文字顯示進度），用 Release 的 `SHA256SUMS.txt` 驗證，再詢問要不要安裝並重新啟動：
+
+  | 安裝方式 | 安裝包 | 安裝做法 |
+  |---|---|---|
+  | Windows 安裝版（`mc2.exe` 旁邊有 `unins000.exe`） | `-windows-x64-setup.exe` | `/VERYSILENT /DIR=<遊戲資料夾> /MC2RELAUNCH=1`；遊戲結束，安裝程式裝完再開遊戲（`mc2.iss` 的 `IsGameUpdate`；資料夾不能寫入時加 `/ALLUSERS`，會跳 UAC） |
+  | Windows 免安裝版（zip） | `-windows-x64.zip` | 直接取代檔案；執行中的 `mc2.exe` 和 DLL 先改名成 `*.mc2old`，下次啟動時刪除 |
+  | Linux AppImage（有 `$APPIMAGE`） | `-linux-x86_64.AppImage` | 寫到舊檔旁邊，再改名蓋過去 |
+  | Linux 壓縮檔（`<根目錄>/usr/bin/mc2`） | `-linux-x86_64.tar.gz` | 和 zip 一樣直接取代 |
+  | macOS | `-macos-arm64.dmg` | 打開磁碟映像，由玩家把 app 拖到「應用程式」 |
+
+  所有新檔案都先寫成 `*.mc2new`，全部寫完才開始改名，所以下載壞掉時什麼都不會改。只接受 `https://github.com/hyouka0904/mc2/releases/download/` 的下載（或 `MC2_UPDATE_URL` 的測試伺服器）。其他情況（不認得的安裝方式、資料夾唯讀、沒有對應安裝包、失敗）都退回打開 Release 頁面。下載好但還沒安裝的安裝包，下次啟動會直接使用；比較舊的會刪掉。
+- 檢查碼只能防下載損壞，防不了 GitHub 帳號被盜；簽章（minisign，工作清單的 U4）還沒做。
+- 測試：`unit_update` 另外涵蓋版本清單（頻道、草稿、安裝包名稱）、SHA-256 測試向量、`SHA256SUMS.txt`、挑選安裝包、辨認壓縮檔安裝、解開 zip 和 tar.gz（長檔名、符號連結、`..` 項目、損壞的壓縮檔必須什麼都不改）以及下載（錯誤和取消時會刪掉檔案）。
 
 ---
 
@@ -269,7 +282,7 @@ cd game && ./mc2
 
 **測試裡的舊存檔**：`tests/saves/<版本>/` 放每個版本的戰役存檔和一份 Linux 快速存檔，CI 的流程測試 `old_campaign_save`、`old_quick_save`、`foreign_quick_save` 會讀它們。存檔格式有改變的版本，就新增一個資料夾。
 
-之後的自動更新（U4–U6）會在安裝新版前先複製一份 `savegame/`。
+更新不會動到使用者資料夾，所以存檔和設定在更新後都還在。
 
 ---
 
@@ -498,7 +511,7 @@ git push origin v0.1.0
 4. 三個平台都通過後，建立一個**草稿** GitHub Release，附上所有安裝包與 `SHA256SUMS.txt`，說明取自 `packaging/RELEASE_NOTES.md`。確認無誤後再到 GitHub 上按「Publish」。
 
 遊戲資料和編譯好的著色器（SPIR-V / MSL / HLSL）與平台無關，只在 Linux 建置一次，再交給 Windows 和 macOS 使用。
-在 Actions 頁面手動執行（workflow_dispatch，可指定測試用版本號），或修改 `packaging/`、`scripts/package.py` 時，也會跑完前三步，每個安裝包各自保留為一個 workflow artifact（不再另外壓縮），不建立 Release。
+**測試版**：在 Actions 頁面手動執行（Actions > Release > Run workflow，選分支），會發佈一個**預發布版** `v<下一個修訂號>-test.<執行編號>`（例如 `v0.1.0` 之後是 `v0.1.1-test.42`），附上安裝包和 `SHA256SUMS.txt`，tag 打在該分支的 commit 上。打開「Receive test versions」的遊戲會提示更新到它；其他人看不到（`releases/latest` 不回傳預發布版，而且 `0.1.1-test.42` 排在 `0.1.1` 之前）。只保留最新 5 個測試版和它們的 tag。選項：`version` 手動指定版本；取消 `publish` 只保留 workflow artifact；取消 `macos` 跳過 macOS（測試版本來就不等 macOS）。修改 `packaging/`、`scripts/package.py` 時，會以 `0.0.0-test` 建置並測試安裝包但不發佈，每個安裝包各自保留為一個 workflow artifact（不再另外壓縮）。
 
 Windows 與 macOS 的 CI 機器沒有可用的 GPU，所以那兩個平台只測安裝流程與程式能否啟動，沒有實際進入遊戲。
 

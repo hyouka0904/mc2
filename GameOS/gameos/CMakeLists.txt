@@ -34,6 +34,7 @@ set(SOURCES ${SOURCES}
     utils/input_script.cpp
     net/gos_net.cpp
     update/gos_update.cpp
+    update/gos_update_install.cpp
     )
 
 set(MAIN_SRC gameosmain.cpp)

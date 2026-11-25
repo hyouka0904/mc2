@@ -411,6 +411,9 @@ int main(int argc, char** argv)
             cfg.currentVersion = MC2_VERSION;
             cfg.statePath = std::string(user_dir) + "/update.ini";
             gos_update::startCheck(cfg);
+            // Files the previous update moved aside, old packages
+            gos_update::setLaunchCommand(argc, argv);
+            gos_update::cleanupAfterUpdate(MC2_VERSION);
         }
     }
 
@@ -489,6 +492,9 @@ int main(int argc, char** argv)
 
     gos_DestroyAudio();
     gos_ModsShutdown();
+
+    // After an update: start the new version
+    gos_update::launchPendingRestart();
 
     return 0;
 }

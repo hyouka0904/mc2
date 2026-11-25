@@ -7,11 +7,13 @@
 #include <cstring>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <condition_variable>
 #include <mutex>
 #include <sstream>
 #include <thread>
+#include <vector>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -26,6 +28,7 @@
 namespace gos_update {
 
 const char* const kDefaultUrl = "https://api.github.com/repos/hyouka0904/mc2/releases/latest";
+const char* const kListUrl = "https://api.github.com/repos/hyouka0904/mc2/releases?per_page=20";
 const char* const kReleasesPage = "https://github.com/hyouka0904/mc2/releases/latest";
 
 namespace {
@@ -164,10 +167,40 @@ bool isDevelopmentBuild(const std::string& version)
 }
 
 //==============================================================================
-// Minimal JSON reader: only the top-level object's string and boolean
-// members are kept; nested values are parsed and skipped.
+// Minimal JSON reader: builds a small tree (numbers are kept as text).
 
 namespace {
+
+struct JNode {
+    char kind = 'n'; // 's' string, 'b' boolean, 'd' number, 'o' object, 'a' array, 'n' null
+    std::string str; // string, or number text
+    bool b = false;
+    std::vector<std::pair<std::string, JNode>> members;
+    std::vector<JNode> items;
+
+    const JNode* get(const char* key) const
+    {
+        for (const auto& m : members)
+            if (m.first == key)
+                return &m.second;
+        return nullptr;
+    }
+    std::string getString(const char* key) const
+    {
+        const JNode* n = get(key);
+        return n && n->kind == 's' ? n->str : std::string();
+    }
+    bool getBool(const char* key) const
+    {
+        const JNode* n = get(key);
+        return n && n->kind == 'b' && n->b;
+    }
+    int64_t getInt(const char* key) const
+    {
+        const JNode* n = get(key);
+        return n && n->kind == 'd' ? strtoll(n->str.c_str(), nullptr, 10) : 0;
+    }
+};
 
 struct Json {
     const char* p;
@@ -277,32 +310,32 @@ struct Json {
         return true;
     }
 
-    bool number()
+    bool number(std::string* out)
     {
         const char* start = p;
         if (p < end && *p == '-')
             ++p;
         while (p < end && (isdigit((unsigned char)*p) || *p == '.' || *p == 'e' || *p == 'E' || *p == '+' || *p == '-'))
             ++p;
+        out->assign(start, p);
         return p > start;
     }
 
-    // kind: 's' string, 't'/'f' boolean, 'o' anything else
-    bool value(char* kind, std::string* str)
+    bool value(JNode* n)
     {
         ws();
         if (p >= end)
             return false;
         if (*p == '"') {
-            *kind = 's';
-            return string(str);
+            n->kind = 's';
+            return string(&n->str);
         }
         if (*p == '{' || *p == '[') {
-            *kind = 'o';
+            const bool obj = *p == '{';
+            n->kind = obj ? 'o' : 'a';
             if (++depth > 64)
                 return false;
-            const char close = *p == '{' ? '}' : ']';
-            const bool obj = *p == '{';
+            const char close = obj ? '}' : ']';
             ++p;
             ws();
             if (p < end && *p == close) {
@@ -311,17 +344,22 @@ struct Json {
                 return true;
             }
             for (;;) {
+                std::string key;
                 if (obj) {
                     ws();
-                    if (!string(nullptr))
+                    if (!string(&key))
                         return false;
                     ws();
                     if (p >= end || *p++ != ':')
                         return false;
                 }
-                char k;
-                if (!value(&k, nullptr))
+                JNode child;
+                if (!value(&child))
                     return false;
+                if (obj)
+                    n->members.emplace_back(std::move(key), std::move(child));
+                else
+                    n->items.push_back(std::move(child));
                 ws();
                 if (p >= end)
                     return false;
@@ -335,73 +373,100 @@ struct Json {
                 return true;
             }
         }
-        if (literal("true")) { *kind = 't'; return true; }
-        if (literal("false")) { *kind = 'f'; return true; }
-        if (literal("null")) { *kind = 'o'; return true; }
-        *kind = 'o';
-        return number();
+        if (literal("true")) { n->kind = 'b'; n->b = true; return true; }
+        if (literal("false")) { n->kind = 'b'; n->b = false; return true; }
+        if (literal("null")) { n->kind = 'n'; return true; }
+        n->kind = 'd';
+        return number(&n->str);
     }
 };
+
+bool parseJson(const std::string& text, JNode* out)
+{
+    Json j{text.data(), text.data() + text.size()};
+    if (!j.value(out))
+        return false;
+    j.ws();
+    return j.p == j.end;
+}
+
+// One release object. False for drafts, unparsable tags and (unless allowed)
+// pre-releases.
+bool readRelease(const JNode& n, bool includePrereleases, Release* out)
+{
+    if (n.kind != 'o' || n.getBool("draft"))
+        return false;
+    const bool pre = n.getBool("prerelease");
+    if (pre && !includePrereleases)
+        return false;
+    std::string tag = n.getString("tag_name");
+    if (!parseVersion(tag, nullptr))
+        return false;
+    if (!tag.empty() && (tag[0] == 'v' || tag[0] == 'V'))
+        tag.erase(0, 1);
+    Release r;
+    r.version = tag;
+    r.prerelease = pre;
+    r.url = n.getString("html_url");
+    // Only ever open a GitHub page from the notice.
+    if (r.url.compare(0, 19, "https://github.com/") != 0)
+        r.url = kReleasesPage;
+    if (const JNode* assets = n.get("assets")) {
+        for (const JNode& a : assets->items) {
+            if (a.kind != 'o')
+                continue;
+            Asset as;
+            as.name = a.getString("name");
+            as.url = a.getString("browser_download_url");
+            as.size = a.getInt("size");
+            // Names end up in file names and update.ini lines
+            const bool plain = !as.name.empty() && as.name.find_first_of("/\\|\r\n") == std::string::npos &&
+                               as.name[0] != '.';
+            if (plain && !as.url.empty() && as.url.find_first_of("|\r\n") == std::string::npos)
+                r.assets.push_back(as);
+        }
+    }
+    if (out)
+        *out = r;
+    return true;
+}
 
 } // namespace
 
 bool parseLatestRelease(const std::string& json, Release* out)
 {
-    Json j{json.data(), json.data() + json.size()};
-    std::map<std::string, std::string> strings;
-    std::map<std::string, bool> bools;
-    j.ws();
-    if (j.p >= j.end || *j.p != '{')
+    JNode root;
+    if (!parseJson(json, &root) || root.kind != 'o')
         return false;
-    ++j.p;
-    j.ws();
-    if (j.p < j.end && *j.p == '}') {
-        ++j.p;
-    } else {
-        for (;;) {
-            j.ws();
-            std::string key;
-            if (!j.string(&key))
-                return false;
-            j.ws();
-            if (j.p >= j.end || *j.p++ != ':')
-                return false;
-            char kind;
-            std::string str;
-            if (!j.value(&kind, &str))
-                return false;
-            if (kind == 's')
-                strings[key] = str;
-            else if (kind == 't' || kind == 'f')
-                bools[key] = kind == 't';
-            j.ws();
-            if (j.p >= j.end)
-                return false;
-            if (*j.p == ',') {
-                ++j.p;
-                continue;
-            }
-            if (*j.p++ != '}')
-                return false;
-            break;
+    return readRelease(root, false, out);
+}
+
+bool parseReleases(const std::string& json, bool includePrereleases, Release* out)
+{
+    JNode root;
+    if (!parseJson(json, &root))
+        return false;
+    if (root.kind == 'o')
+        return readRelease(root, includePrereleases, out);
+    if (root.kind != 'a')
+        return false;
+    bool found = false;
+    Release best;
+    Version bestV;
+    for (const JNode& n : root.items) {
+        Release r;
+        Version v;
+        if (!readRelease(n, includePrereleases, &r) || !parseVersion(r.version, &v))
+            continue;
+        if (!found || compareVersions(v, bestV) > 0) {
+            best = r;
+            bestV = v;
+            found = true;
         }
     }
-    if (bools["draft"] || bools["prerelease"])
-        return false;
-    std::string tag = strings["tag_name"];
-    Version v;
-    if (!parseVersion(tag, &v))
-        return false;
-    if (!tag.empty() && (tag[0] == 'v' || tag[0] == 'V'))
-        tag.erase(0, 1);
-    if (out) {
-        out->version = tag;
-        out->url = strings["html_url"];
-        // Only ever open a GitHub page from the notice.
-        if (out->url.compare(0, 19, "https://github.com/") != 0)
-            out->url = kReleasesPage;
-    }
-    return true;
+    if (found && out)
+        *out = best;
+    return found;
 }
 
 //==============================================================================
@@ -426,6 +491,19 @@ bool loadState(const std::string& path, State* out)
         const std::string key = line.substr(0, eq);
         const std::string val = line.substr(eq + 1);
         if (key == "check") s.checkEnabled = val != "0";
+        else if (key == "channel") s.testChannel = val == "test";
+        else if (key == "latest_channel") s.latestChannel = val;
+        else if (key == "asset") {
+            // name|size|url
+            const size_t a = val.find('|'), b = a == std::string::npos ? a : val.find('|', a + 1);
+            if (b != std::string::npos) {
+                Asset as;
+                as.name = val.substr(0, a);
+                as.size = strtoll(val.substr(a + 1, b - a - 1).c_str(), nullptr, 10);
+                as.url = val.substr(b + 1);
+                s.latestAssets.push_back(as);
+            }
+        }
         else if (key == "last_check") s.lastCheck = strtoll(val.c_str(), nullptr, 10);
         else if (key == "latest_version") s.latestVersion = val;
         else if (key == "latest_url") s.latestUrl = val;
@@ -447,11 +525,16 @@ bool saveState(const std::string& path, const State& s)
         o << "[update]\n"
           << "; check=0 turns off the check for new versions\n"
           << "check=" << (s.checkEnabled ? 1 : 0) << "\n"
+          << "; channel=test also offers test versions (pre-releases)\n"
+          << "channel=" << (s.testChannel ? "test" : "stable") << "\n"
+          << "latest_channel=" << s.latestChannel << "\n"
           << "last_check=" << (long long)s.lastCheck << "\n"
           << "latest_version=" << s.latestVersion << "\n"
           << "latest_url=" << s.latestUrl << "\n"
           << "snoozed_version=" << s.snoozedVersion << "\n"
           << "snoozed_until=" << (long long)s.snoozedUntil << "\n";
+        for (const Asset& a : s.latestAssets)
+            o << "asset=" << a.name << "|" << (long long)a.size << "|" << a.url << "\n";
         if (!o)
             return false;
     }
@@ -484,6 +567,11 @@ bool shouldNotify(const State& s, const std::string& current, int64_t now)
 //==============================================================================
 // HTTP
 
+namespace {
+// Receives the body piece by piece; false stops the transfer.
+typedef std::function<bool(const char* data, size_t size)> DataFn;
+}
+
 #ifdef _WIN32
 
 static std::wstring widen(const std::string& s)
@@ -496,22 +584,28 @@ static std::wstring widen(const std::string& s)
     return w;
 }
 
-bool httpGet(const std::string& url, std::string* body, std::string* error, int timeoutSec)
+// timeoutSec applies to each step (connect, each read), not the whole transfer.
+static bool httpFetch(const std::string& url, const char* accept, int timeoutSec, const DataFn& onData,
+                      std::string* error)
 {
     std::wstring wurl = widen(url);
     URL_COMPONENTS uc;
     memset(&uc, 0, sizeof(uc));
     uc.dwStructSize = sizeof(uc);
     wchar_t host[256] = {0};
-    wchar_t path[2048] = {0};
+    wchar_t urlPath[4096] = {0};
+    wchar_t extra[4096] = {0};
     uc.lpszHostName = host;
     uc.dwHostNameLength = 255;
-    uc.lpszUrlPath = path;
-    uc.dwUrlPathLength = 2047;
+    uc.lpszUrlPath = urlPath;
+    uc.dwUrlPathLength = 4095;
+    uc.lpszExtraInfo = extra; // the query ("?per_page=20")
+    uc.dwExtraInfoLength = 4095;
     if (!WinHttpCrackUrl(wurl.c_str(), 0, 0, &uc)) {
         if (error) *error = "bad URL";
         return false;
     }
+    const std::wstring path = std::wstring(urlPath) + extra;
     const bool secure = uc.nScheme == INTERNET_SCHEME_HTTPS;
     bool ok = false;
     HINTERNET session = WinHttpOpen(widen(kUserAgent).c_str(), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
@@ -523,37 +617,36 @@ bool httpGet(const std::string& url, std::string* body, std::string* error, int 
         connect = WinHttpConnect(session, host, uc.nPort, 0);
     }
     if (connect)
-        request = WinHttpOpenRequest(connect, L"GET", path, nullptr, WINHTTP_NO_REFERER,
+        request = WinHttpOpenRequest(connect, L"GET", path.c_str(), nullptr, WINHTTP_NO_REFERER,
                                      WINHTTP_DEFAULT_ACCEPT_TYPES, secure ? WINHTTP_FLAG_SECURE : 0);
     if (request) {
-        const wchar_t* headers = L"Accept: application/vnd.github+json\r\n";
-        if (WinHttpSendRequest(request, headers, (DWORD)-1L, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
+        const std::wstring headers = widen(std::string("Accept: ") + accept + "\r\n");
+        if (WinHttpSendRequest(request, headers.c_str(), (DWORD)-1L, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
             WinHttpReceiveResponse(request, nullptr)) {
             DWORD code = 0, size = sizeof(code);
             WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                                 WINHTTP_HEADER_NAME_BY_INDEX, &code, &size, WINHTTP_NO_HEADER_INDEX);
-            std::string data;
-            DWORD avail = 0;
-            bool readOk = true;
-            while (WinHttpQueryDataAvailable(request, &avail) && avail > 0) {
-                if (data.size() + avail > kMaxBody) {
-                    readOk = false;
-                    break;
+            if (code != 200) {
+                if (error) *error = "HTTP " + std::to_string(code);
+            } else {
+                std::vector<char> buf(64 * 1024);
+                bool readOk = true;
+                for (;;) {
+                    DWORD got = 0;
+                    if (!WinHttpReadData(request, buf.data(), (DWORD)buf.size(), &got)) {
+                        readOk = false;
+                        if (error) *error = "read failed (" + std::to_string(GetLastError()) + ")";
+                        break;
+                    }
+                    if (got == 0)
+                        break;
+                    if (!onData(buf.data(), got)) {
+                        readOk = false;
+                        if (error && error->empty()) *error = "stopped";
+                        break;
+                    }
                 }
-                const size_t old = data.size();
-                data.resize(old + avail);
-                DWORD got = 0;
-                if (!WinHttpReadData(request, &data[old], avail, &got)) {
-                    readOk = false;
-                    break;
-                }
-                data.resize(old + got);
-            }
-            if (code == 200 && readOk) {
-                if (body) *body = data;
-                ok = true;
-            } else if (error) {
-                *error = readOk ? "HTTP " + std::to_string(code) : "read failed";
+                ok = readOk;
             }
         } else if (error) {
             *error = "request failed (" + std::to_string(GetLastError()) + ")";
@@ -581,6 +674,8 @@ enum {
     kCurlOptHttpHeader = 10023,
     kCurlOptWriteFunction = 20011,
     kCurlOptTimeout = 13,
+    kCurlOptLowSpeedLimit = 19,
+    kCurlOptLowSpeedTime = 20,
     kCurlOptFollowLocation = 52,
     kCurlOptConnectTimeout = 78,
     kCurlOptNoSignal = 99,
@@ -637,25 +732,35 @@ CurlApi* curlApi()
 }
 
 struct Sink {
-    std::string data;
-    bool overflow = false;
+    const DataFn* fn;
+    long* code;
+    CURL* curl;
+    CurlApi* api;
+    bool stopped = false;
 };
 
 size_t writeBody(char* ptr, size_t size, size_t n, void* user)
 {
     Sink* s = (Sink*)user;
     const size_t bytes = size * n;
-    if (s->data.size() + bytes > kMaxBody) {
-        s->overflow = true;
+    // Only the final response's body counts (not error pages)
+    long code = 0;
+    s->api->easy_getinfo(s->curl, kCurlInfoResponseCode, &code);
+    if (code != 200)
+        return bytes;
+    if (!(*s->fn)(ptr, bytes)) {
+        s->stopped = true;
         return 0;
     }
-    s->data.append(ptr, bytes);
     return bytes;
 }
 
 } // namespace
 
-bool httpGet(const std::string& url, std::string* body, std::string* error, int timeoutSec)
+// timeoutSec: whole request when totalTimeout, else the connection and
+// stalls (less than 1 byte/s for that long).
+static bool httpFetchCurl(const std::string& url, const char* accept, int timeoutSec, bool totalTimeout,
+                          const DataFn& onData, std::string* error)
 {
     CurlApi* api = curlApi();
     if (!api->loaded) {
@@ -667,8 +772,10 @@ bool httpGet(const std::string& url, std::string* body, std::string* error, int 
         if (error) *error = "curl_easy_init failed";
         return false;
     }
-    Sink sink;
-    curl_slist* headers = api->slist_append(nullptr, "Accept: application/vnd.github+json");
+    long code = 0;
+    Sink sink{&onData, &code, c, api};
+    const std::string acceptHeader = std::string("Accept: ") + accept;
+    curl_slist* headers = api->slist_append(nullptr, acceptHeader.c_str());
     api->easy_setopt(c, kCurlOptUrl, url.c_str());
     api->easy_setopt(c, kCurlOptUserAgent, kUserAgent);
     api->easy_setopt(c, kCurlOptHttpHeader, headers);
@@ -676,28 +783,102 @@ bool httpGet(const std::string& url, std::string* body, std::string* error, int 
     api->easy_setopt(c, kCurlOptWriteData, (void*)&sink);
     api->easy_setopt(c, kCurlOptFollowLocation, 1L);
     api->easy_setopt(c, kCurlOptMaxRedirs, 5L);
-    api->easy_setopt(c, kCurlOptTimeout, (long)timeoutSec);
+    if (totalTimeout) {
+        api->easy_setopt(c, kCurlOptTimeout, (long)timeoutSec);
+    } else {
+        api->easy_setopt(c, kCurlOptLowSpeedLimit, 1L);
+        api->easy_setopt(c, kCurlOptLowSpeedTime, (long)timeoutSec);
+    }
     api->easy_setopt(c, kCurlOptConnectTimeout, (long)timeoutSec);
     api->easy_setopt(c, kCurlOptNoSignal, 1L);
     const int rc = api->easy_perform(c);
-    long code = 0;
     api->easy_getinfo(c, kCurlInfoResponseCode, &code);
     api->easy_cleanup(c);
     api->slist_free_all(headers);
-    if (rc != 0) {
-        if (error) *error = sink.overflow ? "response too large" : api->easy_strerror(rc);
-        return false;
-    }
-    if (code != 200) {
+    if (code != 200 && code != 0) {
         if (error) *error = "HTTP " + std::to_string(code);
         return false;
     }
-    if (body)
-        *body = sink.data;
+    if (rc != 0) {
+        if (error && error->empty()) *error = sink.stopped ? "stopped" : api->easy_strerror(rc);
+        return false;
+    }
+    if (code != 200) {
+        if (error) *error = "no response";
+        return false;
+    }
     return true;
 }
 
+static bool httpFetch(const std::string& url, const char* accept, int timeoutSec, const DataFn& onData,
+                      std::string* error)
+{
+    return httpFetchCurl(url, accept, timeoutSec, true, onData, error);
+}
+
 #endif
+
+bool httpGet(const std::string& url, std::string* body, std::string* error, int timeoutSec)
+{
+    std::string data;
+    std::string err;
+    const bool ok = httpFetch(url, "application/vnd.github+json", timeoutSec,
+        [&](const char* p, size_t n) {
+            if (data.size() + n > kMaxBody) {
+                err = "response too large";
+                return false;
+            }
+            data.append(p, n);
+            return true;
+        }, &err);
+    if (!ok) {
+        if (error) *error = err;
+        return false;
+    }
+    if (body)
+        *body = data;
+    return true;
+}
+
+bool httpDownload(const std::string& url, const std::string& path, std::atomic<int64_t>* received,
+                  const std::atomic<bool>* cancel, std::string* error)
+{
+    FILE* f = fopen(path.c_str(), "wb");
+    if (!f) {
+        if (error) *error = "cannot write " + path;
+        return false;
+    }
+    if (received)
+        *received = 0;
+    std::string err;
+    const DataFn onData = [&](const char* p, size_t n) {
+        if (cancel && *cancel) {
+            err = "cancelled";
+            return false;
+        }
+        if (fwrite(p, 1, n, f) != n) {
+            err = "disk full?";
+            return false;
+        }
+        if (received)
+            *received += (int64_t)n;
+        return true;
+    };
+#ifdef _WIN32
+    bool ok = httpFetch(url, "application/octet-stream", 30, onData, &err);
+#else
+    bool ok = httpFetchCurl(url, "application/octet-stream", 30, false, onData, &err);
+#endif
+    if (fclose(f) != 0 && ok) {
+        ok = false;
+        err = "disk full?";
+    }
+    if (!ok) {
+        remove(path.c_str());
+        if (error) *error = err;
+    }
+    return ok;
+}
 
 //==============================================================================
 // Background check
@@ -709,9 +890,12 @@ struct Checker {
     Status status = Status::Idle;
     Release release;
     std::string statePath;
+    Config config;        // of the running check (for setTestChannel)
+    bool testServer = false;
     std::condition_variable done;
     bool running = false; // the detached thread has not finished yet
     bool started = false;
+    bool recheck = false; // setTestChannel during a check: run again
 };
 
 // Never freed: the detached thread may still be inside it while the game
@@ -730,20 +914,23 @@ void setResult(Status s, const Release& r = Release())
     c.release = r;
 }
 
-void finished()
-{
-    Checker& c = checker();
-    std::lock_guard<std::mutex> lock(c.m);
-    c.running = false;
-    c.done.notify_all();
-}
-
 void runCheckBody(const Config& cfg);
 
 void runCheck(Config cfg)
 {
-    runCheckBody(cfg);
-    finished();
+    for (;;) {
+        runCheckBody(cfg);
+        Checker& c = checker();
+        std::lock_guard<std::mutex> lock(c.m);
+        if (!c.recheck) {
+            c.running = false;
+            c.done.notify_all();
+            return;
+        }
+        c.recheck = false;
+        cfg.force = true;
+        cfg.now = (int64_t)time(nullptr);
+    }
 }
 
 void runCheckBody(const Config& cfg)
@@ -754,21 +941,32 @@ void runCheckBody(const Config& cfg)
         setResult(Status::Disabled);
         return;
     }
-    const bool fresh = !cfg.force && state.lastCheck > 0 && cfg.now >= state.lastCheck &&
+    const char* channel = state.testChannel ? "test" : "stable";
+    // Test versions come often: the test channel asks at every start.
+    const bool fresh = !cfg.force && !state.testChannel && state.latestChannel == channel &&
+                       state.lastCheck > 0 && cfg.now >= state.lastCheck &&
                        cfg.now - state.lastCheck < kCheckInterval && !state.latestVersion.empty();
     if (!fresh) {
+        const std::string url = !cfg.url.empty() ? cfg.url : state.testChannel ? kListUrl : kDefaultUrl;
         std::string body, error;
         Release r;
-        if (!httpGet(cfg.url, &body, &error, 5) || !parseLatestRelease(body, &r)) {
+        if (!httpGet(url, &body, &error, 5) || !parseReleases(body, state.testChannel, &r)) {
             if (error.empty())
                 error = "unexpected response";
             fprintf(stderr, "update check: %s\n", error.c_str());
             setResult(Status::CheckFailed);
             return;
         }
+        // The option may have changed while the request ran
+        State now;
+        loadState(cfg.statePath, &now);
+        state.testChannel = now.testChannel;
+        state.checkEnabled = now.checkEnabled;
         state.lastCheck = cfg.now;
+        state.latestChannel = channel;
         state.latestVersion = r.version;
         state.latestUrl = r.url;
+        state.latestAssets = r.assets;
         if (!saveState(cfg.statePath, state))
             fprintf(stderr, "update check: cannot write %s\n", cfg.statePath.c_str());
     }
@@ -776,6 +974,9 @@ void runCheckBody(const Config& cfg)
         Release r;
         r.version = state.latestVersion;
         r.url = state.latestUrl.empty() ? kReleasesPage : state.latestUrl;
+        r.assets = state.latestAssets;
+        Version v;
+        r.prerelease = parseVersion(r.version, &v) && !v.pre.empty();
         fprintf(stderr, "update check: version %s is available (running %s)\n",
                 r.version.c_str(), cfg.currentVersion.c_str());
         setResult(Status::Available, r);
@@ -800,16 +1001,16 @@ void startCheck(const Config& config)
         return;
     c.started = true;
     Config cfg = config;
-    if (cfg.url.empty()) {
-        const char* env = getenv("MC2_UPDATE_URL");
-        cfg.url = env && *env ? env : kDefaultUrl;
-    }
-    if (cfg.now == 0)
-        cfg.now = (int64_t)time(nullptr);
-    c.statePath = cfg.statePath;
     // With a test server (MC2_UPDATE_URL) development builds check too.
     const char* testUrl = getenv("MC2_UPDATE_URL");
     const bool testing = config.url.empty() && testUrl && *testUrl;
+    if (testing)
+        cfg.url = testUrl;
+    if (cfg.now == 0)
+        cfg.now = (int64_t)time(nullptr);
+    c.statePath = cfg.statePath;
+    c.config = cfg;
+    c.testServer = !cfg.url.empty();
     if (disabledByEnvironment() || (!testing && isDevelopmentBuild(cfg.currentVersion))) {
         c.status = Status::Disabled;
         return;
@@ -847,6 +1048,60 @@ void snooze()
     c.status = Status::UpToDate;
 }
 
+bool testChannel()
+{
+    Checker& c = checker();
+    std::lock_guard<std::mutex> lock(c.m);
+    State state;
+    loadState(c.statePath, &state);
+    return state.testChannel;
+}
+
+void setTestChannel(bool on)
+{
+    Checker& c = checker();
+    std::lock_guard<std::mutex> lock(c.m);
+    if (c.statePath.empty())
+        return;
+    State state;
+    loadState(c.statePath, &state);
+    if (state.testChannel == on)
+        return;
+    state.testChannel = on;
+    saveState(c.statePath, state);
+    // Check again with the new channel (unless the check is off for good)
+    if (c.status == Status::Disabled || c.status == Status::Idle)
+        return;
+    if (c.running) {
+        c.recheck = true;
+        return;
+    }
+    Config cfg = c.config;
+    cfg.force = true;
+    cfg.now = (int64_t)time(nullptr);
+    c.status = Status::Checking;
+    c.running = true;
+    std::thread(runCheck, cfg).detach();
+}
+
+bool usingTestServer()
+{
+    Checker& c = checker();
+    std::lock_guard<std::mutex> lock(c.m);
+    return c.testServer;
+}
+
+std::string updatesDir()
+{
+    Checker& c = checker();
+    std::lock_guard<std::mutex> lock(c.m);
+    if (c.statePath.empty())
+        return std::string();
+    const size_t slash = c.statePath.find_last_of("/\\");
+    const std::string dir = slash == std::string::npos ? std::string(".") : c.statePath.substr(0, slash);
+    return dir + "/updates";
+}
+
 void waitForCheck()
 {
     Checker& c = checker();
@@ -862,6 +1117,7 @@ void resetForTests()
     c.status = Status::Idle;
     c.release = Release();
     c.started = false;
+    c.recheck = false;
 }
 
 } // namespace gos_update
