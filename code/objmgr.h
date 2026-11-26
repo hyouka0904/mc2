@@ -507,7 +507,7 @@ class GameObjectManager {
 
 		GameObjectPtr findObject (Stuff::Vector3D position);
 
-		GameObjectPtr findByPartId (long partId);
+		GameObjectPtr findByPartId (long partId, bool includeInactive = false);
 
 		GameObjectPtr findByBlockVertex (long blockNum, long vertex);
 

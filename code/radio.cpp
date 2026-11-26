@@ -82,12 +82,21 @@ long Radio::init (char *fileName, unsigned long heapSize, char *movie)
 
 	//--------------------------------------
 	// Startup the packet file.
-	radioID = currentRadio;
+	long slot = 0;
+	while (slot < MAX_RADIOS && radioList[slot])
+		++slot;
+	if (slot == MAX_RADIOS)
+		return -1;
+
+	radioID = slot;
+	radioList[radioID] = this;
+	++currentRadio;
 	messagesFile[radioID] = new PacketFile;
 	gosASSERT(messagesFile[radioID] != NULL);
 		
 	long result = messagesFile[radioID]->open(pilotAudioPath);
-	gosASSERT(result == NO_ERR);
+	if (result != NO_ERR)
+		return result;
 	
 	if (!noiseFile)
 	{
@@ -109,10 +118,18 @@ long Radio::init (char *fileName, unsigned long heapSize, char *movie)
 			Fatal(0, "Unable to load message info.");
 	}
 	
-	radioList[currentRadio] = this;
-	currentRadio++;
-	
 	return(NO_ERR);
+}
+
+void Radio::destroy (void)
+{
+	if (radioID >= 0 && radioList[radioID] == this) {
+		delete messagesFile[radioID];
+		messagesFile[radioID] = nullptr;
+		radioList[radioID] = nullptr;
+		--currentRadio;
+	}
+	radioID = -1;
 }
 		
 #define NO_PLAY			-1

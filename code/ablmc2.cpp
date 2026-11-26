@@ -2214,9 +2214,10 @@ void execObjectCreate (void) {
 	
 	long result = 0;
 
-	GameObjectPtr object = getObject(objectId);
+	GameObjectPtr object = objectId == -1 ? CurObject : ObjectManager->findByPartId(objectId, true);
 	if (object && !object->getExists()) {
 		object->setExists(true);
+		ObjectManager->rebuildCollidableList = true;
 		for (long i = 0; i < Team::numTeams; i++)
 			SensorManager->getTeamSensor(i)->scanBattlefield();
 		result = objectId;
@@ -3025,6 +3026,8 @@ void execObjectRemove (void) {
 			}	
 		else
 			ABLi_pushInteger(1);
+	} else {
+		ABLi_pushInteger(1);
 	}
 }
 
@@ -3032,15 +3035,27 @@ void execObjectRemove (void) {
 
 void execCreateInfantry (void) {
 
-	long teamID = ABLi_popInteger();
-	long commanderID = ABLi_popInteger();
-	float* worldPos = ABLi_popRealPtr();
-	long buildingPartID = ABLi_popInteger();
+	const float* worldPos = ABLi_popRealPtr();
+	const long teamID = ABLi_popInteger();
+	if (teamID < 0 || teamID >= Team::numTeams || !Team::teams[teamID]) {
+		ABLi_pushInteger(0);
+		return;
+	}
+
+	long commanderID = -1;
+	for (long i = 0; i < MAX_COMMANDERS; ++i) {
+		if (Commander::commanders[i] && Commander::commanders[i]->getTeam() == Team::teams[teamID]) {
+			commanderID = i;
+			break;
+		}
+	}
 
 	MoverInitData moverData;
 	memset(&moverData, 0, sizeof(MoverInitData));
-	strcpy(moverData.pilotFileName, "pmw00080");
-	strcpy(moverData.brainFileName, "infantry001");
+	FullPathFileName infantryPilot;
+	infantryPilot.init(warriorPath, "pmw00080", ".fit");
+	strcpy(moverData.pilotFileName, fileExists(infantryPilot) ? "pmw00080" : "pmwregular");
+	strcpy(moverData.brainFileName, "pbrain");
 	strcpy(moverData.csvFileName, "PM101100");
 	moverData.objNumber = 53;
 	moverData.rosterIndex = 255;
@@ -3060,11 +3075,8 @@ void execCreateInfantry (void) {
 	moverData.capturable = false;
 	long infantryHandle = mission->addMover(&moverData);
 
-	MoverPtr infantry = (MoverPtr)ObjectManager->get(infantryHandle);
-	if (infantry)
-		infantry->getPilot()->setIntegerMemory(0, buildingPartID);
-
-	ABLi_pushInteger(0);
+	GameObjectPtr infantry = infantryHandle > 0 ? ObjectManager->get(infantryHandle) : nullptr;
+	ABLi_pushInteger(infantry ? infantry->getPartId() : 0);
 }
 
 //*****************************************************************************

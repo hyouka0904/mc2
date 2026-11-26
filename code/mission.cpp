@@ -1143,27 +1143,25 @@ void Mission::createPartObject (long partIndex, MoverPtr mover) {
 
 //---------------------------------------------------------------------------
 long Mission::addMover (MoverInitData* moverSpec) {
+	if (ObjectManager->nextWatchID > static_cast<unsigned long>(ObjectManager->getMaxObjects()) ||
+		ObjectManager->nextReinforcementPartId > MAX_REINFORCEMENT_PART_ID)
+		return 0;
 	
 	//--------------------------------------
 	// Load the mechwarrior into the mech...
 	MechWarriorPtr pilot = MechWarrior::newWarrior();
 	if (!pilot)
-		STOP(("Too many pilots in this mission!"));
+		return 0;
 
 	FullPathFileName pilotFullFileName;
 	pilotFullFileName.init(warriorPath, moverSpec->pilotFileName, ".fit");
 			
-	FitIniFile* pilotFile = new FitIniFile;
-	gosASSERT(pilotFile != NULL);
-		
-	long result = pilotFile->open(pilotFullFileName);
-	gosASSERT(result == NO_ERR);
-	result = pilot->init(pilotFile);
-	gosASSERT(result == NO_ERR);
-
-	pilotFile->close();
-	delete pilotFile;
-	pilotFile = NULL;
+	FitIniFile pilotFile;
+	if (pilotFile.open(pilotFullFileName) != NO_ERR || pilot->init(&pilotFile) != NO_ERR) {
+		MechWarrior::freeWarrior(pilot);
+		return 0;
+	}
+	pilotFile.close();
 
 	//Copy logistics data to pilot AFTER loading old data.
 	// ONLY if we overrode the data in logistics!!
@@ -1180,7 +1178,7 @@ long Mission::addMover (MoverInitData* moverSpec) {
 	// mover data!
 	//*********************
 
-	long numErrors, numLinesProcessed;
+	long numErrors = 0, numLinesProcessed = 0;
 	FullPathFileName brainFullFileName;
 	if (MPlayer) {
 		pilot->setBrainName("pbrain");
@@ -1192,7 +1190,10 @@ long Mission::addMover (MoverInitData* moverSpec) {
 	}
 		
 	long moduleHandle = ABLi_preProcess(brainFullFileName, &numErrors, &numLinesProcessed);
-	gosASSERT(moduleHandle >= 0);
+	if (moduleHandle < 0 || numErrors) {
+		MechWarrior::freeWarrior(pilot);
+		return 0;
+	}
 	pilot->setBrain(moduleHandle);
 
 /*
@@ -1372,10 +1373,8 @@ typedef struct _MoverInitData {
 			return(mover->getHandle());
 		}
 	}
-	else
-		return -1;
-
-	return(0);
+	MechWarrior::freeWarrior(pilot);
+	return objType ? 0 : -1;
 }
 
 //---------------------------------------------------------------------------
@@ -1420,6 +1419,8 @@ long Mission::addMover (MoverInitData* moveSpec, LogisticsMech* mechData)
 	memcpy(mData.specialtySkills,moveSpec->specialtySkills,sizeof(bool) * NUM_SPECIALTY_SKILLS);
 
 	long moverHandle = addMover(&mData);
+	if (moverHandle <= 0)
+		return moverHandle;
 
 	//Now take the moverHandle and change the component data to match Heidi's passed logisticsMech.
 	MoverPtr mMech = (MoverPtr)ObjectManager->get(moverHandle);

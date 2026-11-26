@@ -2379,12 +2379,23 @@ void Mover::init (bool create) {
 
 void Mover::release (void) {
 
+	updatePathLock(false);
 	setTeamId(-1, false);
 	if (getGroup())
 		getGroup()->remove(this);
 	setCommanderId(-1);
-	MechWarrior::freeWarrior(pilot);
-	pilot = NULL;
+	if (sensorSystem) {
+		sensorSystem->setShutdown(false);
+		sensorSystem->setOwner(nullptr);
+		SensorManager->freeSensor(sensorSystem);
+		sensorSystem = nullptr;
+	}
+	if (pilot) {
+		MechWarrior::freeWarrior(pilot);
+		pilot = nullptr;
+	}
+	delete appearance;
+	appearance = nullptr;
 }
 
 //---------------------------------------------------------------------------

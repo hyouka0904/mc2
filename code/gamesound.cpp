@@ -213,6 +213,15 @@ void GameSoundSystem::removeCurrentMessage(void)
 }
 
 //---------------------------------------------------------------------------
+void GameSoundSystem::discardPilotMessages (MechWarriorPtr pilot)
+{
+	for (long i = MAX_QUEUED_MESSAGES - 1; i >= 0; --i)
+		if (queue[i] && queue[i]->pilot == pilot)
+			removeQueuedMessage(i);
+	if (currentMessage && currentMessage->pilot == pilot)
+		removeCurrentMessage();
+}
+
 long GameSoundSystem::queueRadioMessage (RadioData *msgData)
 {
 long i;
