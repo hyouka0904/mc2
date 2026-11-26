@@ -27,6 +27,17 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
   - 遊戲一律在 `timeout` 下執行。
   - 沒有使用者同意，不做 DXIL（D3D12 shader）。
 
+## 臨時修正
+
+- 目標：修正關卡 MOD 動態生成與移除、Resource Points 顯示、維修車遇到卡模時的指令延續。
+- 工作分支：`fix/mc2-mission-regressions`，從 `dev` 分出。兩者起點為已測的 Claude 分支 `bf8494e`。
+- 里程碑維持 M1、U1–U3 的實機待測。這次插入修正，M2 保持待辦。
+- 合併條件：同一修復版本的 Windows 與 Linux CI 均須通過。macOS 如因 runner 不可用而無結果，可略過。
+- 本機確認：Release 建置、MOD／ENet／更新相關 4 組 CTest、`mc2_01` ABL 連續 16 波共 512 次建立與清場，以及 `objectsuicide` 後重啟用通過。預置單位連續四波移除後，檔案描述符依序從 97 降到 85、73、61、49。
+- 資源點以主機同步的餘額更新 HUD，扣款與取消退款共用既有的資源差額訊息。地圖缺少起始值時以零顯示。
+- 回歸確認：維修指令跨越避障移動保留，超出維修距離時回到接近階段。卡模情境與不同平台待遊戲驗證。
+- 下一步：核對此修復分支的 Linux 與 Windows CI，再合併至 `dev`。M1、U1–U3 的跨實體裝置驗證仍待進行。
+
 ## 已完成事項
 
 ### 移植與基礎（早期）
