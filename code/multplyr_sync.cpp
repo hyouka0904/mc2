@@ -1208,6 +1208,8 @@ void MultiPlayer::handleMoverUpdate (NETPLAYER sender, MCMSG_MoverUpdate* msg) {
 	if ((long)(sizeof(NetMoverUpdate) + hdr.numEntries * sizeof(NetMoverEntry)) > lastMessageSize)
 		return;
 	hostMissionTime = hdr.missionTime;
+	if (commanderID >= 0 && commanderID < MAX_MC_PLAYERS)
+		LogisticsData::instance->syncResourcePoints(hdr.resourcePoints[commanderID]);
 	for (long i = 0; i < MAX_MC_PLAYERS; i++) {
 		teamScore[i] = hdr.teamScore[i];
 		playerInfo[i].score = hdr.playerScore[i];

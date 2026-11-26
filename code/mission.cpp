@@ -2131,8 +2131,9 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 	result = missionFile->readIdUChar("scenarioTuneNum",missionTuneNum);
 	gosASSERT(result == NO_ERR);
 
-	long numRPoints;
-	result = missionFile->readIdLong("ResourcePoints",numRPoints);
+	long numRPoints = 0;
+	if (missionFile->readIdLong("ResourcePoints", numRPoints) != NO_ERR)
+		numRPoints = 0;
 	if (MaxResourcePoints > -1)
 		numRPoints = MaxResourcePoints;
 	if (MPlayer) {

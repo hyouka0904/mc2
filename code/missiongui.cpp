@@ -1113,7 +1113,7 @@ void MissionInterfaceManager::updateVTol()
 							}
 							}
 						else
-							LogisticsData::instance->setResourcePoints(LogisticsData::instance->getResourcePoints() + 10000);
+							LogisticsData::instance->addResourcePoints(10000);
 					}
 
 					if ( !MPlayer || vtolNum == MPlayer->commanderID )

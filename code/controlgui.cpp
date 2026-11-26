@@ -1913,7 +1913,7 @@ void ControlGui::renderVehicleTab()
 	char originalStr[256];
 
 	cLoadString( IDS_RP, originalStr, 256 );
-	sprintf( buffer, originalStr, (long)LogisticsData::instance->getResourcePoints() );
+	snprintf(buffer, sizeof(buffer), originalStr, static_cast<long>(LogisticsData::instance->getResourcePoints()));
 
 	//We are there.  Start flashing.
 	/// TUTORIAL!!!
@@ -1972,11 +1972,6 @@ void ControlGui::handleVehicleClick( int ID )
 			{
 				int cost = vehicleCosts[i];
 				LogisticsData::instance->decrementResourcePoints( cost );
-				if (MPlayer) {
-					Stuff::Vector3D pos;
-					MPlayer->sendReinforcement(-cost, 0, "noname", MPlayer->commanderID, pos, 6);
-				}
-
 			}
 		}
 
@@ -2022,17 +2017,6 @@ void ControlGui::handleVehicleClick( int ID )
 				int cost = vehicleCosts[oldID - LARGE_AIRSTRIKE];
 				LogisticsData::instance->addResourcePoints( cost );
 
-				if ( MPlayer )
-				{
-					MPlayer->playerInfo[MPlayer->commanderID].resourcePoints += cost;
-					MPlayer->playerInfo[MPlayer->commanderID].resourcePointsGained += cost;
-
-					if (!MPlayer->isHost())
-					{
-						MPlayer->sendPlayerUpdate( 0, 5, MPlayer->commanderID );
-					}
-
-				}
 			}
 			
 			idToUnPress = ID;
