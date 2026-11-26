@@ -4,6 +4,10 @@
 
 ## [⬇ 下載最新版](https://github.com/hyouka0904/mc2/releases/latest)
 
+**[⬇ 下載測試版](https://github.com/hyouka0904/mc2/releases)**
+
+請選最新一筆標示 **Pre-release** 的版本，支援的平台以該版本的 Assets 為準。目前正式版（v0.1.0）尚未內建更新功能。
+
 在 Release 頁面下方的 Assets 選擇你的平台：
 
 | 平台 | 檔案 |
@@ -12,7 +16,7 @@
 | macOS 13 以上（Apple Silicon） | `…-macos-arm64.dmg` |
 | Linux x86_64 | `…-linux-x86_64.AppImage`，或 `…-linux-x86_64.tar.gz` |
 
-每個安裝包都附完整的遊戲資料（約 600 MB），下載後就能玩。安裝步驟、存檔位置和常用參數見安裝包裡的 `README.txt`。遊戲啟動時會檢查有沒有新版本（一天最多一次），有的話在主選單提示，點一下就能下載並安裝（遊戲會重新啟動，存檔保留）。Windows 版和 Linux 壓縮檔只下載有變動的部分，通常只有幾 MB。選項 > Gameplay 勾選「Receive test versions」，也會收到尚未正式發佈的測試版。加上 `-noupdatecheck` 就不檢查。
+每個安裝包都附完整的遊戲資料（約 600 MB），下載後就能玩。安裝步驟、存檔位置和常用參數見安裝包裡的 `README.txt`。內建更新功能的版本會在遊戲啟動時檢查有沒有新版本（一天最多一次），有的話在主選單提示，點一下就能下載並安裝（遊戲會重新啟動，存檔保留）。Windows 版和 Linux 壓縮檔只下載有變動的部分，通常只有幾 MB。選項 > Gameplay 勾選「Receive test versions」，也會收到尚未正式發佈的測試版。加上 `-noupdatecheck` 就不檢查。
 
 > **本專案是 [alariq/mc2](https://github.com/alariq/mc2) 的獨立 fork，與原作者 alariq 無關，也未經其認可；與微軟無關。**
 > 問題請回報到本 repository，不要回報給原專案。

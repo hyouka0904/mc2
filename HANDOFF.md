@@ -36,6 +36,11 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
 - 發佈流程的 Windows 與 Linux 打包檢查通過，macOS 尚無結果。[打包執行紀錄](https://github.com/hyouka0904/mc2/actions/runs/45857485973)
 - 下一步：M1、U1–U3 仍待實機回報，M2 保持待辦，平行開發擱置。
 
+## 測試版下載入口
+
+- 中英 README 在正式版下載下方新增測試版入口，指向 GitHub Releases，以便選取最新的 Pre-release。已核對目前正式版 v0.1.0 尚無遊戲內更新功能，v0.1.1-test.24 提供 Windows 和 Linux 套件。
+- 以 `git merge-base --is-ancestor` 確認修正與文件分支的提交均已整合至 `dev`。M1、U1–U3 仍待實機回報。
+
 ## 臨時修正
 
 - 目標：修正關卡 MOD 動態生成與移除、Resource Points 顯示、維修車遇到卡模時的指令延續。

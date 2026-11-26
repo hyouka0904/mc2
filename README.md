@@ -4,6 +4,10 @@
 
 ## [⬇ Download the latest version](https://github.com/hyouka0904/mc2/releases/latest)
 
+**[⬇ Download a test version](https://github.com/hyouka0904/mc2/releases)**
+
+Choose the newest release marked **Pre-release**. The Assets list shows which platforms are available. The current stable version (v0.1.0) predates the in-game updater.
+
 Pick the file for your platform under Assets at the bottom of the release page:
 
 | Platform | File |
@@ -12,7 +16,7 @@ Pick the file for your platform under Assets at the bottom of the release page:
 | macOS 13+ (Apple Silicon) | `…-macos-arm64.dmg` |
 | Linux x86_64 | `…-linux-x86_64.AppImage` or `…-linux-x86_64.tar.gz` |
 
-Every package contains the complete game data (about 600 MB) and is ready to play. See `README.txt` in the package for installation steps, where saves live and common options. The game checks for a new version at start (at most once a day) and shows a notice in the main menu; click it to download and install the update (the game restarts; saves are kept). The Windows versions and the Linux tarball download only the parts that changed, usually a few MB. Options > Gameplay > "Receive test versions" also offers unreleased test builds. `-noupdatecheck` turns the check off.
+Every package contains the complete game data (about 600 MB) and is ready to play. See `README.txt` in the package for installation steps, where saves live and common options. Builds with the in-game updater check for a new version at start (at most once a day) and shows a notice in the main menu; click it to download and install the update (the game restarts; saves are kept). The Windows versions and the Linux tarball download only the parts that changed, usually a few MB. Options > Gameplay > "Receive test versions" also offers unreleased test builds. `-noupdatecheck` turns the check off.
 
 > **This project is an independent fork of [alariq/mc2](https://github.com/alariq/mc2). It is not affiliated with or endorsed by alariq, nor by Microsoft.**
 > Please report issues here, not to the upstream project.
