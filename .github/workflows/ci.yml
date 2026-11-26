@@ -7,11 +7,11 @@ on:
   push:
     paths-ignore:
       - "**.md"
-      - "docs/**"
+      - "doc/**"
   pull_request:
     paths-ignore:
       - "**.md"
-      - "docs/**"
+      - "doc/**"
   workflow_dispatch:
 
 env:

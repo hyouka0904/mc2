@@ -1,8 +1,8 @@
 # 開發說明
 
-[English](DEVELOPMENT.md) ｜ [回到 README](README.zh-TW.md)
+[English](DEVELOPMENT.md) ｜ [回到 README](../README.zh-TW.md)
 
-給想自己編譯、修改程式或參與開發的人。只想玩遊戲的話，到 [README](README.zh-TW.md) 下載安裝包即可。
+給想自己編譯、修改程式或參與開發的人。只想玩遊戲的話，到 [README](../README.zh-TW.md) 下載安裝包即可。
 
 ## 目錄
 
@@ -16,7 +16,7 @@
 8. [安裝包與發佈](#安裝包與發佈)
 9. [已知限制與待辦事項](#已知限制與待辦事項)
 
-- Mod 系統的格式、工具與程式介面：[docs/modding.zh-TW.md](docs/modding.zh-TW.md)
+- Mod 系統的格式、工具與程式介面：[doc/modding.zh-TW.md](modding.zh-TW.md)
 - 聯機模式（合作、Roguelike、雙人對戰、機器學習接口）與中文補丁的工作清單：[ROADMAP_MULTIPLAYER_ZH.md](ROADMAP_MULTIPLAYER_ZH.md)
 
 ---
@@ -72,7 +72,7 @@
 | `cmake/MC2Dependencies.cmake` | 取得 SDL3 / SDL3_mixer / SDL3_ttf：優先用已安裝的版本，否則自動下載固定版本並靜態編譯。 |
 | `.github/workflows/ci.yml` | GitHub Actions：建置、單元測試、實際執行遊戲的冒煙測試。 |
 | `test_scripts/res_conv/` | 介面字串原始檔（`strings.res.cpp`、`resource.h`）和原作者的轉換腳本 `res_conv.pl`。 |
-| `docs/` | 玩家說明書與 Mod 說明。 |
+| `doc/` | 玩家說明書與 Mod 說明。 |
 
 ### 遊戲資料流程
 
@@ -152,7 +152,7 @@ git clone https://github.com/alariq/mc2srcdata.git
 git -C mc2srcdata lfs pull
 ```
 
-另外需要 `ffmpeg`：資料建置會把動畫轉成 MPEG-1（`.mpg`），遊戲用內建的 [pl_mpeg](thirdparty/pl_mpeg/pl_mpeg.h)（MIT 授權）解碼播放。
+另外需要 `ffmpeg`：資料建置會把動畫轉成 MPEG-1（`.mpg`），遊戲用內建的 [pl_mpeg](../thirdparty/pl_mpeg/pl_mpeg.h)（MIT 授權）解碼播放。
 
 ```bash
 sudo apt-get install ffmpeg
@@ -201,12 +201,12 @@ cd game && ./mc2
 
 ## 區網聯機的實作
 
-玩家操作見[區網對戰說明書](docs/manual/lan-skirmish.zh-TW.md)。
+玩家操作見[區網對戰說明書](manual/lan-skirmish.zh-TW.md)。
 
 ### 運作方式
 
 - **主機權威**：主機跑完整的模擬（AI、命中判定、傷害、任務勝負）；客端只送出指令，並顯示主機送來的狀態。客端掉線時，主機的 AI 接手他的單位；主機掉線時，客端的任務結束。
-- 傳輸層是 [ENet](thirdparty/enet/)（可靠／不可靠 UDP），包在 `GameOS/gameos/net/gos_net.h` 後面，遊戲碼不直接碰 ENet。
+- 傳輸層是 [ENet](../thirdparty/enet/)（可靠／不可靠 UDP），包在 `GameOS/gameos/net/gos_net.h` 後面，遊戲碼不直接碰 ENet。
 - 星狀拓撲：客端只連主機，主機轉送。訊息是 `code/multplyr.h` 中的 `MCMSG_*` 結構，欄位一律是固定大小的型別，三個平台的位元組排列相同。
 - 房間探索和遊戲共用 UDP 27015：掃描端把查詢送到 255.255.255.255、每張網卡的子網廣播位址和 127.0.0.1，每個主機回覆自己的房間資訊。
 - `code/multplyr.cpp`：房間、名單、顏色與隊伍、聊天、載入握手。`code/multplyr_sync.cpp`：任務中的同步——單位的移動／狀態 chunk（有變動才送，10 Hz）、開火、致命傷、無線電、命中、世界事件（地雷、火焰、砲擊、佔領建築）、指令、支援單位、暫停、勝負判定。
@@ -318,7 +318,7 @@ ctest --test-dir build --output-on-failure
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
 | `shader_validation` | 以 glslangValidator 離線編譯並連結所有著色器變體（與執行時相同的 `#version 420`、`ALPHA_TEST` 定義與 `#include` 展開），不需要 GPU；未安裝 `glslang-tools` 時略過 |
 | `shader_spirv` | 所有變體編成 Vulkan SPIR-V 並通過 `spirv-val`、兩個階段的介面能連結、轉出 MSL / HLSL，並檢查 `PerDraw` uniform block 與 C++ 結構的位移一致；`-DMC2_SHADER_REQUIRE=msl,hlsl` 可要求轉換器必須存在（CI 使用） |
-| `unit_mods` / `tool_mc2mod` | Mod 系統與製作工具（詳見 [docs/modding.zh-TW.md](docs/modding.zh-TW.md)） |
+| `unit_mods` / `tool_mc2mod` | Mod 系統與製作工具（詳見 [doc/modding.zh-TW.md](modding.zh-TW.md)） |
 | `unit_stuff` | 執行原版 Stuff 數學函式庫內建、但從未被呼叫的自我測試 |
 | `tool_fastfile` / `tool_pak` / `tool_rsp` | 資料工具的打包→解包往返測試 |
 | `tool_text_tool` | 在沒有顯示器的環境下烘焙字型 |
@@ -374,7 +374,7 @@ SDL3 GPU 後端在沒有 GPU 的環境使用 Mesa 的軟體 Vulkan（lavapipe）
 | `-perf-csv <file>` | 每幀寫一行統計：幀號、實際耗時（毫秒）、draw call 數、管線狀態切換次數、出現過的不同管線數、主執行緒 CPU 時間（毫秒） |
 | `-datapath <dir>` | 指定遊戲目錄（含 `data/` 的目錄） |
 | `-version` | 顯示版本後結束 |
-| `-mods <dir>` / `-modpack <file>` | 啟用 Mod / Modpack（見 [docs/modding.zh-TW.md](docs/modding.zh-TW.md)） |
+| `-mods <dir>` / `-modpack <file>` | 啟用 Mod / Modpack（見 [doc/modding.zh-TW.md](modding.zh-TW.md)） |
 | `-windowed` | 忽略遊戲的全螢幕設定，一律以視窗執行（全螢幕行為取決於視窗管理員，會讓截圖因環境而異） |
 | `-shader-reload` | 開發用：著色器原始碼變更時在遊戲中重新編譯（每半秒檢查一次，預設關閉） |
 | `-renderer gl\|gpu` | 繪圖後端：`gpu`＝SDL3 GPU（預設，Linux 上為 Vulkan），`gl`＝OpenGL。截圖比對腳本一律明確指定。環境變數 `MC2_GPU_DEBUG=1` 開啟 Vulkan 驗證層，`SDL_GPU_DRIVER` 可指定驅動 |
@@ -434,7 +434,7 @@ scripts/run_flow_tests.py game --only pause_menu      # 只跑指定的流程
 
 ### 持續整合
 
-`.github/workflows/ci.yml` 在每次 push / PR 時執行；只改文件（`*.md`、`docs/`）的 push 會跳過，要強制執行時在 Actions 頁面按「Run workflow」：
+`.github/workflows/ci.yml` 在每次 push / PR 時執行；只改文件（`*.md`、`doc/`）的 push 會跳過，要強制執行時在 Actions 頁面按「Run workflow」：
 
 1. 以 RelWithDebInfo 與 Debug 建置並執行全部 CTest 測試（Linux），另在 Windows（MSVC）與 macOS（Apple Silicon）建置並執行單元測試；
 2. 下載遊戲資料、建置資料，並以冒煙測試實際遊玩 `mc2_01` 60 秒；
@@ -516,7 +516,7 @@ git push origin v0.1.0
 1. **Linux**：建置、跑單元測試、從 mc2srcdata 建置遊戲資料（必須拿到 Git LFS 的真正影片，不使用測試畫面），產出 AppImage 與 tar.gz。接著從別的目錄、用全新的使用者目錄執行唯讀的 AppImage，以 OpenGL 與 SDL3 GPU 各玩 `mc2_01` 300 幀並檢查截圖不是全黑。
 2. **Windows**：以 MSVC 建置，產出安裝程式與 zip（Visual C++ 執行階段 DLL 一起放在 `mc2.exe` 旁邊）。測試靜默安裝、檢查檔案、執行 `mc2.exe -version`、解除安裝。
 3. **macOS**：建置、產出 dmg（重新 ad-hoc 簽章並產生圖示）。掛載後檢查簽章、檔案與 `mc2 -version`。
-4. 三個平台都通過後，建立一個**草稿** GitHub Release，附上所有安裝包與 `SHA256SUMS.txt`，說明取自 `packaging/RELEASE_NOTES.md`。確認無誤後再到 GitHub 上按「Publish」。
+4. 三個平台都通過後，建立一個**草稿** GitHub Release，附上所有安裝包與 `SHA256SUMS.txt`，說明取自 `doc/RELEASE_NOTES.md`。確認無誤後再到 GitHub 上按「Publish」。
 
 遊戲資料和編譯好的著色器（SPIR-V / MSL / HLSL）與平台無關，只在 Linux 建置一次，再交給 Windows 和 macOS 使用。
 **測試版**：在 Actions 頁面手動執行（Actions > Release > Run workflow，選分支），會發佈一個**預發布版** `v<下一個修訂號>-test.<執行編號>`（例如 `v0.1.0` 之後是 `v0.1.1-test.42`），附上安裝包和 `SHA256SUMS.txt`，tag 打在該分支的 commit 上。打開「Receive test versions」的遊戲會提示更新到它；其他人看不到（`releases/latest` 不回傳預發布版，而且 `0.1.1-test.42` 排在 `0.1.1` 之前）。只保留最新 5 個測試版和它們的 tag。選項：`version` 手動指定版本；取消 `publish` 只保留 workflow artifact；取消 `macos` 跳過 macOS（測試版本來就不等 macOS）。修改 `packaging/`、`scripts/package.py` 時，會以 `0.0.0-test` 建置並測試安裝包但不發佈，每個安裝包各自保留為一個 workflow artifact（不再另外壓縮）。Release 另外附上區塊更新用的區塊和清單（見[版本檢查](#版本檢查)）。
@@ -691,7 +691,7 @@ ASan 的配置器不會像標準函式庫一樣把 sized delete 與 nothrow new 
 
 ### 其他尚未完成的項目
 
-- **網路對戰**：區網對戰已完成（見[區網對戰說明書](docs/manual/lan-skirmish.zh-TW.md)），合作與 Roguelike 模式見工作清單。
+- **網路對戰**：區網對戰已完成（見[區網對戰說明書](manual/lan-skirmish.zh-TW.md)），合作與 Roguelike 模式見工作清單。
 - **`-gpu-shapes` 是否改為預設**：GPU 光照已完成（見上方「3D 模型的硬體路徑」），但在 Mesa 軟體繪圖上比 CPU 路徑慢，需要在實體 GPU 上量測後再決定。
 - GameOS 其餘繪圖 API 的型別安全（3D 模型已改用 `gos_RenderShape`）。
 - 編譯警告：從 643 則降到 0 則（GCC 13，Debug 與 RelWithDebInfo）。修正了全部 `printf` / `scanf` 型別不符（64 位元下 `long` 配 `%d`）、所有可能的 `sprintf` 緩衝區溢位與 `snprintf` 截斷（改用 `snprintf` 並把緩衝區加大到放得下）、ABL 腳本 `objectVisible` / `objectActivate` 對群組使用時的空指標存取、讀取被截斷的字型檔時的無窮迴圈、多人模式未實作時以空指標當作玩家名稱；`fread` 皆檢查回傳值；刪除未使用的變數（只在除錯或 `LAB_ONLY` 程式碼中用到的計時變數保留並標示）。

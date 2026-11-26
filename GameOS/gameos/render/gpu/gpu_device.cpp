@@ -492,7 +492,7 @@ bool GpuDevice::init()
     const bool debug = SDL_getenv("MC2_GPU_DEBUG") != nullptr;
     if (!loadManifest("shaders/compiled")) {
         fprintf(stderr, "SDL3 GPU: shaders/compiled/shaders.txt is missing: build the project with "
-                        "glslangValidator and spirv-val installed (see DEVELOPMENT.md)\n");
+                        "glslangValidator and spirv-val installed (see doc/DEVELOPMENT.md)\n");
         return false;
     }
     // Ask only for the shader formats that were shipped. Offering DXIL

@@ -521,7 +521,7 @@ jobs:
           cd dist
           gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
             --title "MechCommander 2 ${GITHUB_REF_NAME#v}" \
-            --notes-file ../packaging/RELEASE_NOTES.md *
+            --notes-file ../doc/RELEASE_NOTES.md *
 
       - name: Publish a test pre-release
         if: github.event_name == 'workflow_dispatch'

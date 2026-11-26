@@ -30,7 +30,9 @@ Microsoft released the game source under the Shared Source license, but its engi
 - Mods and modpacks.
 - More multiplayer modes (co-op missions, roguelike, 1v1) are in development.
 
-**[Development guide (building, architecture, tests, releases) →](DEVELOPMENT.md)**
+**[Development guide (building, architecture, tests, releases) →](doc/DEVELOPMENT.md)**
+
+[Feature-to-file map](doc/code-map.md) (Traditional Chinese)
 
 ---
 
@@ -40,7 +42,7 @@ Single player plays as in the original game; press **F1** in a mission for the f
 
 | Mode | Manual | Status |
 |---|---|---|
-| LAN skirmish (the original multiplayer mode) | **[LAN skirmish manual](docs/manual/lan-skirmish.md)** | Playable |
+| LAN skirmish (the original multiplayer mode) | **[LAN skirmish manual](doc/manual/lan-skirmish.md)** | Playable |
 | Co-op missions (assault, escort, salvage, recon) | When it ships | In development |
 | Roguelike assault / defense | When it ships | Planned |
 | 1v1 (capture, annihilation) | When it ships | Planned |
@@ -49,8 +51,8 @@ Single player plays as in the original game; press **F1** in a mission for the f
 
 ## Other
 
-- [Mods / modding / modpacks](docs/modding.md): change game data with mods; the `mc2mod` tool.
-- [Multiplayer and Chinese translation roadmap](ROADMAP_MULTIPLAYER_ZH.md) (Chinese only).
+- [Mods / modding / modpacks](doc/modding.md): change game data with mods; the `mc2mod` tool.
+- [Multiplayer and Chinese translation roadmap](doc/ROADMAP_MULTIPLAYER_ZH.md) (Chinese only).
 - [Upstream author's website](https://alariq.github.io/mc2-website/).
 
 ### Differences from upstream
@@ -63,7 +65,7 @@ This fork branched from upstream `7130807` (master, April 2022). Below is what t
 - **Multiplayer**: LAN play (ENet, host-authoritative simulation, room discovery, disconnect handling, network pause).
 - **Testing**: unit tests, headless mission smoke tests, fixed-step screenshot comparison tests, UI flow tests, network tests, benchmark scripts, and CI on Linux, Windows and macOS.
 - **Features**: mod / modpack system and the `mc2mod` tool; 3D audio API; memory allocation tracking.
-- **Fixes and cleanup**: builds with GCC 13; compiler warnings 643 → 0; A* pathfinding bug and open-list performance; RLE TGA decoding; quick save / load, the options screen and the pause menu; struct layout broken by `#pragma pack(4)` on macOS; memory errors and undefined behaviour found with AddressSanitizer + UBSan; audio mixed at the device sample rate with a limiter. Details in the [development guide](DEVELOPMENT.md).
+- **Fixes and cleanup**: builds with GCC 13; compiler warnings 643 → 0; A* pathfinding bug and open-list performance; RLE TGA decoding; quick save / load, the options screen and the pause menu; struct layout broken by `#pragma pack(4)` on macOS; memory errors and undefined behaviour found with AddressSanitizer + UBSan; audio mixed at the device sample rate with a limiter. Details in the [development guide](doc/DEVELOPMENT.md).
 
 #### Fixes from the upstream author
 These fixes come from upstream work after this fork branched and were ported here (upstream commits in brackets):
@@ -79,7 +81,7 @@ These features follow the upstream approach but were reimplemented on this fork'
 
 #### In upstream but not in this fork
 - The hardware T&L render path: this fork's SDL3 GPU backend works differently, so it does not apply.
-- Prebuilt Windows third-party libraries and their build guide: this fork uses vcpkg, see [Building on Windows](DEVELOPMENT.md#building-on-windows).
+- Prebuilt Windows third-party libraries and their build guide: this fork uses vcpkg, see [Building on Windows](doc/DEVELOPMENT.md#building-on-windows).
 - Multi-monitor window handling (displayIndex).
 
 ### License
