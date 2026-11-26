@@ -1912,8 +1912,15 @@ void ControlGui::renderVehicleTab()
 	// draw in RP
 	char originalStr[256];
 
+	const long points = LogisticsData::instance->getResourcePoints();
 	cLoadString( IDS_RP, originalStr, 256 );
-	snprintf(buffer, sizeof(buffer), originalStr, static_cast<long>(LogisticsData::instance->getResourcePoints()));
+	snprintf(buffer, sizeof(buffer), originalStr, points);
+
+	// The support panel is only as wide as its buttons. Leave room for every
+	// digit even when the full resource label won't fit the selected layout.
+	const long panelRight = float2long(vehicleButtons[LAST_VEHICLE - 1].location[2].x);
+	if (left + static_cast<long>(vehicleFont.width(buffer)) > panelRight)
+		snprintf(buffer, sizeof(buffer), "RP: %ld", points);
 
 	//We are there.  Start flashing.
 	/// TUTORIAL!!!
