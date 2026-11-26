@@ -1,7 +1,11 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <cstdlib>
+#include <memory>
 #include <string>
+
+#include <SDL3/SDL_stdinc.h>
 
 #include "gameos.hpp"
 #include "font3d.hpp"
@@ -957,7 +961,6 @@ class gosFont {
         int getFontAscent() const { return gi_.font_ascent_; }
 
         int getCharWidth(int c) const;
-        void getCharUV(int c, uint32_t* u, uint32_t* v) const;
         int getCharAdvance(int c) const;
         const gosGlyphMetrics& getGlyphMetrics(int c) const;
 
@@ -2142,60 +2145,99 @@ void gosRenderer::drawIndexedTris(HGOSBUFFER ib, HGOSBUFFER vb, HGOSVERTEXDECLAR
     afterDrawCall();
 }
 
-static int get_next_break(const char* text) {
+static int nextTextCodepoint(const char*& text, size_t& remaining)
+{
     const char* start = text;
-    do {
-        char c = *text;
-        if(c==' ' || c=='\n')
-            return (int32_t)(text - start);
-    } while(*text++);
-
-    return (int32_t)(text - start - 1);
+    const Uint32 codepoint = SDL_StepUTF8(&text, &remaining);
+    // Original resources can still contain standalone extended ASCII bytes.
+    if (codepoint == SDL_INVALID_UNICODE_CODEPOINT && text == start + 1)
+        return static_cast<unsigned char>(*start);
+    return static_cast<int>(codepoint);
 }
 
-int findTextBreak(const char* text, const int count, const gosFont* font, const int region_width, int* out_str_width) {
+static bool isCjk(int codepoint)
+{
+    return (codepoint >= 0x3000 && codepoint <= 0x30ff) ||
+           (codepoint >= 0x3100 && codepoint <= 0x312f) ||
+           (codepoint >= 0x31a0 && codepoint <= 0x31bf) ||
+           (codepoint >= 0x3400 && codepoint <= 0x9fff) ||
+           (codepoint >= 0xf900 && codepoint <= 0xfaff) ||
+           (codepoint >= 0xff01 && codepoint <= 0xff60) ||
+           (codepoint >= 0x20000 && codepoint <= 0x323af);
+}
 
+static bool canBreakBetween(int left, int right)
+{
+    if (!isCjk(left) && !isCjk(right))
+        return false;
+
+    switch (left) {
+        case 0x3008: case 0x300a: case 0x300c: case 0x300e: case 0x3010:
+        case 0xff08: case '(': case '[':
+            return false;
+    }
+    switch (right) {
+        case 0x3001: case 0x3002: case 0x3009: case 0x300b: case 0x300d:
+        case 0x300f: case 0x3011: case 0xff01: case 0xff09: case 0xff0c:
+        case 0xff1a: case 0xff1b: case 0xff1f:
+        case ')': case ']': case ',': case '.': case '!': case '?': case ':': case ';':
+            return false;
+    }
+    return true;
+}
+
+static int findTextBreak(const char* text, int count, const gosFont* font,
+                         int regionWidth, int* outWidth)
+{
+    const char* cursor = text;
+    size_t remaining = count;
     int width = 0;
-    int pos = 0;
 
-    int space_adv = font->getCharAdvance(' ');
+    while (remaining) {
+        const char* segmentEnd = cursor;
+        size_t segmentRemaining = remaining;
+        int segmentWidth = 0;
+        int previous = 0;
+        while (segmentRemaining) {
+            const char* next = segmentEnd;
+            size_t nextRemaining = segmentRemaining;
+            const int codepoint = nextTextCodepoint(next, nextRemaining);
+            if (codepoint == ' ' || codepoint == '\n' ||
+                (previous && canBreakBetween(previous, codepoint)))
+                break;
 
-    while(text[pos]) {
-
-        int break_pos = get_next_break(text + pos);
-
-        int cur_width = 0;
-        for(int j=0;j<break_pos;++j) {
-            cur_width += font->getCharAdvance(text[pos + j]);
+            segmentWidth += font->getCharAdvance(codepoint);
+            segmentEnd = next;
+            segmentRemaining = nextRemaining;
+            previous = codepoint;
         }
 
-        // if next possible break will not fit, then return now
-        if(width + cur_width >= region_width) {
-
-            if(pos == 0) { // handle case when only one word in line and it does not fit it, just return whole line
-                width = cur_width;
-                pos = break_pos;
+        // Keep the legacy rule for words that fill or exceed the remaining width.
+        if (width + segmentWidth >= regionWidth && segmentEnd != cursor) {
+            if (cursor == text) {
+                width = segmentWidth;
+                cursor = segmentEnd;
             }
             break;
-        } else {
-            width += cur_width;
-            pos += break_pos;
+        }
 
-            if(text[pos] == '\n') {
-                pos++;
-                break;
-            }
-
-            if(text[pos] == ' ') {
-                width += space_adv;
-                pos++;
-            }
+        width += segmentWidth;
+        cursor = segmentEnd;
+        remaining = segmentRemaining;
+        if (remaining && *cursor == '\n') {
+            ++cursor;
+            break;
+        }
+        if (remaining && *cursor == ' ') {
+            width += font->getCharAdvance(' ');
+            ++cursor;
+            --remaining;
         }
     }
 
-    if(out_str_width)
-        *out_str_width = width;
-    return pos;
+    if (outWidth)
+        *outWidth = width;
+    return static_cast<int>(cursor - text);
 }
 // returnes num lines in text which should be wrapped in region_width
 int calcTextHeight(const char* text, const int count, const gosFont* font, int region_width)
@@ -2319,9 +2361,10 @@ void gosRenderer::drawText(const char* text) {
                     break;
         }
 
-        for(int i=0; i<num_chars; ++i) {
-
-            const char c = text[i + pos];
+        const char* line = text + pos;
+        size_t lineBytes = num_chars;
+        while (lineBytes) {
+            const int c = nextTextCodepoint(line, lineBytes);
 
             const gosGlyphMetrics& gm = font->getGlyphMetrics(c);
             int char_off_x = gm.minx;
@@ -2455,36 +2498,36 @@ gosFont* gosFont::load(const char* fontFile) {
     char fname[256];
     char dir[256];
     _splitpath(fontFile, NULL, dir, fname, NULL);
-    const char* tex_ext = ".bmp";
-    const char* glyph_ext = ".glyph";
-    
-	const size_t textureNameSize = strlen(fname) + sizeof('/') + strlen(dir) + strlen(tex_ext) + 1;
-    char* textureName = new char[textureNameSize];
-	memset(textureName, 0, textureNameSize);
+    const std::string originalBase = std::string(dir) + '/' + fname;
+    std::string fontBase = originalBase;
+    const auto destroyFont = [](gosFont* font) { delete font; };
+    std::unique_ptr<gosFont, decltype(destroyFont)> font(new gosFont(), destroyFont);
 
-	const size_t glyphNameSize = strlen(fname) + sizeof('/') + strlen(dir) + strlen(glyph_ext) + 1;
-    char* glyphName = new char[glyphNameSize];
-	memset(glyphName, 0, glyphNameSize);
-
-    uint32_t formatted_len = S_snprintf(textureName, textureNameSize, "%s/%s%s", dir, fname, tex_ext);
-	gosASSERT(formatted_len <= textureNameSize - 1);
-
-    formatted_len = S_snprintf(glyphName, glyphNameSize, "%s/%s%s", dir, fname, glyph_ext);
-	gosASSERT(formatted_len <= glyphNameSize - 1);
-
-    gosTexture* ptex = new gosTexture(gos_Texture_Alpha, textureName, 0, NULL, 0, false);
-    if(!ptex || !ptex->createHardwareTexture()) {
-        STOP(("Failed to create font texture: %s\n", textureName));
+    const char* language = std::getenv("MC2_LANGUAGE");
+    if (language && strcmp(language, "zh-TW") == 0) {
+        const std::string localizedBase = std::string("localization/zh-TW/fonts/") + fname;
+        if (FILE* texture = fopen((localizedBase + ".bmp").c_str(), "rb")) {
+            fclose(texture);
+            if (FILE* metrics = fopen((localizedBase + ".glyph").c_str(), "rb")) {
+                fclose(metrics);
+                fontBase = localizedBase;
+            }
+        }
+    }
+    const std::string glyphName = fontBase + ".glyph";
+    if (!gos_load_glyphs(glyphName.c_str(), font->gi_)) {
+        STOP(("Failed to load font glyphs: %s\n", glyphName.c_str()));
+        return nullptr;
     }
 
-    DWORD tex_id = getGosRenderer()->addTexture(ptex);
-
-    gosFont* font = new gosFont();
-    if(!gos_load_glyphs(glyphName, font->gi_)) {
-        delete font;
-        STOP(("Failed to load font glyphs: %s\n", glyphName));
-        return NULL;
+    const std::string textureName = fontBase + ".bmp";
+    auto texture = std::make_unique<gosTexture>(gos_Texture_Alpha, textureName.c_str(),
+        0, nullptr, 0, false);
+    if (!texture->createHardwareTexture()) {
+        STOP(("Failed to create font texture: %s\n", textureName.c_str()));
+        return nullptr;
     }
+    font->tex_id_ = getGosRenderer()->addTexture(texture.release());
 
     font->font_name_ = new char[strlen(fname) + 1];
     strcpy(font->font_name_, fname);
@@ -2492,12 +2535,7 @@ gosFont* gosFont::load(const char* fontFile) {
     font->font_id_ = new char[strlen(fontFile) + 1];
     strcpy(font->font_id_, fontFile);
 
-    font->tex_id_ = tex_id;
-
-    delete[] textureName;
-    delete[] glyphName;
-
-    return font;
+    return font.release();
 
 }
 
@@ -2510,40 +2548,19 @@ uint32_t gosFont::destroy(gosFont* font) {
     return rc;
 }
 
-void gosFont::getCharUV(int c, uint32_t* u, uint32_t* v) const {
-
-    gosASSERT(u && v);
-
-    int32_t pos = c - gi_.start_glyph_;
-    if(pos < 0 || pos >= (int)gi_.num_glyphs_) {
-        *u = *v = 0;
-        return;
-    }
-
-    *u = gi_.glyphs_[pos].u;
-    *v = gi_.glyphs_[pos].v;
-}
-
-int gosFont::getCharAdvance(int c) const
+int gosFont::getCharAdvance(int codepoint) const
 {
-    int pos = c - gi_.start_glyph_;
-    if(pos < 0 || pos >= (int)gi_.num_glyphs_) {
-        return getMaxCharWidth();
-    }
-
-    return gi_.glyphs_[pos].advance;
+    if (const gosGlyphMetrics* glyph = gi_.find(codepoint))
+        return glyph->advance;
+    return getMaxCharWidth();
 }
 
-const gosGlyphMetrics& gosFont::getGlyphMetrics(int c) const {
-    int pos = c - gi_.start_glyph_;
-    if(pos < 0 || pos >= (int)gi_.num_glyphs_)
-        pos = 0;
-
-    return gi_.glyphs_[pos];
+const gosGlyphMetrics& gosFont::getGlyphMetrics(int codepoint) const
+{
+    if (const gosGlyphMetrics* glyph = gi_.find(codepoint))
+        return *glyph;
+    return gi_.glyphs_[0];
 }
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // graphics
@@ -2850,6 +2867,21 @@ void __stdcall gos_TextSetRegion( int Left, int Top, int Right, int Bottom )
     g_gos_renderer->setTextRegion(Left, Top, Right, Bottom);
 }
 
+DWORD __stdcall gos_TextCjkWrappedHeight(const char* text, int regionWidth)
+{
+    const size_t length = strlen(text);
+    const char* cursor = text;
+    size_t remaining = length;
+    while (remaining) {
+        if (isCjk(nextTextCodepoint(cursor, remaining))) {
+            const gosFont* font = g_gos_renderer->getTextAttributes().FontHandle;
+            return calcTextHeight(text, static_cast<int>(length), font, regionWidth)
+                   * font->getMaxCharHeight();
+        }
+    }
+    return 0;
+}
+
 void __stdcall gos_TextStringLength( DWORD* Width, DWORD* Height, const char *fmt, ... )
 {
     gosASSERT(Width && Height);
@@ -2881,16 +2913,16 @@ void __stdcall gos_TextStringLength( DWORD* Width, DWORD* Height, const char *fm
     int cur_width = 0;
     const char* txtptr = text;
 
-    while(*txtptr) {
-        if(*txtptr == '\n') {
+    while (len) {
+        const int codepoint = nextTextCodepoint(txtptr, len);
+        if (codepoint == '\n') {
             num_newlines++;
             max_width = max_width > cur_width ? max_width : cur_width;
             cur_width = 0;
         } else {
-            const int cw = font->getCharAdvance(*txtptr);
+            const int cw = font->getCharAdvance(codepoint);
             cur_width += cw;
         }
-        txtptr++;
     }
     max_width = max_width > cur_width ? max_width : cur_width;
 

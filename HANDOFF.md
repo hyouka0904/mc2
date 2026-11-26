@@ -1,7 +1,7 @@
 # 交接資訊（HANDOFF）
 
 > 每完成一個重要階段就更新這份文件，不等到任務結束。
-> 最後更新：2026-11-27（開發文件整理）
+> 最後更新：2026-11-27（繁中補丁預覽）
 
 ## 任務目標
 
@@ -26,6 +26,15 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
 - **執行與範圍**
   - 遊戲一律在 `timeout` 下執行。
   - 沒有使用者同意，不做 DXIL（D3D12 shader）。
+
+## 繁中補丁預覽
+
+- 目標：在 `feat/zh-tw-localization`（起點 `dev` 提交 `9ec2c9d`）驗證主選單與第一關的中文字形、斷行、任務文字與英文備援。
+- 已完成：UTF-8 繪製與量測、基本中文標點禁則、相容舊字型的稀疏字形表、外部翻譯覆寫，以及 30 條試譯。預覽以 `MC2_LANGUAGE=zh-TW` 啟用，翻譯與疊加字型置於遊戲資料夾的 `localization/zh-TW/`。
+- 補丁產生已確認：`python3 scripts/build_zh_tw_patch.py /workspace/scratch/mc2-zh-game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 12 套字型，每套涵蓋試譯用的 201 字。
+- Linux Release 的 `ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 共 23 項通過。`python3 scripts/run_screenshot_tests.py game shots --renderer gl --only main_menu campaign_select mc2_01_0300` 三張預設英文截圖均符合基準。
+- 以 `MC2_LANGUAGE=zh-TW timeout 285 python3 scripts/run_flow_tests.py game --renderer gl --only campaign,solo_mission --timeout 135` 驗證戰役及單人任務流程，並檢閱主選單與第一關簡報截圖。以資源 DLL 直接確認英文備援與重新啟動後的語言選擇。
+- 待辦：Windows 實機、其他解析度與全量翻譯。字型多頁、遊戲內語言設定、輸入法支援仍待後續。M1 與 U1–U3 維持實機待測，M2 保持待辦。
 
 ## 開發文件整理
 

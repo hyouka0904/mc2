@@ -1,6 +1,8 @@
 #ifndef GOS_FONT_H
 #define GOS_FONT_H
 
+#include <vector>
+
 typedef struct {
     int32_t minx;
     int32_t maxx;
@@ -12,6 +14,11 @@ typedef struct {
     uint32_t v;
 } gosGlyphMetrics;
 
+struct gosUnicodeGlyph {
+    uint32_t codepoint;
+    gosGlyphMetrics metrics;
+};
+
 struct gosGlyphInfo {
     gosGlyphInfo():num_glyphs_(0), glyphs_(0) {}
     uint32_t num_glyphs_;
@@ -20,6 +27,9 @@ struct gosGlyphInfo {
     uint32_t max_advance_;
     uint32_t font_ascent_;
     uint32_t font_line_skip_;
+    std::vector<gosUnicodeGlyph> unicode_glyphs_;
+
+    const gosGlyphMetrics* find(int codepoint) const;
 };
 
 bool gos_load_glyphs(const char* glyphFile, gosGlyphInfo& gi);

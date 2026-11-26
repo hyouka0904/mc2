@@ -1,0 +1,30 @@
+IDS_MM_RETURN_TO_GAME	返回遊戲
+IDS_MM_MULTIPLAYER	多人遊戲
+IDS_MM_OPTIONS	選項
+IDS_MM_ENCYCLOPEDIA	百科全書
+IDS_MM_NEWCAMPAIGN	新戰役
+IDS_MM_SKIRMISH	單人任務
+IDS_MM_SAVE	儲存遊戲
+IDS_MM_EXIT	離開
+IDS_MM_LOAD	載入遊戲
+IDS_MM_RETURN_TO_GAME2	返回目前的遊戲。
+IDS_MM_MULTIPLAYER_HELP	開始多人遊戲。
+IDS_MM_OPTIONS_HELP	調整畫面、音效、遊戲玩法與快捷鍵。
+IDS_MM_ENCYCLOPEDIA_HELP	查閱《BattleTech》宇宙的裝備、人物和歷史。
+IDS_MM_NEWCAMPAIGN_HELP	開始新的戰役。
+IDS_MM_SKIRMISH_HELP	載入已完成的戰役任務，或用任務編輯器建立的任務。
+IDS_MM_SAVE_HELP	儲存目前的任務。
+IDS_MM_EXIT_HELP	離開《MechCommander 2》。
+IDS_MM_LOAD_HELP	載入已儲存的任務。
+IDS_MN_TITLE	任務簡報
+IDS_MN_HEADER	任務簡報
+IDS_MN_MISSION_OBJECTIVES	任務目標
+IDS_MIS_NAME_01	偵察巡邏
+IDS_BLURB_01	進行基本系統檢查，並深入匪徒活動區偵察。
+IDS_OBJECTIVES_1_1	1. 調查廢棄機場
+IDS_OBJECTIVES_1_2	2. 摧毀機庫
+IDS_OBJECTIVES_1_3	3. 消滅匪徒巡邏隊
+IDS_OBJECTIVES_1_4	4. 完成維修後前往北島
+IDS_OBJECTIVES_1_5	5. 找出並消滅匪徒
+IDS_OBJECTIVES_1_6	6. 將所有機甲移至撤離點
+IDS_BRIEF_01	我方部隊自這個區域起，陸續遭到匪徒伏擊與襲擊。\n\n請啟動 MechCommander 軟體與各項系統，前往該區調查。遇到敵對匪徒時，可逕行消滅，無須向史坦納最高指揮部請示。\n\n戰術官備註：\n指揮官，歡迎來到卡弗五號星。我會在雇主史坦納家族提供的簡報中補上自己的備註。\n\n巡邏路線會穿越一連串小島。機甲和氣墊載具可以渡過淺水區，一般車輛和戰車則無法通行。若遇到大批匪徒，可試著穿過淺水區撤退，將敵方的機甲與車輛分開。

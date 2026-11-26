@@ -1,9 +1,9 @@
-#include<inttypes.h>
+#include <algorithm>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 // errno + strerror
 #include <errno.h>
-#include <string.h>
 
 #include "gameos.hpp"
 #include "gos_font.h"
@@ -44,9 +44,40 @@ bool gos_load_glyphs(const char* glyphFile, gosGlyphInfo& gi)
         num_structs_read += n;
     }
 
-    fclose(glyph_info);
+    // An optional, sorted Unicode table follows the original glyph records.
+    char magic[4];
+    uint32_t count = 0;
+    if (fread(magic, 1, sizeof(magic), glyph_info) == sizeof(magic) &&
+        memcmp(magic, "MCU1", sizeof(magic)) == 0 &&
+        fread(&count, sizeof(count), 1, glyph_info) == 1 && count <= 0x110000) {
+        gi.unicode_glyphs_.resize(count);
+        uint32_t previous = 0;
+        for (auto& glyph : gi.unicode_glyphs_) {
+            if (fread(&glyph.codepoint, sizeof(glyph.codepoint), 1, glyph_info) != 1 ||
+                fread(&glyph.metrics, sizeof(glyph.metrics), 1, glyph_info) != 1 ||
+                glyph.codepoint <= previous || glyph.codepoint > 0x10ffff) {
+                gi.unicode_glyphs_.clear();
+                break;
+            }
+            previous = glyph.codepoint;
+        }
+    }
 
+    fclose(glyph_info);
     return true;
 }
 
+const gosGlyphMetrics* gosGlyphInfo::find(int codepoint) const
+{
+    const int position = codepoint - static_cast<int>(start_glyph_);
+    if (position >= 0 && static_cast<uint32_t>(position) < num_glyphs_)
+        return &glyphs_[position];
 
+    const auto it = std::lower_bound(unicode_glyphs_.begin(), unicode_glyphs_.end(),
+        static_cast<uint32_t>(codepoint), [](const gosUnicodeGlyph& glyph, uint32_t value) {
+            return glyph.codepoint < value;
+        });
+    if (it != unicode_glyphs_.end() && it->codepoint == static_cast<uint32_t>(codepoint))
+        return &it->metrics;
+    return nullptr;
+}

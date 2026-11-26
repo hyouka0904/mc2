@@ -85,6 +85,9 @@ unsigned long aFont::height( const char* st, int areaWidth ) const
 	gos_TextSetRegion( 0, 0, areaWidth, Environment.screenHeight );
 	gos_TextStringLength(&width,&height,st);
 
+	if (const DWORD wrappedHeight = gos_TextCjkWrappedHeight(st, areaWidth))
+		return wrappedHeight;
+
 	DWORD lineCount = 1;
 
 	if ( width > areaWidth - 1 )

@@ -1030,6 +1030,9 @@ void __stdcall gos_TextDrawBackground( int Left, int Top, int Right, int Bottom,
 //
 void __stdcall gos_TextStringLength( DWORD* Width, DWORD* Height, const char *Message, ... );
 
+// Returns zero when the string contains no CJK codepoints.
+DWORD __stdcall gos_TextCjkWrappedHeight(const char* text, int regionWidth);
+
 //
 // Draws string using current attributes and position
 //
