@@ -85,6 +85,7 @@ class GameSoundSystem : public SoundSystem
 		long queueRadioMessage (RadioData *msgData);
 		void moveFromQueueToPlaying (void);
 		void removeCurrentMessage (void);
+		void discardPilotMessages (MechWarriorPtr pilot);
 };
 
 //---------------------------------------------------------------------------

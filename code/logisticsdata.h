@@ -90,8 +90,9 @@ public:
 
 	void				setResourcePoints(long rp) {resourcePoints = rp; rpJustAdded = 0;}
 	int					getResourcePoints() { return resourcePoints; }
-	void				addResourcePoints( int amount ){ resourcePoints+= amount; rpJustAdded = true;}
-	void				decrementResourcePoints( int amount ){ resourcePoints -= amount; }
+	void				addResourcePoints(int amount);
+	void				decrementResourcePoints(int amount);
+	void				syncResourcePoints(int amount);
 
 	int					getCBills();
 	void				addCBills( int amount );

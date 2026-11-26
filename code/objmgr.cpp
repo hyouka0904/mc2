@@ -547,6 +547,7 @@ ElementalPtr GameObjectManager::getElemental (long elementalIndex) {
 BattleMechPtr GameObjectManager::newMech (void) {
 
 	if (numMechs < maxMechs) {
+		mechs[numMechs]->GameObject::init(false);
 		mechs[numMechs]->init(false);
 		mechs[numMechs]->setExists(true);
 		setPartId(mechs[numMechs], -1, -1, -1);
@@ -567,6 +568,7 @@ BattleMechPtr GameObjectManager::newMech (void) {
 GroundVehiclePtr GameObjectManager::newVehicle (void) {
 
 	if (numVehicles < maxVehicles) {
+		vehicles[numVehicles]->GameObject::init(false);
 		vehicles[numVehicles]->init(false);
 		vehicles[numVehicles]->setExists(true);
 		setPartId(vehicles[numVehicles], -1, -1, -1);
@@ -586,7 +588,7 @@ GroundVehiclePtr GameObjectManager::newVehicle (void) {
 
 void GameObjectManager::setWatchID (GameObjectPtr obj) {
 
-	if (obj->watchID == 0) {
+	if (obj->watchID == 0 && nextWatchID <= static_cast<unsigned long>(getMaxObjects())) {
 		watchList[nextWatchID] = obj;
 		obj->watchID = nextWatchID++;
 	}
@@ -598,8 +600,12 @@ void GameObjectManager::freeMover (MoverPtr mover) {
 
 	bool foundIt = modifyMoverLists(mover, MOVERLIST_DELETE);
 	if (foundIt) {
+		for (long i = 0; i < numMovers; ++i)
+			if (moverList[i]->sensorSystem)
+				moverList[i]->sensorSystem->removeContact(mover);
 		mover->release();
 		mover->setExists(false);
+		rebuildCollidableList = true;
 		mover->setFlag(OBJECT_FLAG_REMOVED, true);
 		mover->setPartId(0);
 		watchList[mover->watchID] = NULL;
@@ -2095,7 +2101,7 @@ GameObjectPtr GameObjectManager::findObjectByTypeHandle (long typeHandle) {
 
 //---------------------------------------------------------------------------
 
-GameObjectPtr GameObjectManager::findByPartId (long partId) {
+GameObjectPtr GameObjectManager::findByPartId (long partId, bool includeInactive) {
 
 	if (partId == 0)
 		return(NULL);
@@ -2104,7 +2110,7 @@ GameObjectPtr GameObjectManager::findByPartId (long partId) {
 	for (long objIndex = 1; objIndex <= numObjects; objIndex++) 
 	{
 		GameObjectPtr obj = objList[objIndex];
-		if (obj && obj->getExists() && (obj->getPartId() == partId))
+		if (obj && (includeInactive || obj->getExists()) && (obj->getPartId() == partId))
 			return(obj);
 	}
 	return(NULL);
@@ -3000,7 +3006,7 @@ long GameObjectManager::Save (PacketFilePtr file, long packetNum)
 			// If none, let it be.  It'll be zero already
 			// DO NOT CALL getWatchID!!!!!!!
 			// That will assign them to objects which don't have them!!!!
-			for (long j=0;j<=nextWatchID;j++)
+			for (long j = 1; j < nextWatchID; ++j)
 			{
 				if (watchList[j] == objList[i])
 				{
@@ -3618,7 +3624,7 @@ long GameObjectManager::Load (PacketFilePtr file, long packetNum)
 	// If none, let it be.  It'll be zero already
 	// DO NOT CALL getWatchID!!!!!!!
 	// That will assign them to objects which don't have them!!!!
-	for (int j=0;j<getMaxObjects();j++)
+	for (int j = 0; j <= getMaxObjects(); ++j)
 	{
 		watchList[j] = objList[watchSave[j]];
 	}

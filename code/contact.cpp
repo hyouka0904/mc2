@@ -1250,7 +1250,8 @@ void SensorSystemManager::freeSensor (SensorSystemPtr sensor) {
 
 	sensor->prev = NULL;
 	sensor->next = freeList;
-	freeList->prev = sensor;
+	if (freeList)
+		freeList->prev = sensor;
 	freeList = sensor;
 }
 

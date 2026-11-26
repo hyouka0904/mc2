@@ -66,7 +66,9 @@ def host_script():
     s = click(600, *MP_BUTTON) + click(800, *LAN) + click(900, *HOST_GAME)
     s += click(1000, *HOST_NAME_EDIT)
     s += ["1010 key R", "1014 key O", "1018 key O", "1022 key M"]
-    s += click(1050, *HOST_ACCEPT) + click(1300, *QUICKSTART) + click(4600, *LAUNCH)
+    # Let the second process finish startup and signal Ready even on a
+    # software renderer with an uneven frame rate between the two windows.
+    s += click(1050, *HOST_ACCEPT) + click(1300, *QUICKSTART) + click(6200, *LAUNCH)
     return s
 
 

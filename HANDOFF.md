@@ -1,7 +1,7 @@
 # 交接資訊（HANDOFF）
 
 > 每完成一個重要階段就更新這份文件，不等到任務結束。
-> 最後更新：2026-11-25（commit 67c5a31 之後）
+> 最後更新：2026-11-26（臨時修正整合至 dev）
 
 ## 任務目標
 
@@ -20,12 +20,28 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
   - 給測試步驟時要附完整指令。
   - 每個里程碑結束就停下來，等使用者回報實機測試結果。
 - **Git**
-  - 工作分支 `claude/admiring-maxwell-3xhqba`，只 push 到這條分支。master 和 tag 由使用者處理。
+  - 路線圖工作分支為 `claude/admiring-maxwell-3xhqba`。臨時修正由獨立分支通過 CI 後整合至 `dev`。master 和 tag 由使用者處理。
   - 不開 PR，除非使用者要求。
   - commit 用 Conventional Commits（見 `CLAUDE.md`），不要寫進模型名稱。
 - **執行與範圍**
   - 遊戲一律在 `timeout` 下執行。
   - 沒有使用者同意，不做 DXIL（D3D12 shader）。
+
+## 臨時修正
+
+- 目標：修正關卡 MOD 動態生成與移除、Resource Points 顯示、維修車遇到卡模時的指令延續。
+- 工作分支：`fix/mc2-mission-regressions`，從 `dev` 分出。兩者起點為已測的 Claude 分支 `bf8494e`。
+- 里程碑維持 M1、U1–U3 的實機待測。這次插入修正，M2 保持待辦。
+- 合併條件：同一修復版本的 Windows 與 Linux CI 均須通過。macOS 如因 runner 不可用而無結果，可略過。
+- 本機確認：Release 建置、MOD／ENet／更新相關 4 組 CTest、`mc2_01` ABL 連續 16 波共 512 次建立與清場，以及 `objectsuicide` 後重啟用通過。預置單位連續四波移除後，檔案描述符依序從 97 降到 85、73、61、49。
+- 資源點以主機同步的餘額更新 HUD，扣款與取消退款共用既有的資源差額訊息。地圖缺少起始值時以零顯示。800×600 實測完整標籤會裁掉數字，寬度不足時改用 RP 標籤。單人 HUD 已確認完整顯示 22000。雙實例測試確認客戶端顯示 3000，扣除探測器費用變成 1000，取消後回到 3000。
+- 回歸確認：維修指令跨越避障移動保留，超出維修距離時回到接近階段。同座標部署及遠距離接近兩個本機關卡測試都成功修回裝甲。不同平台的實機操作仍待驗證。
+- 修復分支 `8940d6c` 的 CI 五項全過，涵蓋 Windows、macOS、Linux Debug／RelWithDebInfo 與 Linux 遊戲端到端。聯機、版本提示、兩個渲染後端的畫面和 UI 流程均通過。[CI 執行紀錄](https://github.com/hyouka0904/mc2/actions/runs/45847432179)
+- 測試命令
+  - `cmake --build build --target mc2 unit_net unit_update unit_mods`
+  - `ctest --test-dir build -R '^(unit_net|unit_update|unit_mods|tool_mc2mod)$' --output-on-failure`
+  - `timeout 900 python3 scripts/run_net_test.py game --out net --timeout 900`（CI 內執行同一聯機測試）
+- 下一步：在 `dev` 整合版驗證 M1、U1–U3 的 Windows／Linux 跨實體裝置操作，並回報原地圖的維修脫困情境。保持 M2 待辦。
 
 ## 已完成事項
 

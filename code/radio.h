@@ -131,9 +131,7 @@ class Radio
 			radioID = -1;
 		}
 
-		void destroy (void)
-		{
-		}
+		void destroy (void);
 
 		Radio (void)
 		{

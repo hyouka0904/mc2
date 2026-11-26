@@ -33,6 +33,32 @@ LogisticsData.cpp			: Implementation of the LogisticsData component.
 
 extern CPrefs prefs;
 
+void LogisticsData::addResourcePoints(int amount)
+{
+	resourcePoints += amount;
+	rpJustAdded = true;
+#ifndef VIEWER
+	if (MPlayer)
+		MPlayer->sendReinforcement(amount, 0, nullptr, MPlayer->commanderID, Stuff::Vector3D(0, 0, 0), 6);
+#endif
+}
+
+void LogisticsData::decrementResourcePoints(int amount)
+{
+	resourcePoints -= amount;
+#ifndef VIEWER
+	if (MPlayer)
+		MPlayer->sendReinforcement(-amount, 0, nullptr, MPlayer->commanderID, Stuff::Vector3D(0, 0, 0), 6);
+#endif
+}
+
+void LogisticsData::syncResourcePoints(int amount)
+{
+	if (amount > resourcePoints)
+		rpJustAdded = true;
+	resourcePoints = amount;
+}
+
 //----------------------------------------------------------------------
 // WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //PLEASE CHANGE THIS IF THE SAVEGAME FILE FORMAT CHANGES!!!!!!!!!!!!!

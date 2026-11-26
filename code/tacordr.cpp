@@ -757,8 +757,11 @@ long TacticalOrder::execute (MechWarriorPtr warrior, long& message) {
 	long result = TACORDER_FAILURE;
 	message = -1;
 
-	if (warrior->getVehicle()->refitBuddyWID)	// am I in a refitting operation? if is, point my and my refit
-	{												// buddy to NULL, taking us out of the operation
+	// A pathfinding escape is temporary. Keep both units reserved for the refit.
+	const bool escapingTile = origin == ORDER_ORIGIN_SELF &&
+		code == TACTICAL_ORDER_MOVETO_POINT && moveParams.escapeTile;
+	if (warrior->getVehicle()->refitBuddyWID && !escapingTile)
+	{
 		GameObjectPtr refitBuddy = ObjectManager->getByWatchID(warrior->getVehicle()->refitBuddyWID);
 		MoverPtr vehicle = warrior->getVehicle();
 		// turn off refitting (may not be on, but make sure)
@@ -1065,13 +1068,11 @@ long TacticalOrder::execute (MechWarriorPtr warrior, long& message) {
 //					cellCol++;
 					land->cellToWorld(cellRow, cellCol, destination);
 
-					result = warrior->orderMoveToPoint(unitOrder, false, origin, destination, selectionIndex, params);
+					warrior->orderMoveToPoint(unitOrder, false, origin, destination, selectionIndex, params);
 					time = 0;
-					if (result == TACORDER_FAILURE)
-					{
-						((MoverPtr)target)->refitBuddyWID = warrior->getVehicle()->getWatchID();
-						warrior->getVehicle()->refitBuddyWID = target->getWatchID();
-					}
+					((MoverPtr)target)->refitBuddyWID = warrior->getVehicle()->getWatchID();
+					warrior->getVehicle()->refitBuddyWID = target->getWatchID();
+					result = TACORDER_FAILURE;
 				}
 
 				if (result != TACORDER_FAILURE)
@@ -1440,7 +1441,15 @@ long TacticalOrder::status (MechWarriorPtr warrior) {
 					((MoverPtr) target)->refitBuddyWID = warrior->getVehicle()->getWatchID();
 
 				result = TACORDER_FAILURE;
-				switch(stage) 
+				if ((stage == 2 || stage == 3) &&
+					warrior->getVehicle()->distanceFrom(target->getPosition()) >= Mover::refitRange)
+				{
+					((GroundVehiclePtr)warrior->getVehicle())->refitting = false;
+					stage = 1;
+					time = 0;
+				}
+
+				switch(stage)
 				{
 					case 1:	// move
 						if (warrior->getMovePath()->numStepsWhenNotPaused == 0 && warrior->getMovePathRequest() == NULL)
@@ -1458,7 +1467,7 @@ long TacticalOrder::status (MechWarriorPtr warrior) {
 								cellCol++;
 								land->cellToWorld(cellRow, cellCol, destination);
 								unsigned long params = TACORDER_PARAM_FACE_OBJECT;
-								result = warrior->orderMoveToPoint(unitOrder, false, origin, destination, selectionIndex, params);
+								warrior->orderMoveToPoint(unitOrder, false, origin, destination, selectionIndex, params);
 							}
 						}
 						break;

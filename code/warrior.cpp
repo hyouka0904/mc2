@@ -9,6 +9,7 @@
 //***************************************************************************
 
 #ifndef MCLIB_H
+#include "gamesound.h"
 #include"mclib.h"
 #endif
 
@@ -7535,6 +7536,11 @@ MechWarrior* MechWarrior::newWarrior (void) {
 
 void MechWarrior::freeWarrior (MechWarrior* warrior) {
 
+	if (warrior->radio) {
+		soundSystem->discardPilotMessages(warrior);
+		delete warrior->radio;
+		warrior->radio = nullptr;
+	}
 	warrior->clear();
 }
 

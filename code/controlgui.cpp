@@ -1912,8 +1912,15 @@ void ControlGui::renderVehicleTab()
 	// draw in RP
 	char originalStr[256];
 
+	const long points = LogisticsData::instance->getResourcePoints();
 	cLoadString( IDS_RP, originalStr, 256 );
-	sprintf( buffer, originalStr, (long)LogisticsData::instance->getResourcePoints() );
+	snprintf(buffer, sizeof(buffer), originalStr, points);
+
+	// The support panel is only as wide as its buttons. Leave room for every
+	// digit even when the full resource label won't fit the selected layout.
+	const long panelRight = float2long(vehicleButtons[LAST_VEHICLE - 1].location[2].x);
+	if (left + static_cast<long>(vehicleFont.width(buffer)) > panelRight)
+		snprintf(buffer, sizeof(buffer), "RP: %ld", points);
 
 	//We are there.  Start flashing.
 	/// TUTORIAL!!!
@@ -1972,11 +1979,6 @@ void ControlGui::handleVehicleClick( int ID )
 			{
 				int cost = vehicleCosts[i];
 				LogisticsData::instance->decrementResourcePoints( cost );
-				if (MPlayer) {
-					Stuff::Vector3D pos;
-					MPlayer->sendReinforcement(-cost, 0, "noname", MPlayer->commanderID, pos, 6);
-				}
-
 			}
 		}
 
@@ -2022,17 +2024,6 @@ void ControlGui::handleVehicleClick( int ID )
 				int cost = vehicleCosts[oldID - LARGE_AIRSTRIKE];
 				LogisticsData::instance->addResourcePoints( cost );
 
-				if ( MPlayer )
-				{
-					MPlayer->playerInfo[MPlayer->commanderID].resourcePoints += cost;
-					MPlayer->playerInfo[MPlayer->commanderID].resourcePointsGained += cost;
-
-					if (!MPlayer->isHost())
-					{
-						MPlayer->sendPlayerUpdate( 0, 5, MPlayer->commanderID );
-					}
-
-				}
 			}
 			
 			idToUnPress = ID;
