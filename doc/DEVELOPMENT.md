@@ -1,8 +1,8 @@
 # Development Guide
 
-[中文版](DEVELOPMENT.zh-TW.md) ｜ [Back to README](README.md)
+[中文版](DEVELOPMENT.zh-TW.md) ｜ [Back to README](../README.md)
 
-For people who want to build the game, change the code or contribute. To just play, download a package from the [README](README.md).
+For people who want to build the game, change the code or contribute. To just play, download a package from the [README](../README.md).
 
 ## Contents
 
@@ -16,7 +16,7 @@ For people who want to build the game, change the code or contribute. To just pl
 8. [Packages and releases](#packages-and-releases)
 9. [Known limitations and open items](#known-limitations-and-open-items)
 
-- Mod format, tool and API: [docs/modding.md](docs/modding.md)
+- Mod format, tool and API: [doc/modding.md](modding.md)
 - Roadmap for the multiplayer modes (co-op, roguelike, 1v1, ML interface) and the Chinese translation: [ROADMAP_MULTIPLAYER_ZH.md](ROADMAP_MULTIPLAYER_ZH.md) (Chinese only)
 
 ---
@@ -80,7 +80,7 @@ The code has four layers; each depends only on the ones below it:
 | `cmake/MC2Dependencies.cmake` | Gets SDL3 / SDL3_mixer / SDL3_ttf: an installed version if there is one, otherwise a pinned version downloaded and built statically. |
 | `.github/workflows/ci.yml` | GitHub Actions: build, unit tests, smoke test that runs the game. |
 | `test_scripts/res_conv/` | UI string sources (`strings.res.cpp`, `resource.h`) and the upstream conversion script `res_conv.pl`. |
-| `docs/` | Player manuals and the modding guide. |
+| `doc/` | Player manuals and the modding guide. |
 
 ### Game data pipeline
 
@@ -160,7 +160,7 @@ The cutscenes are stored with Git LFS. With `git-lfs` installed, run after cloni
 git -C mc2srcdata lfs pull
 ```
 
-You also need `ffmpeg`: the data build converts the movies to MPEG-1 (`.mpg`), which the game decodes with the bundled [pl_mpeg](thirdparty/pl_mpeg/pl_mpeg.h) (MIT).
+You also need `ffmpeg`: the data build converts the movies to MPEG-1 (`.mpg`), which the game decodes with the bundled [pl_mpeg](../thirdparty/pl_mpeg/pl_mpeg.h) (MIT).
 
 ```bash
 sudo apt-get install ffmpeg
@@ -208,12 +208,12 @@ cd game && ./mc2
 
 ## How LAN multiplayer works
 
-For playing, see the [LAN skirmish manual](docs/manual/lan-skirmish.md).
+For playing, see the [LAN skirmish manual](manual/lan-skirmish.md).
 
 ### Design
 
 - **Host-authoritative**: the host runs the full simulation (AI, hit rolls, damage, mission outcome); clients only send orders and display the state the host sends. When a client drops, the host's AI takes over its units; when the host drops, the clients' mission ends.
-- The transport is [ENet](thirdparty/enet/) (reliable / unreliable UDP) behind `GameOS/gameos/net/gos_net.h`; game code never touches ENet directly.
+- The transport is [ENet](../thirdparty/enet/) (reliable / unreliable UDP) behind `GameOS/gameos/net/gos_net.h`; game code never touches ENet directly.
 - Star topology: clients connect only to the host, which relays. Messages are the `MCMSG_*` structs in `code/multplyr.h`, made only of fixed-size types, so the byte layout is identical on all three platforms.
 - `code/multplyr.cpp`: rooms, roster, colors and teams, chat, load handshake. `code/multplyr_sync.cpp`: in-mission sync — unit movement / status chunks (sent on change, 10 Hz), weapon fire, critical hits, radio, hits, world events (mines, fire, artillery, building captures), orders, support units, pause, mission outcome.
 - Room discovery shares UDP 27015 with the game: a scanner sends a query to 255.255.255.255, to every interface's subnet broadcast and to 127.0.0.1, and every host answers with its room info.
@@ -325,7 +325,7 @@ ctest --test-dir build --output-on-failure
 | `render_isolation` | Checks that OpenGL appears only in `GameOS/gameos/render/gl/` |
 | `shader_validation` | Compiles and links every shader variant offline with glslangValidator (same `#version 420`, `ALPHA_TEST` define and `#include` expansion as at run time), no GPU needed; skipped without `glslang-tools` |
 | `shader_spirv` | Every variant compiles to Vulkan SPIR-V and passes `spirv-val`, the two stages' interfaces link, conversion to MSL / HLSL works, and the `PerDraw` uniform block offsets match the C++ struct; `-DMC2_SHADER_REQUIRE=msl,hlsl` makes the converters mandatory (CI uses it) |
-| `unit_mods` / `tool_mc2mod` | Mod system and tool (see [docs/modding.md](docs/modding.md)) |
+| `unit_mods` / `tool_mc2mod` | Mod system and tool (see [doc/modding.md](modding.md)) |
 | `unit_stuff` | Runs the self-tests built into the original Stuff math library that were never called |
 | `tool_fastfile` / `tool_pak` / `tool_rsp` | Pack → unpack round trips for the data tools |
 | `tool_text_tool` | Bakes a font without a display |
@@ -381,7 +381,7 @@ A few GameOS-level command-line options make every run produce pixel-identical f
 | `-perf-csv <file>` | One line per frame: frame number, wall time (ms), draw calls, pipeline state changes, distinct pipelines seen, main thread CPU time (ms) |
 | `-datapath <dir>` | Game directory (the one containing `data/`) |
 | `-version` | Print the version and exit |
-| `-mods <dir>` / `-modpack <file>` | Enable mods / a modpack (see [docs/modding.md](docs/modding.md)) |
+| `-mods <dir>` / `-modpack <file>` | Enable mods / a modpack (see [doc/modding.md](modding.md)) |
 | `-windowed` | Ignore the game's fullscreen setting and always use a window (fullscreen depends on the window manager and would make screenshots environment-dependent) |
 | `-shader-reload` | Development: recompile shaders in game when their source changes (checked every half second, off by default) |
 | `-renderer gl\|gpu` | Render backend: `gpu` = SDL3 GPU (default; Vulkan on Linux), `gl` = OpenGL. The screenshot script always passes it explicitly. `MC2_GPU_DEBUG=1` enables the Vulkan validation layers; `SDL_GPU_DRIVER` picks a driver |
@@ -441,7 +441,7 @@ Bugs these flows caught (all fixed):
 
 ### Continuous integration
 
-`.github/workflows/ci.yml` runs on every push / PR, except pushes that only change documentation (`*.md`, `docs/`; use "Run workflow" to force a run):
+`.github/workflows/ci.yml` runs on every push / PR, except pushes that only change documentation (`*.md`, `doc/`; use "Run workflow" to force a run):
 
 1. Builds RelWithDebInfo and Debug and runs every CTest test (Linux), and builds and runs the unit tests on Windows (MSVC) and macOS (Apple Silicon);
 2. Downloads and builds the game data and plays `mc2_01` for 60 seconds as a smoke test;
@@ -523,7 +523,7 @@ git push origin v0.1.0
 1. **Linux**: builds, runs the unit tests, builds the game data from mc2srcdata (the real Git LFS videos are required; no test patterns), and produces the AppImage and tar.gz. It then runs the read-only AppImage from another folder with a fresh user folder, plays `mc2_01` for 300 frames with OpenGL and with SDL3 GPU, and checks that the screenshots are not black.
 2. **Windows**: builds with MSVC and produces the installer and zip (the Visual C++ runtime DLLs sit next to `mc2.exe`). Tests a silent install, checks the files, runs `mc2.exe -version`, uninstalls.
 3. **macOS**: builds and produces the dmg (re-signed ad-hoc, icon generated). Mounts it and checks the signature, the files and `mc2 -version`.
-4. When all three pass, creates a **draft** GitHub Release with every package and `SHA256SUMS.txt`, using `packaging/RELEASE_NOTES.md` as the text. Check it, then press "Publish" on GitHub.
+4. When all three pass, creates a **draft** GitHub Release with every package and `SHA256SUMS.txt`, using `doc/RELEASE_NOTES.md` as the text. Check it, then press "Publish" on GitHub.
 
 The game data and the compiled shaders (SPIR-V / MSL / HLSL) are platform-independent, so they are built once on Linux and handed to Windows and macOS.
 **Test versions.** Running the workflow by hand (Actions > Release > Run workflow, pick the branch) publishes a **pre-release** `v<next patch>-test.<run number>` (for example `v0.1.1-test.42` after `v0.1.0`) with the packages and `SHA256SUMS.txt`, tagged at the branch's commit. Games with "Receive test versions" on offer it as an update; everyone else never sees it (`releases/latest` skips pre-releases, and `0.1.1-test.42` sorts before `0.1.1`). Only the 5 newest test pre-releases and their tags are kept. Options: `version` sets the version by hand, unticking `publish` only keeps workflow artifacts, unticking `macos` skips the macOS job (a test pre-release does not wait for macOS anyway). Changing `packaging/` or `scripts/package.py` builds and tests the packages as `0.0.0-test` without publishing; each package is kept as a separate workflow artifact (not zipped again). Releases also carry the parts and manifests for part updates (see [Update check](#update-check)).
@@ -698,7 +698,7 @@ ASan's allocator does not forward sized delete and nothrow new to the game's `op
 
 ### Other open items
 
-- **Network play**: LAN skirmish is done (see the [LAN skirmish manual](docs/manual/lan-skirmish.md)); co-op, roguelike and the other modes are in the roadmap.
+- **Network play**: LAN skirmish is done (see the [LAN skirmish manual](manual/lan-skirmish.md)); co-op, roguelike and the other modes are in the roadmap.
 - **Whether `-gpu-shapes` becomes the default**: GPU lighting is done (see "The 3D model hardware path" above) but is slower than the CPU path on Mesa software rendering; it needs measuring on a real GPU.
 - Type safety for the remaining GameOS draw APIs (3D models already use `gos_RenderShape`).
 - Compiler warnings: down from 643 to 0 (GCC 13, Debug and RelWithDebInfo). Fixed every `printf` / `scanf` type mismatch (`long` with `%d` on 64-bit), every possible `sprintf` overflow and `snprintf` truncation (now `snprintf` with buffers large enough), null pointer access in the ABL `objectVisible` / `objectActivate` when used on groups, an infinite loop reading a truncated font file, a null pointer used as the player name while multiplayer was unimplemented; every `fread` return value is checked; unused variables deleted (timing variables used only in debug or `LAB_ONLY` code are kept and marked).

@@ -1,17 +1,17 @@
 # 交接資訊（HANDOFF）
 
 > 每完成一個重要階段就更新這份文件，不等到任務結束。
-> 最後更新：2026-11-26（臨時修正整合至 dev）
+> 最後更新：2026-11-27（開發文件整理）
 
 ## 任務目標
 
-MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Linux、Windows（MSVC）、macOS（Apple Silicon）。目前在做 `ROADMAP_MULTIPLAYER_ZH.md` 的聯機路線圖，分成三條線：
+MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Linux、Windows（MSVC）、macOS（Apple Silicon）。目前在做 `doc/ROADMAP_MULTIPLAYER_ZH.md` 的聯機路線圖，分成三條線：
 
 - **M 線（聯機）**：M1 區網聯機 → M2 共通系統 → M3 合作關卡 → M4 地圖生成 → M5 合作任務擴充 → M6 Roguelike → M7 雙人對戰 → M8 機器學習接口。
 - **U 線（更新）**：版本檢查和自動更新。
 - **L 線（中文化）**：繁體中文補丁。
 
-詳細計畫在 `ROADMAP_MULTIPLAYER_ZH.md`。
+詳細計畫在 `doc/ROADMAP_MULTIPLAYER_ZH.md`。
 
 ### 工作規則（使用者指定）
 
@@ -26,6 +26,15 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
 - **執行與範圍**
   - 遊戲一律在 `timeout` 下執行。
   - 沒有使用者同意，不做 DXIL（D3D12 shader）。
+
+## 開發文件整理
+
+- 工作分支：`docs/development-map`。開發指南、聯機路線圖、玩家手冊、Mod 文件及發佈說明集中到 `doc/`。根目錄 README 保留中英入口，`HANDOFF.md` 保留原路徑。
+- 新增 [功能與檔案索引](doc/code-map.md) 和 [AGENTS.md](AGENTS.md)。先查相關條目，再用 `rg -n` 核對入口、共用狀態、連動檔案與測試。
+- 已驗證：Markdown 相對連結與標題錨點檢查通過，`git diff --check HEAD` 通過。發佈流程和 CI 已同步改用 `doc/` 的路徑。
+- 分支提交 `0be7619` 通過 Windows、Linux Debug／RelWithDebInfo 及 Linux 遊戲端到端測試（雙渲染後端、UI、區網與版本相容性）。macOS 排隊後取消，沒有開始執行。依既有條件整合至 `dev`。[CI 執行紀錄](https://github.com/hyouka0904/mc2/actions/runs/45857701890)
+- 發佈流程的 Windows 與 Linux 打包檢查通過，macOS 尚無結果。[打包執行紀錄](https://github.com/hyouka0904/mc2/actions/runs/45857485973)
+- 下一步：M1、U1–U3 仍待實機回報，M2 保持待辦，平行開發擱置。
 
 ## 臨時修正
 

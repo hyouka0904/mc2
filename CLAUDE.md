@@ -2,7 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-MechCommander 2 source port: the original game code on a reimplemented GameOS platform layer (SDL3, SDL3 GPU / OpenGL, ENet). Linux, Windows (MSVC) and macOS (Apple Silicon). Full developer docs: `DEVELOPMENT.md` (Chinese: `DEVELOPMENT.zh-TW.md`). Player docs: `README.md`, `docs/manual/`. Multiplayer / update / localization roadmap: `ROADMAP_MULTIPLAYER_ZH.md`.
+MechCommander 2 source port: the original game code on a reimplemented GameOS platform layer (SDL3, SDL3 GPU / OpenGL, ENet). Linux, Windows (MSVC) and macOS (Apple Silicon). Full developer docs: `doc/DEVELOPMENT.md` (Chinese: `doc/DEVELOPMENT.zh-TW.md`). Player docs: `README.md`, `doc/manual/`. Multiplayer / update / localization roadmap: `doc/ROADMAP_MULTIPLAYER_ZH.md`.
+
+See [AGENTS.md](AGENTS.md) for the feature map and targeted reading workflow.
 
 ## Working rules
 
@@ -10,7 +12,7 @@ MechCommander 2 source port: the original game code on a reimplemented GameOS pl
 - Always run the game under `timeout` (it can hang; test scripts have their own timeouts).
 - Do not work on DXIL (D3D12 shaders) without the user's go-ahead.
 - Keep `HANDOFF.md` up to date (goal, done, open items, decisions, test commands and results, next steps) after every significant stage, not only at the end.
-- Roadmap work stops at each milestone in `ROADMAP_MULTIPLAYER_ZH.md` until the user reports real-machine test results.
+- Roadmap work stops at each milestone in `doc/ROADMAP_MULTIPLAYER_ZH.md` until the user reports real-machine test results.
 
 ## Build
 
@@ -67,7 +69,7 @@ Cross-cutting points:
 - **UI strings**: a new `IDS_*` string must be added to `resource.h`, `strings.res.h` and `test_scripts/res_conv/{resource.h,strings.res.h,strings.res.cpp}`; they build the `res/` string library.
 - **LAN multiplayer**: host-authoritative star topology. Messages are fixed-size `MCMSG_*` structs in `code/multplyr.h`; `multplyr.cpp` handles rooms, roster, chat and the load handshake, `multplyr_sync.cpp` handles in-mission sync. Bump the protocol stamp (`MC2NET-1` in `multplyr.cpp`) whenever a message changes. Room discovery shares UDP 27015.
 - **Saves**: campaign saves (`.fit`, text) must keep loading across versions: accepted range `OldestSaveGameVersionNumber..SaveGameVersionNumber` in `code/logisticsdata.cpp`. Quick saves (`.ims`) store structs byte for byte; the stamp carries a layout hash (`code/savelayout.cpp`). When a saved struct changes size, `unit_savelayout` fails on purpose: update `kCurrent` in the test, never the legacy table. `tests/saves/<version>/` holds old saves loaded by the flow tests.
-- **Mods**: `GameOS/gameos/mods/`, tool `tools/mc2mod/`, examples in `examples/`; see `docs/modding.md`.
+- **Mods**: `GameOS/gameos/mods/`, tool `tools/mc2mod/`, examples in `examples/`; see `doc/modding.md`.
 
 ## Git Commit Guidelines
 

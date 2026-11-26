@@ -30,7 +30,9 @@
 - 支援 Mod 與 Modpack。
 - 接下來的聯機模式（合作關卡、Roguelike、雙人對戰）正在開發中。
 
-**[開發說明（建置、架構、測試、發佈）→](DEVELOPMENT.zh-TW.md)**
+**[開發說明（建置、架構、測試、發佈）→](doc/DEVELOPMENT.zh-TW.md)**
+
+[功能與檔案索引](doc/code-map.md)
 
 ---
 
@@ -40,7 +42,7 @@
 
 | 模式 | 說明書 | 狀態 |
 |---|---|---|
-| 區網對戰（原版多人模式） | **[區網對戰說明書](docs/manual/lan-skirmish.zh-TW.md)** | 可以玩 |
+| 區網對戰（原版多人模式） | **[區網對戰說明書](doc/manual/lan-skirmish.zh-TW.md)** | 可以玩 |
 | 合作關卡（攻堅、護送、回收、偵查） | 完成後提供 | 開發中 |
 | Roguelike 攻堅／防守 | 完成後提供 | 規劃中 |
 | 雙人對戰（佔領、殲滅） | 完成後提供 | 規劃中 |
@@ -49,8 +51,8 @@
 
 ## 其他
 
-- [Mod / Modding / Modpack](docs/modding.zh-TW.md)：用 Mod 修改遊戲資料、製作工具 `mc2mod`。
-- [聯機模式與中文補丁的工作清單](ROADMAP_MULTIPLAYER_ZH.md)（只有中文）。
+- [Mod / Modding / Modpack](doc/modding.zh-TW.md)：用 Mod 修改遊戲資料、製作工具 `mc2mod`。
+- [聯機模式與中文補丁的工作清單](doc/ROADMAP_MULTIPLAYER_ZH.md)（只有中文）。
 - [原作者網站](https://alariq.github.io/mc2-website/)。
 
 ### 與原專案的差異
@@ -63,7 +65,7 @@
 - **聯機**：區網對戰（ENet、主機權威、房間探索、斷線處理、網路暫停）。
 - **測試**：單元測試、無畫面的任務冒煙測試、固定步長的截圖比對測試、UI 流程測試、網路測試、效能量測腳本，以及 Linux / Windows / macOS 三平台 CI。
 - **功能**：Mod / Modpack 系統與 `mc2mod` 工具；3D 音效 API；記憶體配置追蹤。
-- **修正與整理**：能以 GCC 13 建置；編譯警告 643 → 0；A* 尋路錯誤與開放清單效能；RLE TGA 解碼；快速存讀檔、選項畫面、暫停選單；macOS 上 `#pragma pack(4)` 造成的結構排列錯誤；以 AddressSanitizer + UBSan 找到的記憶體錯誤與未定義行為；音效改以裝置取樣率混音並加上限幅器。細節見[開發說明](DEVELOPMENT.zh-TW.md)。
+- **修正與整理**：能以 GCC 13 建置；編譯警告 643 → 0；A* 尋路錯誤與開放清單效能；RLE TGA 解碼；快速存讀檔、選項畫面、暫停選單；macOS 上 `#pragma pack(4)` 造成的結構排列錯誤；以 AddressSanitizer + UBSan 找到的記憶體錯誤與未定義行為；音效改以裝置取樣率混音並加上限幅器。細節見[開發說明](doc/DEVELOPMENT.zh-TW.md)。
 
 #### 來自原作者的修正
 下列修正出自原作者在本 fork 分出之後的上游修改，由本 fork 移植（括號內為原專案的 commit）：
@@ -79,7 +81,7 @@
 
 #### 原專案有、本 fork 沒有
 - 硬體 T&L 繪圖路徑：本 fork 的 SDL3 GPU 後端採用不同做法，不適用。
-- Windows 預編譯第三方套件與建置教學：本 fork 改用 vcpkg，見[在 Windows 上建置](DEVELOPMENT.zh-TW.md#在-windows-上建置)。
+- Windows 預編譯第三方套件與建置教學：本 fork 改用 vcpkg，見[在 Windows 上建置](doc/DEVELOPMENT.zh-TW.md#在-windows-上建置)。
 - 多螢幕視窗處理（displayIndex）。
 
 ### 授權

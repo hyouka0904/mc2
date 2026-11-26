@@ -11,4 +11,4 @@
 0.1.0: written by the 0.1.0 save code (format unchanged up to the layout
 fingerprint), with the `campaign` and `quick_save` flows.
 
-See "Save game compatibility" in DEVELOPMENT.md.
+See "Save game compatibility" in the [development guide](../../doc/DEVELOPMENT.md#save-game-compatibility).
