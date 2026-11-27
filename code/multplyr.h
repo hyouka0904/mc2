@@ -283,6 +283,8 @@ typedef struct _MC2Player {
 	int			resourcePoints;
 	int			rank;
 	bool			ready;
+	uint32_t		preparedRevision;
+	int				loadoutCost;
 	int             score;
 	int             kills;
 	int             losses;
@@ -297,6 +299,7 @@ typedef struct _MissionSettings {
 	GUID			mapGuid;				// Insures maps are the same version!!
 	char			url[256]; /// GLENN, you probably want this somewhere else....
 	int			defaultCBills;
+	uint32_t	preparationRevision;
 	int			resourcePoints;
 	float			timeLimit;
 	bool			unlimitedAmmo;
@@ -312,7 +315,6 @@ typedef struct _MissionSettings {
 	bool			resourceBuilding;
 	bool			resourceForMechs;
 	char			missionType;
-	bool			quickStart;
 	char			maxTeams;
 	char			maxPlayers;
 	char			numPlayers;
@@ -748,7 +750,8 @@ class MCMSG_Chat {
 		bool				isDeadChat;
 		bool				hideName;
 		char				commanderID;	// sender
-		char				team;			// -1: everyone, else team only
+		signed char			team;			// -1: everyone, else team only
+		signed char			whisperTo;		// -1: public/team, else recipient commander
 		char				string[];
 	
 	public:
@@ -764,6 +767,7 @@ class MCMSG_Chat {
 			hideName = false;
 			commanderID = -1;
 			team = -1;
+			whisperTo = -1;
 			string[0] = '\0';
 		}
 };
@@ -1776,6 +1780,7 @@ class MultiPlayer {
 		bool allMissionDataLoaded (void);
 		bool allMissionFullySetup (void);
 		void addLocalChat (long commanderID, const char* text, bool hideName, bool teamOnly);
+		bool sendWhisper(long recipient, const char* text);
 		void recalcTeamColors (void);
 		void logState (void);
 		void clearRosters (void);

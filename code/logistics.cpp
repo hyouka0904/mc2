@@ -505,18 +505,11 @@ int _stdcall Logistics::beginMission(void*, int, void*[])
 				}
 			else
 				MPlayer->calcDropZones(dropZoneList, hqs);
-			if (MPlayer->missionSettings.quickStart)
-				for (long i = 0; i < MAX_MC_PLAYERS; i++) {
-					MPlayer->commandersToLoad[i][0] = (long)dropZoneList[i]; //MPlayer->playerInfo[i].commanderID;
-					MPlayer->commandersToLoad[i][1] = (long)(dropZoneList[i] > -1) ? MPlayer->playerInfo[dropZoneList[i]].team : 0;
-					MPlayer->commandersToLoad[i][2] = hqs[i];
-				}
-			else
-				for (long i = 0; i < MAX_MC_PLAYERS; i++) {
-					MPlayer->commandersToLoad[i][0] = dropZoneList[i]; //-1;
-					MPlayer->commandersToLoad[i][1] = (dropZoneList[i] > -1) ? MPlayer->playerInfo[dropZoneList[i]].team : 0; //-1;
-					MPlayer->commandersToLoad[i][2] = hqs[i];
-				}
+			for (long i = 0; i < MAX_MC_PLAYERS; i++) {
+				MPlayer->commandersToLoad[i][0] = dropZoneList[i];
+				MPlayer->commandersToLoad[i][1] = (dropZoneList[i] > -1) ? MPlayer->playerInfo[dropZoneList[i]].team : 0;
+				MPlayer->commandersToLoad[i][2] = hqs[i];
+			}
 			MPlayer->sendMissionSetup(0, 0, NULL);
 		}
 		if (!MPlayer->waitTillStartLoading()) {
@@ -530,22 +523,9 @@ int _stdcall Logistics::beginMission(void*, int, void*[])
 			commandersToLoad[i][1] = MPlayer->commandersToLoad[i][1];
 			commandersToLoad[i][2] = MPlayer->commandersToLoad[i][2];
 		}
-		if (MPlayer->missionSettings.quickStart) {
-			MultiPlayTeamId = MPlayer->playerInfo[MPlayer->commanderID].team;
-			//if (MultiPlayTeamId < 0)
-			if (MultiPlayTeamId == 0xffffffff)
-				STOP(("Bad commanderID"));
-			MultiPlayCommanderId = MPlayer->commanderID;
-			//if (MultiPlayCommanderId < 0)
-			if (MultiPlayCommanderId == 0xffffffff)
-				STOP(("Bad commanderID"));
-			missionLoadType = MISSION_LOAD_MP_QUICKSTART;
-			}
-		else {
-			MultiPlayTeamId = MPlayer->playerInfo[MPlayer->commanderID].team;
-			MultiPlayCommanderId = MPlayer->commanderID;
-			missionLoadType = MISSION_LOAD_MP_LOGISTICS;
-		}
+		MultiPlayTeamId = MPlayer->playerInfo[MPlayer->commanderID].team;
+		MultiPlayCommanderId = MPlayer->commanderID;
+		missionLoadType = MISSION_LOAD_MP_LOGISTICS;
 		long maxTeam = -1;
 		for (int i = 0; i < MAX_MC_PLAYERS; i++)
 			if (MPlayer->playerInfo[i].team > maxTeam)
@@ -566,10 +546,6 @@ int _stdcall Logistics::beginMission(void*, int, void*[])
 	if (mission)
 		mission->destroy();
 
-	long numPlayers = 1;
-	if ( MPlayer )
-		MPlayer->getPlayers(numPlayers);
-	long numMoversPerCommander[MAX_MC_PLAYERS] = {12, 12, 12, 9, 7, 6, 5, 4};
 	Stuff::Vector3D dropZoneList[255]; // ubsurdly large, but sometimes we overrun this.
 	long dropZoneID = 0;
 	if (MPlayer) {
@@ -582,7 +558,7 @@ int _stdcall Logistics::beginMission(void*, int, void*[])
 		useUnlimitedAmmo = MPlayer->missionSettings.unlimitedAmmo;
 	}
 
-	mission->init((char*)(const char*)LogisticsData::instance->getCurrentMission(), missionLoadType, dropZoneID, dropZoneList, commandersToLoad, numMoversPerCommander[numPlayers - 1]);
+	mission->init((char*)(const char*)LogisticsData::instance->getCurrentMission(), missionLoadType, dropZoneID, dropZoneList, commandersToLoad);
 
 	LogisticsData::instance->rpJustAdded = 0;
 

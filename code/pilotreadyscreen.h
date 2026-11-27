@@ -74,7 +74,6 @@ private:
 	PilotReadyScreen( const PilotReadyScreen& );
 	PilotReadyScreen& operator=( const PilotReadyScreen& );
 
-	float				launchFadeTime;
 
 
 

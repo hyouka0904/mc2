@@ -243,7 +243,7 @@ void ShutdownNetworking (void) {
 #include <chrono>
 #include <cstddef>
 
-#define MC2_NET_PROTOCOL_STAMP	"MC2NET-1"		// bump when the wire format changes
+#define MC2_NET_PROTOCOL_STAMP	"MC2NET-3"		// bump when the wire format changes
 
 // Tests pretend to be another release with MC2_NET_TEST_VERSION and
 // MC2_NET_TEST_PROTOCOL (scripts/run_net_test.py --scenario version).
@@ -1034,7 +1034,7 @@ bool MultiPlayer::waitForSessionEntry (void) {
 
 bool MultiPlayer::playersReadyToLoad (void) {
 
-	return(allMechDataReceived());
+		return(allMechDataReceived());
 }
 
 //---------------------------------------------------------------------------
@@ -1493,7 +1493,25 @@ void MultiPlayer::getChatMessages( char** buffer, long* playerIDs, long& count )
 
 //---------------------------------------------------------------------------
 
-static void SendChatMessage (MultiPlayer* mp, char team, const char* text, bool hideName) {
+static void AddWhisper(MultiPlayer* mp, long sender, long recipient, const char* text)
+{
+    char format[128];
+    char label[MAX_CHAT_LENGTH + 128];
+    if (sender == mp->commanderID) {
+        cLoadString(IDS_MP_CHAT_WHISPER_TO, format, sizeof(format) - 1);
+        snprintf(label, sizeof(label), format, static_cast<int>(recipient + 1),
+                 mp->playerInfo[recipient].name);
+    } else {
+        cLoadString(IDS_MP_CHAT_WHISPER, label, sizeof(label) - 1);
+    }
+    // Keep the prefix and bound the payload separately.
+    const size_t prefix = strlen(label);
+    snprintf(label + prefix, sizeof(label) - prefix, " %s", text);
+    mp->addLocalChat(sender, label, false, true);
+}
+
+static void SendChatMessage (MultiPlayer* mp, signed char team, const char* text, bool hideName,
+                             signed char recipient = -1) {
 
 	if (!text)
 		return;
@@ -1501,19 +1519,36 @@ static void SendChatMessage (MultiPlayer* mp, char team, const char* text, bool 
 	memset(buffer, 0, sizeof(buffer));
 	MCMSG_Chat* msg = (MCMSG_Chat*)buffer;
 	msg->type = MCMSG_CHAT;
-	msg->allPlayers = (team < 0);
+	msg->allPlayers = (team < 0 && recipient < 0);
+	msg->whisperTo = recipient;
 	msg->hideName = hideName;
 	msg->commanderID = (char)mp->commanderID;
 	msg->team = team;
 	CopyString(msg->string, text, MAX_CHAT_LENGTH);
 	int size = (int)(sizeof(MCMSG_Chat) + strlen(msg->string) + 1);
-	mp->addLocalChat(mp->commanderID, msg->string, hideName, team >= 0);
-	mp->sendMessage(0, msg, size, true);
+	if (recipient >= 0) {
+        AddWhisper(mp, mp->commanderID, recipient, msg->string);
+        mp->sendMessage(mp->playerInfo[recipient].player, msg, size, true);
+    } else {
+        mp->addLocalChat(mp->commanderID, msg->string, hideName, team >= 0);
+        mp->sendMessage(0, msg, size, true);
+    }
 }
 
 void MultiPlayer::sendChat (NETPLAYER receiver, char team, char* chatMessage) {
 
 	SendChatMessage(this, team, chatMessage, false);
+}
+
+//---------------------------------------------------------------------------
+
+bool MultiPlayer::sendWhisper(long recipient, const char* text)
+{
+    const auto* player = getPlayerInfo(recipient);
+    if (!player || !player->player || player->leftSession || recipient == commanderID)
+        return false;
+    SendChatMessage(this, -1, text, false, static_cast<signed char>(recipient));
+    return true;
 }
 
 //---------------------------------------------------------------------------
@@ -1539,6 +1574,27 @@ void MultiPlayer::handleChat (NETPLAYER sender, MCMSG_Chat* msg) {
 			return;
 		msg->commanderID = (char)cid;
 	}
+    const auto* author = getPlayerInfo(cid);
+    if (!author || !author->player)
+        return;
+    if (msg->whisperTo != -1) {
+        const long recipient = msg->whisperTo;
+        const auto* target = getPlayerInfo(recipient);
+        if (!target || !target->player || target->leftSession || recipient == cid)
+            return;
+        if (recipient == commanderID)
+            AddWhisper(this, cid, recipient, msg->string);
+        else if (iAmHost)
+            sendMessage(target->player, msg, lastMessageSize, true);
+        return;
+    }
+    if (iAmHost) {
+        // A client sends to the host; relay only to the intended audience.
+        for (const auto& player : playerInfo)
+            if (player.player && !player.leftSession && player.player != HOST_NETPLAYER &&
+                player.player != sender && (msg->team < 0 || player.team == msg->team))
+                sendMessage(player.player, msg, lastMessageSize, true);
+    }
 	bool teamOnly = msg->team >= 0;
 	MC2Player* me = getPlayerInfo(commanderID);
 	if (!teamOnly || (me && (me->team == msg->team)))
@@ -1604,8 +1660,10 @@ void MultiPlayer::handlePlayerUpdate (NETPLAYER sender, MCMSG_PlayerUpdate* msg)
 		CopyString(info.insigniaFile, in.insigniaFile, MAXLEN_INSIGNIA_FILE);
 		info.stripeColor = ((in.stripeColor >= 0) && (in.stripeColor < MAX_COLORS)) ? in.stripeColor : 0;
 		info.faction = in.faction;
-		info.ready = in.ready;
-		info.cBills = in.cBills;
+        info.preparedRevision = in.preparedRevision;
+        info.loadoutCost = in.loadoutCost;
+        info.ready = in.ready && in.preparedRevision == missionSettings.preparationRevision &&
+            in.loadoutCost >= 0 && in.loadoutCost <= info.cBills;
 		if ((in.team >= 0) && (in.team < MAX_TEAMS) && (in.team != info.team))
 			setPlayerTeam(cid, in.team);
 		if ((in.baseColor[BASECOLOR_PREFERENCE] != info.baseColor[BASECOLOR_PREFERENCE])
@@ -1769,12 +1827,8 @@ static void ApplyMissionSetup (MultiPlayer* mp, long cid, const MCMSG_MissionSet
 				mp->missionFullySetup[cid] = true;
 			break;
 		case 6:
-			if (!mp->iAmHost) {
-				if (mp->missionSettings.quickStart)
-					mp->startLoading = true;
-				else
-					mp->startLogistics = true;
-			}
+			if (!mp->iAmHost)
+				mp->startLoading = true;
 			break;
 	}
 }
@@ -1910,6 +1964,8 @@ void MultiPlayer::processNetMessage (NETPLAYER sender, const unsigned char* data
 	switch (type) {
 		case MCMSG_CHAT:
 			NEED(MCMSG_Chat);
+            if (size <= (int)sizeof(MCMSG_Chat) || size > (int)sizeof(MCMSG_Chat) + MAX_CHAT_LENGTH)
+                return;
 			handleChat(sender, (MCMSG_Chat*)m);
 			break;
 		case MCMSG_PLAYER_CID:
@@ -2037,6 +2093,7 @@ void MultiPlayer::initStartupParameters (bool fresh) {
 
 void MultiPlayer::resetForNewGame (void) {
 
+
 	startLogistics = false;
 	startLoading = false;
 	startMission = false;
@@ -2063,7 +2120,8 @@ bool MultiPlayer::allPlayersReady (void) {
 
 	for (long i = 0; i < MAX_MC_PLAYERS; i++)
 		if ((playerInfo[i].commanderID > -1) && playerInfo[i].player && !playerInfo[i].leftSession
-			&& !playerInfo[i].ready)
+            && (!playerInfo[i].ready || playerInfo[i].preparedRevision != missionSettings.preparationRevision
+                || playerInfo[i].loadoutCost < 0 || playerInfo[i].loadoutCost > playerInfo[i].cBills))
 			return(false);
 	return(true);
 }

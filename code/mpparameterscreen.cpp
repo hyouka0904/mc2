@@ -56,8 +56,9 @@ extern bool quitGame;
 #define MP_UNLIMITED_AMMO	216
 #define MP_VARIANTS			217
 #define MP_ALLTECH			218
-#define MP_QUICKSTART		219
+#define MP_LEGACY_QUICKSTART		219
 #define MP_RP_FORMMECHS		220
+#define MP_PREPARE_LOADOUT 221
 
 #define MP_INCREMENT_PLAYER_CBILLS 250
 #define MP_DECREMENT_PLAYER_CBILLS 251
@@ -155,6 +156,24 @@ void MPParameterScreen::init(FitIniFile* file)
 		}
 	}
 
+    auto* start = static_cast<aAnimButton*>(getButton(MB_MSG_NEXT));
+    prepareButton = *start;
+    prepareButton.setID(MP_PREPARE_LOADOUT);
+    prepareButton.setText(IDS_MP_PREPARE_LOADOUT);
+    prepareButton.setMessageOnRelease();
+    addChild(&prepareButton);
+
+    // Use the original Quick Start slot for the host's start button.
+    if (auto* legacyQuickStart = getButton(MP_LEGACY_QUICKSTART))
+    {
+        start->move(legacyQuickStart->globalLeft() - start->globalLeft(),
+                    legacyQuickStart->globalTop() - start->globalTop() +
+                        (legacyQuickStart->height() - start->height()) / 2);
+        legacyQuickStart->showGUIWindow(false);
+    }
+    else
+        start->move(-148, -77);
+
 	int curY = 0;
 	playerParameters[0].init( file, "PlayerParams" );
 
@@ -211,7 +230,12 @@ void MPParameterScreen::begin()
 	bErrorDlg = 0;
 	bDisconnectDlg = 0;
 
-	MPlayer->initParametersScreen();
+    const bool returningFromPreparation = status == PREPAREMULTIPLAYER;
+    if (!returningFromPreparation)
+    {
+        hasPreparation = false;
+        MPlayer->initParametersScreen();
+    }
 
 	if ( MPlayer->isHost() )
 	{
@@ -224,7 +248,7 @@ void MPParameterScreen::begin()
 				strcpy( MPlayer->missionSettings.map, "mc2_m01" );
 		}
 		if ( strlen( MPlayer->missionSettings.map ) )
-			setMission( MPlayer->missionSettings.map, (status != UP && status != NEXT) ? 1 : 0 );
+			setMission( MPlayer->missionSettings.map, !returningFromPreparation && status != UP && status != NEXT );
 	}
 	else if ( strlen( MPlayer->missionSettings.map ) )
 		setMissionClientOnly( MPlayer->missionSettings.map );
@@ -273,12 +297,17 @@ void MPParameterScreen::render(int xOffset, int yOffset )
 		}
 		return;
 	}
-	if ( status == NEXT && MPlayer->missionSettings.quickStart )
-	{
-		xOffset = 0;
-		yOffset = 0;
-	}
 	LogisticsScreen::render(xOffset, yOffset);
+    auto* start = getButton(MB_MSG_NEXT);
+    if (start->isShowing() && !start->isEnabled())
+    {
+        const GUI_RECT bounds = {start->globalLeft() + xOffset, start->globalTop() + yOffset,
+                                 start->globalRight() + xOffset, start->globalBottom() + yOffset};
+        drawRect(bounds, 0x80000000);
+    }
+    prepareButton.move(xOffset, yOffset);
+    prepareButton.render();
+    prepareButton.move(-xOffset, -yOffset);
 
 	if ( bMapInfoDlg )
 	{
@@ -329,6 +358,79 @@ void MPParameterScreen::render()
 	render(0, 0);
 }
 
+static bool canReadyForMap()
+{
+    FullPathFileName path;
+    path.init(missionPath, MPlayer->missionSettings.map, ".fit");
+    return fileExists(path) &&
+        MPParameterScreen::getGUIDFromFile(MPlayer->missionSettings.map) == MPlayer->missionSettings.mapGuid;
+}
+
+bool MPParameterScreen::prepareLoadout()
+{
+    auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    if (MPlayer->missionSettings.inProgress || !canReadyForMap())
+        return false;
+
+    const int faction = player->faction >= 0 && player->faction < 4 ? player->faction : 0;
+    const auto revision = MPlayer->missionSettings.preparationRevision;
+    if (!hasPreparation || preparationRevision != revision ||
+        preparationBudget != player->cBills || preparationFaction != faction)
+    {
+        LogisticsData::instance->setPurchaseFile(pPurchaseFiles[MPlayer->missionSettings.allTech ? 4 : faction]);
+        if (LogisticsData::instance->setCurrentMission(MPlayer->missionSettings.map) != NO_ERR)
+            return false;
+        preparationRevision = revision;
+        preparationBudget = player->cBills;
+        preparationFaction = faction;
+        hasPreparation = true;
+    }
+    cancelPreparation();
+    return true;
+}
+
+void MPParameterScreen::cancelPreparation()
+{
+    auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    if (!player->ready && !player->loadoutCost && !player->preparedRevision)
+        return;
+
+    player->ready = false;
+    player->loadoutCost = 0;
+    player->preparedRevision = 0;
+    MPlayer->sendPlayerUpdate(0, 5, MPlayer->commanderID);
+}
+
+void MPParameterScreen::completePreparation()
+{
+    auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    const int remaining = LogisticsData::instance->getCBills();
+    const int faction = player->faction >= 0 && player->faction < 4 ? player->faction : 0;
+    player->ready = hasPreparation && preparationRevision == MPlayer->missionSettings.preparationRevision
+        && preparationBudget == player->cBills && preparationFaction == faction
+        && remaining >= 0 && remaining <= preparationBudget
+        && LogisticsData::instance->getCurrentDropWeight() <= MPlayer->missionSettings.dropWeight;
+    player->preparedRevision = preparationRevision;
+    player->loadoutCost = player->ready ? preparationBudget - remaining : 0;
+    MPlayer->sendPlayerUpdate(0, 5, MPlayer->commanderID);
+}
+
+bool MPParameterScreen::canStartGame()
+{
+    if (!MPlayer->isHost() || !MPlayer->allPlayersReady() ||
+        !MPlayer->missionSettings.map[0] || MPlayer->missionSettings.dropWeight < 30)
+        return false;
+
+    long count = 0;
+    const auto* players = MPlayer->getPlayers(count);
+    if (count < 2 || count > MPlayer->missionSettings.maxPlayers)
+        return false;
+    for (long i = 1; i < count; ++i)
+        if (players[i].team != players[0].team)
+            return true;
+    return false;
+}
+
 int	MPParameterScreen::handleMessage( unsigned long message, unsigned long who)
 {
 	if ( RUNNING == status )
@@ -362,14 +464,22 @@ int	MPParameterScreen::handleMessage( unsigned long message, unsigned long who)
 			break;
 		case 50/*MB_MSG_NEXT*/:
 			{
-				if (MPlayer->isHost())
-					MPlayer->setInProgress(true);
-				delayTime += frameLength;
+                auto* next = getButton(MB_MSG_NEXT);
+                next->press(false);
+                if (!next->isEnabled() || delayTime || !canStartGame())
+                    break;
+                MPlayer->setInProgress(true);
+                delayTime = frameLength;
 				char text[256];
 				cLoadString( IDS_MPLAYER_GAME_ABOUT_TO_START, text, 255 );
 				MPlayer->sendChat( 0, -1, text );
 			}
 			break;
+        case MP_PREPARE_LOADOUT:
+            if (prepareButton.isEnabled() && prepareLoadout())
+                status = PREPAREMULTIPLAYER;
+            break;
+
 		case 101/*load map button*/:
 			{
 				//load map
@@ -588,11 +698,6 @@ int	MPParameterScreen::handleMessage( unsigned long message, unsigned long who)
 			
 			break;
 
-		case MP_QUICKSTART:
-			MPlayer->missionSettings.quickStart ^= 1;
-			MPParameterScreen::resetCheckBoxes();
-			break;
-
 		}
 	}
 
@@ -791,12 +896,11 @@ void MPParameterScreen::update()
 	if (status != GOTOSPLASH)
 		fadeOutTime = 0.0f;
 
-	if ( MPlayer->missionSettings.quickStart )
-	{
-		getButton( MB_MSG_NEXT )->setText( IDS_STRING27171 );
-	}
-	else
-		getButton( MB_MSG_NEXT )->setText( IDS_NEXT );
+    auto* start = getButton(MB_MSG_NEXT);
+    start->setText(IDS_MP_START_GAME);
+    start->showGUIWindow(MPlayer->isHost());
+    start->disable(delayTime > 0.0f || !canStartGame());
+    prepareButton.disable(MPlayer->missionSettings.inProgress || !canReadyForMap());
 
 	char str[256];
 	cLoadString( IDS_MP_PARAM_HOST_IP, str, 255 );
@@ -824,18 +928,10 @@ void MPParameterScreen::update()
 
 	if ( delayTime > 5.f )
 	{
-		if ( getButton( MB_MSG_NEXT )->isEnabled() )
+		if (canStartGame())
 		{
 
 			getButton( 50/*MB_MSG_NEXT*/ )->press( 0 );
-			int faction = MPlayer->getPlayerInfo( MPlayer->commanderID )->faction;
-			if ( faction < 0 )
-				faction = 0;
-			if ( MPlayer->missionSettings.allTech )
-				LogisticsData::instance->setPurchaseFile( pPurchaseFiles[4] );
-			else
-				LogisticsData::instance->setPurchaseFile( pPurchaseFiles[faction] );
-			LogisticsData::instance->setCurrentMission( MPlayer->missionSettings.map );
 			MPlayer->sendMissionSetup(0, 6, NULL);
 
 			status = NEXT;
@@ -1028,17 +1124,8 @@ void MPParameterScreen::update()
 			getButton( MP_LOCKGAME )->showGUIWindow( false );
 			getButton( MP_BOOTPLAYER )->showGUIWindow( false );
 
-			if ( MPlayer->startLoading || MPlayer->startLogistics )
+			if ( MPlayer->startLoading )
 			{
-				int faction = MPlayer->getPlayerInfo( MPlayer->commanderID )->faction;
-				if ( faction < 0 )
-					faction = 0;
-				if ( MPlayer->missionSettings.allTech )
-					LogisticsData::instance->setPurchaseFile( pPurchaseFiles[4] );
-				else
-					LogisticsData::instance->setPurchaseFile( pPurchaseFiles[faction] );
-				LogisticsData::instance->setCurrentMission( MPlayer->missionSettings.map );
-
 				status = NEXT;
 				return;
 			}
@@ -1079,7 +1166,7 @@ void MPParameterScreen::update()
 				if ( pButton )
 				{
 					pButton->disable( false );
-					pButton->showGUIWindow( true );
+					pButton->showGUIWindow(i != MP_LEGACY_QUICKSTART);
 				}
 			}
 
@@ -1103,14 +1190,6 @@ void MPParameterScreen::update()
 					bErrorDlg = true;
 
 				}
-			}
-
-			MC2Player* data = MPlayer->getPlayerInfo( MPlayer->commanderID );
-			{
-				if ( data )
-					data->ready = true; // default to ready for host since they have to press launch anyway
-				else
-					return;
 			}
 
 
@@ -1137,8 +1216,6 @@ void MPParameterScreen::update()
 			getButton( MP_DECREMENT_DROPWEIGHT )->disable( bDisable );
 			bDisable = MPlayer->missionSettings.dropWeight >= 1200.f;
 			getButton( MP_INCREMENT_DROPWEIGHT )->disable( bDisable );
-
-			getButton( MP_QUICKSTART )->disable( 0 );
 
 			getButton( MP_LOCKGAME )->showGUIWindow( true );
 			getButton( MP_BOOTPLAYER )->showGUIWindow( true );
@@ -1167,6 +1244,9 @@ void MPParameterScreen::update()
 		if ( !ChatWindow::instance()->pointInside(userInput->getMouseX(), userInput->getMouseY()) )
 		{
 			LogisticsScreen::update();
+            prepareButton.update();
+            if (status == PREPAREMULTIPLAYER)
+                return;
 		}
 
 		if ( oldEditFocus != -1 )
@@ -1213,8 +1293,6 @@ void MPParameterScreen::update()
 			}
 		}
 
-		getButton( MP_QUICKSTART )->disable( 0 );
-
 		if ( MPlayer )
 		{
 			int oldPlayerCount = playerCount;
@@ -1234,7 +1312,6 @@ void MPParameterScreen::update()
 					}
 				}
 			}
-			bool bReady = true;
 			
 			const MC2Player* sortedPlayers[MAX_MC_PLAYERS];
 			for ( int i = 0; i < playerCount; i++ )
@@ -1248,33 +1325,17 @@ void MPParameterScreen::update()
 			{
 				playerParameters[i].setData( sortedPlayers[i] );
 			}
-			int team = -1;
-			if ( playerCount )
-				team = sortedPlayers[0]->team;
-			bool bUniqueTeam = 0;
 			for(int i = 0; i < playerCount; i++ )
 			{
-//				if ( !ChatWindow::instance()->pointInside(userInput->getMouseX(), userInput->getMouseY() ) )
-					playerParameters[i].update();
-				bReady &= sortedPlayers[i]->ready;
-				if ( !MPlayer->missionSettings.quickStart )
-					bReady &= ((sortedPlayers[i]->cBills) ? 1 : 0);
+                if (!ChatWindow::instance()->pointInside(userInput->getMouseX(), userInput->getMouseY()))
+                    playerParameters[i].update();
 
 				if ( playerParameters[i].hasFocus() )
 					bEditHasFocus = true;
 
-				if ( sortedPlayers[i]->team != team )
-					bUniqueTeam = 1;
 
 			}
 
-			bReady &= !bEditHasFocus;
-			bReady &= (MPlayer->isHost());
-			bReady &= strlen( MPlayer->missionSettings.map ) ? 1 : 0;
-			bReady &= (playerCount > 1);
-			bReady &= (MPlayer->missionSettings.maxPlayers >= playerCount);
-			bReady &= bUniqueTeam;
-			bReady &= (MPlayer->missionSettings.dropWeight >= 30);
 
 			bool bPress = MPlayer->missionSettings.airStrike;
 			getButton( MP_AIRSTRIKES )->press( bPress );
@@ -1312,9 +1373,6 @@ void MPParameterScreen::update()
 			bPress = MPlayer->missionSettings.resourceForMechs;
 			getButton( MP_RP_FORMMECHS )->press( bPress );
 
-			bPress = MPlayer->missionSettings.quickStart;
-			getButton( MP_QUICKSTART )->press( bPress );
-
 			bPress = MPlayer->missionSettings.locked;
 			getButton( MP_LOCKGAME )->press( bPress );
 
@@ -1351,23 +1409,20 @@ void MPParameterScreen::update()
 			if ( !edits[0].hasFocus() )
 				edits[0].setEntry( text );
 
-			if ( bReady )
-			{
-				getButton( MB_MSG_NEXT )->disable( false );
-			}
-			else
-			{
-				getButton( MB_MSG_NEXT )->disable( true );
-				if ( delayTime )
-				{
-					char text[256];
-					cLoadString( IDS_MP_LAUNCH_ABORTED, text, 255 );
-					MPlayer->sendChat( 0, -1, text );
-					delayTime = 0.f;
-					bWaitingToStart = 0;
-					MPlayer->setInProgress( 0 );
-				}
-			}
+            if (MPlayer->isHost())
+            {
+                const bool bReady = !bEditHasFocus && canStartGame();
+                getButton(MB_MSG_NEXT)->disable(delayTime > 0.0f || !bReady);
+                if (!bReady && delayTime)
+                {
+                    char text[256];
+                    cLoadString(IDS_MP_LAUNCH_ABORTED, text, 255);
+                    MPlayer->sendChat(0, -1, text);
+                    delayTime = 0.f;
+                    bWaitingToStart = false;
+                    MPlayer->setInProgress(false);
+                }
+            }
 
 	
 
@@ -1501,21 +1556,12 @@ void MPParameterScreen::checkVersionClientOnly( const char* pNewMapName )
 
 void MPParameterScreen::resetCheckBoxes()
 {
-
-	if ( MPlayer->isHost() )
-	{
-		long playerCount = 0;
-		const MC2Player* players = MPlayer->getPlayers(playerCount);
-
-		for ( int i = 0; i < playerCount; i++ )
-		{
-			MC2Player* pWrite = MPlayer->getPlayerInfo( players[i].commanderID );
-			if ( pWrite->commanderID != MPlayer->commanderID )
-				pWrite->ready = 0;
-				
-		}
-	}
-
+    if (MPlayer->isHost())
+    {
+        ++MPlayer->missionSettings.preparationRevision;
+        for (auto& player : MPlayer->playerInfo)
+            player.ready = false;
+    }
 }
 
 void MPParameterScreen::setHostLeftDlg( const char* playerName )
@@ -1966,38 +2012,8 @@ void aPlayerParams::update()
 
 	}
 
-	if ( commanderID == MPlayer->commanderID )
-	{
-
-		if ( !MPlayer->isHost() )
-		{
-			FullPathFileName path;
-			path.init( missionPath, MPlayer->missionSettings.map, ".fit" );
-			if ( !fileExists( path ) ||
-				MPParameterScreen::getGUIDFromFile( MPlayer->missionSettings.map ) != MPlayer->missionSettings.mapGuid )  // disable the ready button if the map isn't around...
-			{
-				ReadyButton.disable( false );		
-				ReadyButton.press( 0 );
-				ReadyButton.disable( true );		
-			}
-			else
-				ReadyButton.disable( false );
-		}
-	}
-
-	if ( !bHasFocus )
-		return;
-
-
-
-	bool bOldReady = ReadyButton.isPressed();
-
-	if ( bOldReady ) // need to check the ready button if nothing else
-	{
-		ReadyButton.update();
-	}
-
-
+	if (!bHasFocus)
+        return;
 
 		// need to check for changes
 		int oldSel = teamNumberDropList.GetSelectedItem();
@@ -2013,21 +2029,20 @@ void aPlayerParams::update()
 		
 
 	bool bCBillsChanged = 0;
-	if ( !bOldReady || ( MPlayer->isHost() ) ) // don't do anything if all ready. 
+	if (!MPlayer->getPlayerInfo(commanderID)->ready || MPlayer->isHost())
 	{
 
 		if ( (commanderID == MPlayer->commanderID || MPlayer->isHost() ) )
 		{
-			edit.setReadOnly( 0 );
-			bool bHasFocus = edit.hasFocus();
-			edit.update();
-			if ( bHasFocus && !edit.hasFocus() )
-				bCBillsChanged = true;
-
-			if ( commanderID == MPlayer->commanderID )
-				ReadyButton.update();
-			CBillsSpinnerDownButton.update();
-			CBillsSpinnerUpButton.update( );
+            if (MPlayer->isHost())
+            {
+                edit.setReadOnly(false);
+                const bool hadFocus = edit.hasFocus();
+                edit.update();
+                bCBillsChanged = hadFocus && !edit.hasFocus();
+                CBillsSpinnerDownButton.update();
+                CBillsSpinnerUpButton.update();
+            }
 			factionDropList.update();
 			teamNumberDropList.update();		
 		}
@@ -2037,7 +2052,6 @@ void aPlayerParams::update()
 
 		int newSel = teamNumberDropList.GetSelectedItem();
 		int newFaction = factionDropList.GetSelectedItem();
-		bool bNewReady = ReadyButton.isPressed();
 		EString cBillsText;
 		edit.getEntry( cBillsText );
 		long newCBills = 0;
@@ -2058,24 +2072,20 @@ void aPlayerParams::update()
 			MPParameterScreen::resetCheckBoxes();
 		}
 
-		else if ( (oldSel != newSel) || (oldFaction != newFaction) || 
-			(bOldReady != bNewReady)  )
+		else if (oldSel != newSel || oldFaction != newFaction)
 		{
 			// send out new info....
 			if ( MPlayer )
 			{
 			
 				MC2Player* pInfo = MPlayer->getPlayerInfo( commanderID );
-				pInfo->cBills = newCBills;
-				if ( MPlayer->isHost() )
-					pInfo->ready = 0;
-				else
-					pInfo->ready = bNewReady;
+				pInfo->ready = false;
 				pInfo->faction = newFaction;
 				if (MPlayer->isHost())
 				{
 					if (pInfo->team != newSel)
 						MPlayer->setPlayerTeam(commanderID, newSel);
+                    MPParameterScreen::resetCheckBoxes();
 				}
 				else {
 					pInfo->team = newSel;
@@ -2110,11 +2120,10 @@ void	aPlayerParams::setData( const _MC2Player* data)
 	bDisable = ( data->cBills >= 1000000 );
 	CBillsSpinnerUpButton.disable( bDisable );
 
-	if ( data->ready )
+	ReadyButton.disable(false);
+	if (data->ready && data->preparedRevision == MPlayer->missionSettings.preparationRevision)
 	{
-		if ( data->commanderID != MPlayer->commanderID )
-			ReadyButton.disable( false );
-		ReadyButton.press( 1 );
+		ReadyButton.press(true);
 	}
 	else
 	{

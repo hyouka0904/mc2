@@ -230,14 +230,14 @@ For playing, see the [LAN skirmish manual](manual/lan-skirmish.md).
 ### Tests
 
 - `unit_net` (CTest): host and client in one process; 1000 reliable packets each way (order and contents), 64 KB fragmentation, broadcast, room discovery (broadcast and direct IP), local interface enumeration (every address answers a direct IP query), timeout when nobody is listening.
-- `scripts/run_net_test.py game`: two game instances on one machine, driven by script through main menu → host / join → Ready → Launch, into WetWork for a 12 vs 12 battle; compares destroyed units, kill counts and positions on both sides, and the host must keep running after the client leaves.
+- `scripts/run_net_test.py game`: two game instances on one machine, driven by script through main menu → host / join → prepare loadouts → Start game, into WetWork for a battle; compares destroyed and disabled units, kill counts and positions on both sides.
 - `scripts/run_net_test.py game --scenario version`: the host pretends to be release 9.9.9 with another protocol; the client must show the room as "VERSION 9.9.9", show the version dialog on Join and never connect.
 
 ### Versions in the lobby
 
 - The room beacon ends with the host's game version (hosts before 0.2 send the shorter beacon; it is still accepted and shown as "< 0.2"). The client marks a room compatible when the protocol stamp and the game data hash match its own.
 - Incompatible rooms show `VERSION x.y.z` (or `DIFFERENT GAME DATA`) in the map column. Join does not connect; it shows both versions. If the host is newer the room list dialog offers **Download** (opens the release page); the direct IP panel says where to download it. If the host is older it says the host needs to update.
-- The protocol stamp (`MC2NET-1` in `code/multplyr.cpp`) still decides whether two games can play together; the version string is only shown. Bump the stamp whenever a network message changes.
+- The protocol stamp (`MC2NET-3` in `code/multplyr.cpp`) still decides whether two games can play together; the version string is only shown. Bump the stamp whenever a network message changes.
 
 ---
 

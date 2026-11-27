@@ -16,6 +16,18 @@ ChatWindow* ChatWindow::s_instance = NULL;
 #define MP_CHAT_EXPAND		301
 #define MP_CHAT_TEAMONLY	302
 
+namespace {
+constexpr int ChatEveryone = -2;
+constexpr int ChatTeam = -1;
+constexpr int AudienceWidth = 215;
+constexpr int AudienceHeight = 17;
+
+bool contains(const GUI_RECT& rect, long x, long y)
+{
+    return x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
+}
+}
+
 ChatWindow::ChatWindow(  )
 {
 	curItem = 0;
@@ -83,14 +95,58 @@ int ChatWindow::initInstance()
 
 	maxItems = listBox.height()/itemHeight;
 
-	edits[0].limitEntry( 128 );
+    getButton(MP_CHAT_TEAMONLY)->showGUIWindow(false);
+    audienceFont.init(IDS_CHAT_FONT);
+    edits[0].resize(edits[0].width() - AudienceWidth, edits[0].height());
+    edits[0].limitEntry(128);
 	edits[0].setSelectedColor( 0xffffffff );
 
 	return true;
 }
 
+GUI_RECT ChatWindow::audienceRect(int row)
+{
+    const long right = listBox.globalRight();
+    const long bottom = edits[0].globalBottom() - row * AudienceHeight;
+    return {right - AudienceWidth, bottom - AudienceHeight, right, bottom};
+}
+
+int ChatWindow::getAudiences(int* targets)
+{
+    int count = 0;
+    targets[count++] = ChatEveryone;
+    targets[count++] = ChatTeam;
+    for (const auto& player : MPlayer->playerInfo)
+        if (player.player && !player.leftSession && player.commanderID >= 0 &&
+            player.commanderID != MPlayer->commanderID)
+            targets[count++] = player.commanderID;
+    return count;
+}
+
+bool ChatWindow::validRecipient() const
+{
+    const auto* player = MPlayer->getPlayerInfo(audience);
+    return player && player->player && !player->leftSession &&
+        strcmp(player->name, recipientName) == 0;
+}
+
+const char* ChatWindow::audienceLabel(int target, char* label)
+{
+    if (target == ChatEveryone || target == ChatTeam)
+        cLoadString(target == ChatEveryone ? IDS_MP_CHAT_ALL : IDS_MP_CHAT_TEAM, label, 127);
+    else
+    {
+        char format[128];
+        cLoadString(IDS_MP_CHAT_WHISPER_TO, format, sizeof(format) - 1);
+        snprintf(label, 128, format, target + 1, MPlayer->playerInfo[target].name);
+    }
+    return label;
+}
+
 bool ChatWindow::pointInside( long xPos, long yPos )
 {
+    if (audienceOpen || (!getButton(MP_CHAT_HELPTOGGLE)->isPressed() && contains(audienceRect(), xPos, yPos)))
+        return true;
 	if ( getButton( MP_CHAT_EXPAND )->isPressed() )
 		return chatWidget.inside( xPos, yPos );
 
@@ -116,12 +172,6 @@ int ChatWindow::handleMessage( unsigned long, unsigned long who )
 	{
 		if ( getButton( MP_CHAT_EXPAND )->isPressed() )
 			getButton( MP_CHAT_HELPTOGGLE )->press( 0 );
-	}
-	else if ( who == MP_CHAT_TEAMONLY )
-	{
-		
-		getButton( MP_CHAT_HELPTOGGLE )->press( 0 );
-
 	}
 	return 1;
 }
@@ -168,13 +218,87 @@ void ChatWindow::render( int xOffset, int yOffset )
 		edits[0].move(-xOffset, -yOffset );
 	}
 
-	textObjects[0].render(); // render this last, otherwise it gets cut off
+    textObjects[0].render();
+    if (getButton(MP_CHAT_HELPTOGGLE)->isPressed())
+        return;
+
+    const auto renderAudience = [&](int target, int row) {
+        auto rect = audienceRect(row);
+        rect.left += xOffset;
+        rect.right += xOffset;
+        rect.top += yOffset;
+        rect.bottom += yOffset;
+        drawRect(rect, target == audience ? 0xff23495a : 0xff151b20);
+        char label[132];
+        if (!row && target >= 0 && !validRecipient())
+            cLoadString(IDS_MP_CHAT_RECIPIENT_MISSING, label, sizeof(label) - 1);
+        else
+            audienceLabel(target, label);
+
+        const int labelWidth = AudienceWidth - 20;
+        if (audienceFont.width(label) > static_cast<unsigned>(labelWidth))
+        {
+            // Cut at UTF-8 boundaries and leave room for the ellipsis.
+            size_t end = strlen(label);
+            do {
+                do {
+                    --end;
+                } while (end && (static_cast<unsigned char>(label[end]) & 0xc0) == 0x80);
+                strcpy(label + end, "...");
+            } while (end && audienceFont.width(label) > static_cast<unsigned>(labelWidth));
+        }
+        audienceFont.render(label, rect.left + 4, rect.top, labelWidth, AudienceHeight, 0xffffffff, false, 3);
+        if (!row)
+            audienceFont.render("v", rect.right - 13, rect.top, 11, AudienceHeight, 0xffffffff, false, 3);
+    };
+
+    renderAudience(audience, 0);
+    if (audienceOpen)
+    {
+        int targets[MAX_MC_PLAYERS + 2];
+        const int count = getAudiences(targets);
+        for (int i = 0; i < count; ++i)
+            renderAudience(targets[i], count - i);
+    }
 
 }
 
 void ChatWindow::update()
 {
+    int targets[MAX_MC_PLAYERS + 2];
+    const int targetCount = getAudiences(targets);
+
+    if (userInput->isLeftClick() && !getButton(MP_CHAT_HELPTOGGLE)->isPressed())
+    {
+        const long x = userInput->getMouseX();
+        const long y = userInput->getMouseY();
+        if (contains(audienceRect(), x, y))
+        {
+            audienceOpen = !audienceOpen;
+            return;
+        }
+        if (audienceOpen)
+        {
+            audienceOpen = false;
+            for (int i = 0; i < targetCount; ++i)
+                if (contains(audienceRect(targetCount - i), x, y))
+                {
+                    audience = targets[i];
+                    if (audience >= 0)
+                        recipientName = MPlayer->playerInfo[audience].name;
+                    edits[0].setFocus(true);
+                    break;
+                }
+            return;
+        }
+    }
+
 	bool bEnterPressed = gos_GetKeyStatus(KEY_RETURN) == KEY_PRESSED;
+    if (audienceOpen && (bEnterPressed || gos_GetKeyStatus(KEY_ESCAPE) == KEY_PRESSED))
+    {
+        audienceOpen = false;
+        return;
+    }
 	bool bFocused = edits[0].hasFocus();
 
 	if ( getButton( MP_CHAT_EXPAND )->isPressed() )
@@ -217,12 +341,27 @@ void ChatWindow::update()
 		{
 			EString text;
 			edits[0].getEntry( text );
-			int team = getButton( MP_CHAT_TEAMONLY )->isPressed() ? 
-				MPlayer->getPlayerInfo( MPlayer->commanderID )->team : -1;
-			if ( text.Length() )
-			{
-				MPlayer->sendChat( 0, team, (char*)(const char*)text );
-			}
+            if (text.Length())
+            {
+                if (audience >= 0)
+                {
+                    if (!validRecipient() || !MPlayer->sendWhisper(audience, text))
+                    {
+                        char unavailable[128];
+                        cLoadString(IDS_MP_CHAT_RECIPIENT_LEFT, unavailable, sizeof(unavailable) - 1);
+                        MPlayer->addLocalChat(MPlayer->commanderID, unavailable, true, false);
+                        edits[0].setFocus(true);
+                        audienceOpen = true;
+                        return;
+                    }
+                }
+                else
+                {
+                    const auto* local = MPlayer->getPlayerInfo(MPlayer->commanderID);
+                    const int team = audience == ChatTeam ? local->team : -1;
+                    MPlayer->sendChat(0, team, (char*)(const char*)text);
+                }
+            }
 			edits[0].setEntry( "" );
 			edits[0].setFocus( false );
 		}

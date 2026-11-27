@@ -165,7 +165,7 @@ void PilotReadyScreen::begin()
 {
 	getButton( MB_MSG_PREV )->disable( false );
 	getButton( MB_MSG_MAINMENU )->disable( false );
-	launchFadeTime = 0;
+    getButton(MB_MSG_NEXT)->setText(MPlayer ? IDS_MP_FINISH_PREPARATION : IDS_STRING27171);
 	// initialize both the inventory and icon lists
 	EList< LogisticsMech*, LogisticsMech* > mechList;
 	LogisticsData::instance->getInventory( mechList );
@@ -325,14 +325,6 @@ void PilotReadyScreen::render(int xOffset, int yOffset )
 		statics[28].render( xOffset, yOffset );
 	}
 
-	if ( launchFadeTime )
-	{
-		launchFadeTime += frameLength;
-		long color = interpolateColor( 0x00000000, 0x7f000000, launchFadeTime/.5f );
-		GUI_RECT rect = { 0, 0, Environment.screenWidth, Environment.screenHeight };
-		drawRect( rect, color );
-	}
-
 	if ( MPlayer && ChatWindow::instance() )
 		ChatWindow::instance()->render(xOffset, yOffset);
 
@@ -344,12 +336,6 @@ void PilotReadyScreen::render(int xOffset, int yOffset )
 
 void PilotReadyScreen::update()
 {
-	if ( MPlayer )
-	{
-		if ( MPlayer->playersReadyToLoad() )
-			status = NEXT;
-	}
-
 	if ( getButton( MB_MSG_PREV )->isEnabled() ) // this is disabled if the user has already pressed launch )
 	{
 		// update current text
@@ -448,12 +434,12 @@ void PilotReadyScreen::update()
 			if ( curSel == -1 || pIcons[curSel].getPilot() )
 				buttons[2].disable( 1 );
 			else
-				buttons[2].disable( 0 );
+				buttons[2].disable(0);
 		}
 		else
 		{
 			if ( bHasMech )
-				buttons[1].disable( 0 );
+				buttons[1].disable(LogisticsData::instance->getCBills() < 0);
 			else
 				buttons[1].disable( 1 );
 
@@ -518,27 +504,15 @@ int	PilotReadyScreen::handleMessage( unsigned long message, unsigned long who )
 	switch( who )
 	{
 	case MB_MSG_NEXT:
-		if ( MPlayer )
-		{
-			MPlayer->sendMissionSetup(0, 7, NULL);
-			getButton( MB_MSG_PREV )->disable( true );
-			getButton( MB_MSG_NEXT )->disable( true );
-			getButton( MB_MSG_MAINMENU )->disable( true );
-			MC2Player* pInfo = MPlayer->getPlayerInfo( MPlayer->commanderID );
-			if ( pInfo )
-			{
-				const char* name = pInfo->name;
-				MPlayer->sendPlayerActionChat(0, name, IDS_MP_PLAYER_READY );
-			}
-
-			pilotListBox.SelectItem( -1 );
-
-			launchFadeTime = .0001f;
-
-		}
-		else
-			status = NEXT;
-		break;
+        if (!getButton(MB_MSG_NEXT)->isEnabled())
+            break;
+        if (MPlayer)
+        {
+            status = RETURNMULTIPLAYER;
+        }
+        else
+            status = NEXT;
+        break;
 
 	case MB_MSG_PREV:
 		status = PREVIOUS;
@@ -692,7 +666,6 @@ void PilotReadyScreen::beginDrag( LogisticsPilot* pPilot )
 	if ( pPilot )
 		LogisticsPilotListBox::makeUVs( pPilot, dragIcon );
 
-	launchFadeTime = 0.f;
 
 }
 

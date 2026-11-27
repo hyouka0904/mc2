@@ -127,7 +127,6 @@ typedef unsigned long	ObjectiveStatus;
 typedef enum {
 	MISSION_LOAD_SP_QUICKSTART,
 	MISSION_LOAD_SP_LOGISTICS,
-	MISSION_LOAD_MP_QUICKSTART,
 	MISSION_LOAD_MP_LOGISTICS
 } MissionLoadType;
 
@@ -257,7 +256,7 @@ class Mission
 
 		bool calcComplexDropZones (char* missionName, char dropZoneList[MAX_MC_PLAYERS]);
 
-		void init (const char *missionName, long loadType, long dropZoneID, Stuff::Vector3D* dropZoneList, char commandersToLoad[8][3], long numMoversPerCommander);
+		void init (const char *missionName, long loadType, long dropZoneID, Stuff::Vector3D* dropZoneList, char commandersToLoad[8][3]);
 
 		static void initBareMinimum();
 		

@@ -104,7 +104,7 @@ void MissionBriefingScreen::render(int xOffset, int yOffset )
 void MissionBriefingScreen::update()
 {
 
-	if ( MPlayer || LogisticsData::instance->isSingleMission() )
+	if (!MPlayer && LogisticsData::instance->isSingleMission())
 	{
 		getButton( MB_MSG_PREV )->disable( true );
 

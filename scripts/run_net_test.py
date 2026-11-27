@@ -3,26 +3,31 @@
 """LAN multiplayer end to end: two game instances on this machine.
 
     run_net_test.py <game_dir> [--renderer gl|gpu] [--out DIR] [--timeout S]
-                    [--scenario battle|version]
+                    [--scenario battle|logistics|version]
 
 Both instances run headless (Xvfb, fixed time step, scripted mouse and
 keys), each with its own user data directory, and talk over 127.0.0.1:
 
   host    main menu -> Multiplayer -> Local network -> Host game "ROOM",
-          ticks Quickstart, launches once the client is ready
+          prepares a mech and pilot, launches once the client is ready
   client  main menu -> Multiplayer -> Local network -> LAN browser, picks
-          the room, joins, ticks Ready
+          the room, joins and prepares a mech and pilot
 
-Both load WetWork (mc2_m01) with the quickstart forces. The host gets
+Both load WetWork (mc2_m01) with their prepared mechs. The host gets
 MC2_NET_TEST_CHARGE=1, so after 10 seconds its units attack the client's.
 Both write MC2_NET_STATEFILE (unit positions and states every second of the
-host's mission clock). The client quits mid battle; the host carries on.
+host's mission clock). Both instances must exit cleanly.
 
 Checks: the client found and joined the room, both machines passed every
-step of the loading handshake, there was a fight (units destroyed, kills
-counted), both machines agree on which units are destroyed and on the
+step of the loading handshake, there was a fight (units knocked out, kills
+counted), both machines agree on destroyed and disabled units and on the
 kill/loss tallies, live units are within a couple of map cells of each
 other, and neither game logged a STOP, assertion or crash.
+
+--scenario logistics: each player buys a mech, assigns a pilot and returns
+to the room. The client reopens preparation, backs out, then completes it
+again. The host must observe ready, unready and ready before launching.
+Both games must load the two prepared mechs.
 
 --scenario version: the host pretends to be release 9.9.9 with another
 network protocol (MC2_NET_TEST_VERSION / MC2_NET_TEST_PROTOCOL). The client
@@ -53,33 +58,34 @@ LAN_BROWSER = (597, 398)      # LAN panel: Go to LAN browser
 HOST_GAME = (597, 447)        # LAN panel: Host game
 HOST_NAME_EDIT = (297, 219)   # host dialog
 HOST_ACCEPT = (550, 437)
-QUICKSTART = (533, 490)       # parameters screen
-LAUNCH = (722, 566)           # parameters screen Next / Launch, browser Join
+NEXT = (722, 566)             # browser Join and logistics Next
+START_GAME = (580, 489)       # room: Start game
 FIRST_ROOM = (200, 116)       # LAN browser list
-CLIENT_READY = (458, 145)     # second player row: Ready
+PREPARE = (722, 566)          # room: Prepare
+BACK = (65, 566)              # briefing: Back
 
 HOST_FRAMES = 15000
 CLIENT_FRAMES = 9500
 
 
-def host_script():
+def host_room_script():
     s = click(600, *MP_BUTTON) + click(800, *LAN) + click(900, *HOST_GAME)
     s += click(1000, *HOST_NAME_EDIT)
     s += ["1010 key R", "1014 key O", "1018 key O", "1022 key M"]
-    # Let the second process finish startup and signal Ready even on a
-    # software renderer with an uneven frame rate between the two windows.
-    s += click(1050, *HOST_ACCEPT) + click(1300, *QUICKSTART) + click(6200, *LAUNCH)
-    return s
+    return s + click(1050, *HOST_ACCEPT)
 
 
-def client_script():
+def join_room_script():
     return (click(600, *MP_BUTTON) + click(800, *LAN) + click(900, *LAN_BROWSER) +
-            click(1400, *FIRST_ROOM) + click(1450, *LAUNCH) + click(2200, *CLIENT_READY))
+            click(1400, *FIRST_ROOM) + click(1450, *NEXT))
 
 
-def version_client_script():
-    return (click(600, *MP_BUTTON) + click(800, *LAN) + click(900, *LAN_BROWSER) +
-            click(1400, *FIRST_ROOM) + click(1450, *LAUNCH))
+def prepare_mech(frame):
+    actions = (PREPARE, NEXT,                   # briefing -> mech bay
+               (660, 278), (619, 104), (400, 78), NEXT,  # purchase a mech
+               (625, 104), (437, 78), NEXT,             # add it to deployment
+               (635, 105), (441, 78), NEXT)             # assign a pilot, return
+    return [event for i, xy in enumerate(actions) for event in click(frame + 100 * i, *xy)]
 
 
 def start(name, script, frames, game_dir, out, renderer, display, extra_env, captures=None):
@@ -115,11 +121,11 @@ def load_state(path):
         if f[1] == "kills":
             kills[int(f[0])] = f[2:]
         elif f[1] != "dbg" and len(f) >= 6:
-            units[int(f[0])][int(f[1])] = (float(f[2]), float(f[3]), f[4] == "1")
+            units[int(f[0])][int(f[1])] = (float(f[2]), float(f[3]), f[4] == "1", f[5] == "1")
     return units, kills
 
 
-def check(host_dir, client_dir, host_status, client_status):
+def check(host_dir, client_dir, host_status, client_status, logistics=False):
     problems = []
     host_log = open(os.path.join(host_dir, "game.log"), errors="replace").read()
     client_log = open(os.path.join(client_dir, "game.log"), errors="replace").read()
@@ -129,7 +135,8 @@ def check(host_dir, client_dir, host_status, client_status):
         problems.append("client exit status %s" % client_status)
     for what, text in (("host", host_log), ("client", client_log)):
         problems += ["%s log has %r" % (what, b) for b in FORBIDDEN if b in text]
-        for step, cids in ((0, (0,)), (2, (0, 1)), (4, (0, 1))):  # step 0 comes from the host only
+        steps = [(6, (0,)), (0, (0,)), (1, (0, 1)), (2, (0, 1)), (4, (0, 1))]
+        for step, cids in steps:
             for cid in cids:
                 line = "[net] mission setup %d from commander %d" % (step, cid)
                 if line not in text:
@@ -143,26 +150,35 @@ def check(host_dir, client_dir, host_status, client_status):
     h_units, h_kills = load_state(os.path.join(host_dir, "state.txt"))
     c_units, c_kills = load_state(os.path.join(client_dir, "state.txt"))
     common = sorted(set(h_units) & set(c_units))
+    if not common or h_units[common[0]] != c_units[common[0]] or len(h_units[common[0]]) != 2:
+        problems.append("both players must load the two prepared mechs")
+    if logistics:
+        ready_updates = re.findall(r"player update from commander 1: ready ([01])", host_log)
+        transitions = "".join(state for i, state in enumerate(ready_updates)
+                              if i == 0 or state != ready_updates[i - 1])
+        if not transitions.endswith("101"):
+            problems.append("client must be ready, cancel readiness, then finish preparation again")
+        return problems
     if len(common) < 30:
         problems.append("only %d seconds of mission on both machines" % len(common))
         return problems
     last = common[-1]
-    destroyed = sum(1 for u in h_units[last].values() if u[2])
-    if destroyed == 0:
-        problems.append("no unit was destroyed (no fight?)")
-    # destroyed state: allow a one-second lag, but never for long
+    knocked_out = sum(1 for u in h_units[last].values() if u[2] or u[3])
+    if knocked_out == 0:
+        problems.append("no unit was destroyed or disabled (no fight?)")
+    # Allow a short lag in destroyed and disabled state.
     lagging = 0
     for s in common:
-        diff = [i for i in h_units[s] if i in c_units[s] and h_units[s][i][2] != c_units[s][i][2]]
+        diff = [i for i in h_units[s] if i in c_units[s] and h_units[s][i][2:] != c_units[s][i][2:]]
         lagging = lagging + 1 if diff else 0
         if lagging > 2:
-            problems.append("destroyed units differ for 3 seconds at %d: %s" % (s, diff))
+            problems.append("destroyed or disabled units differ for 3 seconds at %d: %s" % (s, diff))
             break
     # positions of live units
     worst = (0.0, None, None)
     for s in common:
-        for i, (x, y, dead) in h_units[s].items():
-            if dead or i not in c_units[s] or c_units[s][i][2]:
+        for i, (x, y, destroyed, disabled) in h_units[s].items():
+            if destroyed or disabled or i not in c_units[s] or any(c_units[s][i][2:]):
                 continue
             d = math.hypot(x - c_units[s][i][0], y - c_units[s][i][1])
             if d > worst[0]:
@@ -174,8 +190,8 @@ def check(host_dir, client_dir, host_status, client_status):
     if k_common and h_kills[k_common[-1]] != c_kills[k_common[-1]]:
         problems.append("kills differ at %d: host %s client %s" %
                         (k_common[-1], h_kills[k_common[-1]], c_kills[k_common[-1]]))
-    print("  %d seconds compared, %d units destroyed, max distance %.0f, kills %s" %
-          (len(common), destroyed, worst[0], " ".join(h_kills.get(last, [])[:2])))
+    print("  %d seconds compared, %d units knocked out, max distance %.0f, kills %s" %
+          (len(common), knocked_out, worst[0], " ".join(h_kills.get(last, [])[:2])))
     return problems
 
 
@@ -207,7 +223,7 @@ def main():
     ap.add_argument("--renderer", default="gl")
     ap.add_argument("--out", default=None, help="logs, state files and captures (default: temporary)")
     ap.add_argument("--timeout", type=int, default=900, help="seconds for the whole test")
-    ap.add_argument("--scenario", choices=("battle", "version"), default="battle")
+    ap.add_argument("--scenario", choices=("battle", "logistics", "version"), default="battle")
     args = ap.parse_args()
     game_dir = os.path.abspath(args.game_dir)
     out = os.path.abspath(args.out) if args.out else tempfile.mkdtemp(prefix="mc2net-")
@@ -218,12 +234,20 @@ def main():
     host = client = None
     try:
         version_test = args.scenario == "version"
-        if version_test:
+        logistics = args.scenario == "logistics"
+        # Try starting before preparation, then give both players time to finish.
+        start_frame = 7900 if logistics else 6700
+        host_preparation = (host_room_script() + click(1500, *START_GAME) +
+                            prepare_mech(1700) + click(start_frame, *START_GAME))
+        if logistics:
+            host, host_dir = start("host", host_preparation, 9800, game_dir, out, args.renderer, display,
+                                   {"MC2_NET_LOG": "2"}, captures="1480,1770,2470,2770,2870,8500")
+        elif version_test:
             # The host keeps its room open until the client is done (stopped below)
-            host, host_dir = start("host", host_script(), HOST_FRAMES, game_dir, out, args.renderer, display,
+            host, host_dir = start("host", host_room_script(), HOST_FRAMES, game_dir, out, args.renderer, display,
                                    {"MC2_NET_TEST_VERSION": "9.9.9", "MC2_NET_TEST_PROTOCOL": "MC2NET-T"})
         else:
-            host, host_dir = start("host", host_script(), HOST_FRAMES, game_dir, out, args.renderer,
+            host, host_dir = start("host", host_preparation, HOST_FRAMES, game_dir, out, args.renderer,
                                    display, {"MC2_NET_TEST_CHARGE": "1"})
         host_log = os.path.join(host_dir, "game.log")
         while time.time() < deadline and host.poll() is None:
@@ -231,10 +255,17 @@ def main():
                 break
             time.sleep(0.5)
         if version_test:
-            client, client_dir = start("client", version_client_script(), 1600, game_dir, out,
+            client, client_dir = start("client", join_room_script(), 1600, game_dir, out,
                                        args.renderer, display, {}, captures="1380,1560")
+        elif logistics:
+            script = (join_room_script() + prepare_mech(2200) +
+                      click(3850, *PREPARE) + click(4200, *BACK) +
+                      click(4700, *PREPARE) + click(5000, *NEXT) +
+                      click(5300, *NEXT) + click(5600, *NEXT))
+            client, client_dir = start("client", script, 8200, game_dir, out, args.renderer, display, {},
+                                       captures="2180,3650,4490,5500,5900,7700")
         else:
-            client, client_dir = start("client", client_script(), CLIENT_FRAMES, game_dir, out,
+            client, client_dir = start("client", join_room_script() + prepare_mech(2200), CLIENT_FRAMES, game_dir, out,
                                        args.renderer, display, {})
         statuses = {}
         if version_test:
@@ -260,8 +291,10 @@ def main():
         xvfb.kill()
 
     print("net test (%s, %s): logs in %s" % (args.scenario, args.renderer, out))
-    checker = check_version if args.scenario == "version" else check
-    problems = checker(host_dir, client_dir, statuses["host"], statuses["client"])
+    if version_test:
+        problems = check_version(host_dir, client_dir, statuses["host"], statuses["client"])
+    else:
+        problems = check(host_dir, client_dir, statuses["host"], statuses["client"], logistics)
     for p in problems:
         print("  FAIL: " + p)
     print("PASS" if not problems else "FAILED")

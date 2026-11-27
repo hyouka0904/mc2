@@ -1662,7 +1662,7 @@ void __stdcall InitializeGameEngine()
 		{
 			logistics->setLogisticsState(log_STARTMISSIONFROMCMDLINE);
 			char commandersToLoad[MAX_MC_PLAYERS][3] = {{0, 0, 0}, {1, 1, 1}, {2, 0, 2}, {3, 3, 3}, {4, 4, 4}, {5, 5, 5}, {6, 6, 6}, {7, 7, 7}};
-			mission->init(missionName, MISSION_LOAD_SP_QUICKSTART, 0, NULL, commandersToLoad, 2);
+			mission->init(missionName, MISSION_LOAD_SP_QUICKSTART, 0, NULL, commandersToLoad);
 			eye->activate();
 			eye->update();
 			mission->start();

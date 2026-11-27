@@ -42,7 +42,7 @@ IDS_BLURB_23	從雷納德手中解放太空港。
 IDS_BLURB_24	摧毀史坦納最高指揮部，為卡弗五號星帶來和平。
 IDS_BLURB_M1	殲滅：擊毀敵方單位即可得分。分數最高者獲勝。
 IDS_BLURB_M10	多人遊戲的情境任務。
-IDS_BLURB_M11	殲滅：擊毀敵方單位即可得分，分數最高者獲勝。\n使用快速開始時，所有玩家都能在這個版本的 Ravines 操控載具。
+IDS_BLURB_M11	殲滅：擊毀敵方單位即可得分，分數最高者獲勝。
 IDS_BLURB_M2	生存競賽：消滅所有對手，最後保有可作戰機甲者獲勝。
 IDS_BLURB_M3	山丘之王：控制山頂總部累計時間最長者獲勝。
 IDS_BLURB_M4	山丘決戰：時間耗盡時，控制總部者獲勝。
@@ -2106,3 +2106,12 @@ IDS_OPTION_TRADITIONAL_CHINESE	繁體中文
 IDS_LANGUAGE_RESTART_WARNING	重新啟動遊戲後，語言設定就會生效。
 IDS_LANGUAGE_AND_RESOLUTION_WARNING	重新啟動遊戲後，語言設定就會生效。新解析度將在下次開始任務時生效。
 IDS_LANGUAGE_SAVE_FAILED	無法儲存語言設定。
+IDS_MP_PREPARE_LOADOUT	任務整備
+IDS_MP_FINISH_PREPARATION	完成整備
+IDS_MP_START_GAME	開始遊戲
+IDS_MP_CHAT_ALL	收件人：所有人
+IDS_MP_CHAT_TEAM	收件人：隊伍
+IDS_MP_CHAT_WHISPER_TO	悄悄話給 #%d %s：
+IDS_MP_CHAT_WHISPER	［悄悄話］
+IDS_MP_CHAT_RECIPIENT_LEFT	收件人已離開。請重新選擇收件人。
+IDS_MP_CHAT_RECIPIENT_MISSING	請選擇收件人

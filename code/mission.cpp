@@ -1638,7 +1638,7 @@ bool IsGateOpen (int objectWID) {
 }
 
 //----------------------------------------------------------------------------
-void Mission::init (const char *missionName, long loadType, long dropZoneID, Stuff::Vector3D* dropZoneList, char commandersToLoad[8][3], long numMoversPerCommander)
+void Mission::init (const char *missionName, long loadType, long dropZoneID, Stuff::Vector3D* dropZoneList, char commandersToLoad[8][3])
 {
 	neverEndingStory = false;
 	invulnerableON = false;
@@ -2428,7 +2428,6 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 
 	loadProgress = 43.5f;
 
-	long numMoversLoaded[MAX_MC_PLAYERS] = {0, 0, 0, 0, 0, 0, 0, 0};
 	long numDropZonePositions = 0;
 	if (numParts)
 	{
@@ -2631,20 +2630,6 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 				parts[i].commanderID = cmdId;
 			}
 
-			if (loadType == MISSION_LOAD_MP_QUICKSTART) {
-				long origCommanderID = parts[i].commanderID;
-				parts[i].commanderID = commandersToLoad[origCommanderID][0];
-				parts[i].teamId = commandersToLoad[origCommanderID][1];
-				if (commandersToLoad[origCommanderID][0] > -1) {
-					if (numMoversLoaded[commandersToLoad[origCommanderID][0]] == numMoversPerCommander) {
-						parts[i].commanderID = -1;
-						parts[i].teamId = -1;
-						}
-					else
-						numMoversLoaded[commandersToLoad[origCommanderID][0]]++;
-				}
-			}
-
 			parts[i].gestureId = 2; // this has never changed
 	
 			result = missionFile->readIdULong("BaseColor",parts[i].baseColor);
@@ -2722,7 +2707,6 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 		case MISSION_LOAD_SP_QUICKSTART:
 		case MISSION_LOAD_SP_LOGISTICS:
 			break;
-		case MISSION_LOAD_MP_QUICKSTART:
 		case MISSION_LOAD_MP_LOGISTICS:
 			numMechs = 64;
 			numVehicles = 64;
@@ -2748,9 +2732,6 @@ void Mission::init (const char *missionName, long loadType, long dropZoneID, Stu
 				loadEm = false;
 			if (loadType == MISSION_LOAD_SP_LOGISTICS)
 				if (parts[i].commanderID == 0 && !parts[i].destroyed)
-					loadEm = false;
-			if (loadType == MISSION_LOAD_MP_QUICKSTART)
-				if (parts[i].commanderID == -1)
 					loadEm = false;
 			if (loadEm) {
 				ObjectTypePtr objType = ObjectManager->getObjectType(parts[i].objNumber);

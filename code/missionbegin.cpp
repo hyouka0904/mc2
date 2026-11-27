@@ -713,6 +713,26 @@ const char* MissionBegin::update()
 			return NULL;
 		}
 
+        if (pCurScreen->getStatus() == LogisticsScreen::PREPAREMULTIPLAYER)
+        {
+            pCurScreen->end();
+            setUpMultiplayerLogisticsScreens();
+            curScreenX = 1;
+            screens[curScreenX][curScreenY]->begin();
+            return NULL;
+        }
+        if (MPlayer && (pCurScreen->getStatus() == LogisticsScreen::RETURNMULTIPLAYER ||
+            (pCurScreen == singlePlayerScreens[1][1] && pCurScreen->getStatus() == LogisticsScreen::PREVIOUS)))
+        {
+            auto* lobby = static_cast<MPParameterScreen*>(multiplayerScreens[2][1]);
+            if (pCurScreen->getStatus() == LogisticsScreen::RETURNMULTIPLAYER)
+                lobby->completePreparation();
+            else
+                lobby->cancelPreparation();
+            restartMPlayer(nullptr);
+            return NULL;
+        }
+
 		if ( pCurScreen->getStatus() == LogisticsScreen::READYTOLOAD && 
 			(curScreenX == 4 ||( MPlayer && curScreenX == 3 )) )
 			bReadyToLoad = true;
@@ -731,15 +751,7 @@ const char* MissionBegin::update()
 					{
 						if ( dynamic_cast<MPParameterScreen*>( screens[curScreenX][curScreenY] ) )
 						{
-							if ( curScreenX == 2 )
-							{
-								
-								if ( !MPlayer->missionSettings.quickStart)
-								{
-									setUpMultiplayerLogisticsScreens();	
-								}						
-							}
-							else if ( curScreenX == 3 )
+							if ( curScreenX == 3 )
 							{
 								bDone = true;
 							}

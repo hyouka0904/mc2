@@ -4435,6 +4435,15 @@
 #define IDS_LANGUAGE_RESTART_WARNING    60075
 #define IDS_LANGUAGE_AND_RESOLUTION_WARNING 60076
 #define IDS_LANGUAGE_SAVE_FAILED       60077
+#define IDS_MP_PREPARE_LOADOUT           60078
+#define IDS_MP_FINISH_PREPARATION        60079
+#define IDS_MP_START_GAME                60080
+#define IDS_MP_CHAT_ALL                  60081
+#define IDS_MP_CHAT_TEAM                 60082
+#define IDS_MP_CHAT_WHISPER_TO           60083
+#define IDS_MP_CHAT_WHISPER              60084
+#define IDS_MP_CHAT_RECIPIENT_LEFT       60085
+#define IDS_MP_CHAT_RECIPIENT_MISSING    60088
 */
 
 #include "strings.res.h"

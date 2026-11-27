@@ -44,7 +44,9 @@ class LogisticsScreen : public aObject
 		FADEDOWN,
 		FADEUP,
 		READYTOLOAD,
-		GOTOSPLASH
+		GOTOSPLASH,
+		PREPAREMULTIPLAYER,
+		RETURNMULTIPLAYER
 	};
 
 	LogisticsScreen();

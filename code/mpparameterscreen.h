@@ -183,6 +183,19 @@ private:
 	bool			bHostLeftDlg;
 	bool			bWaitingToStart;
 
+    aAnimButton prepareButton;
+    bool hasPreparation = false;
+    uint32_t preparationRevision = 0;
+    int preparationBudget = 0;
+    int preparationFaction = -1;
+
+public:
+    void completePreparation();
+    void cancelPreparation();
+private:
+    bool prepareLoadout();
+    bool canStartGame();
+
 	
 
 };

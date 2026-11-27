@@ -86,7 +86,15 @@ class ChatWindow: public LogisticsScreen
 
 		aListBox		listBox;
 
-		aEdit			chatEdit;
+        int audience = -2;
+        bool audienceOpen = false;
+        EString recipientName;
+        aFont audienceFont;
+
+        GUI_RECT audienceRect(int row = 0);
+        const char* audienceLabel(int target, char* label);
+        int getAudiences(int* targets);
+        bool validRecipient() const;
 		ChatWidget		chatWidget;
 
 		ChatMessageItem	listItems[4];

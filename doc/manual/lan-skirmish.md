@@ -15,8 +15,10 @@
 2. The host presses **Host Game**, enters a room name → **Accept**.
 3. Everyone else presses **Go to LAN Browser**, picks the room → **Join**. The room list broadcasts a query on the LAN every second, so rooms on the same network appear by themselves; no IP needed.
    - If no room shows up (different subnet, broadcasts blocked), choose **Internet (Direct TCP/IP)** instead, enter the host's IP → **Join Game**.
-4. In the room, the host picks the map (**Load Map**) and the rules; everyone picks a team and faction and presses **Ready**. Any rule change by the host clears everyone's Ready.
-5. When everyone is ready the host presses **Next / Launch**; after a 5-second countdown everyone enters the 'Mech bay together (with **Use Quickstart** checked, the map's default forces are used instead).
+4. The host picks the map and rules. Everyone picks a team and faction, then selects **Prepare**. Read the briefing, assemble a lance and assign pilots, then select **Finish prep** to return to the room.
+5. The host can select **Start game** once everyone is ready, within budget and meets the room rules. Rule changes require players to prepare again.
+
+The chat recipient menu offers everyone, your team or one player. Select the recipient, type your message, and press **Enter**.
 
 ## During the mission
 
