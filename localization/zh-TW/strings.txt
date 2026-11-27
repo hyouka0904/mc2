@@ -1,30 +1,843 @@
-IDS_MM_RETURN_TO_GAME	返回遊戲
-IDS_MM_MULTIPLAYER	多人遊戲
-IDS_MM_OPTIONS	選項
-IDS_MM_ENCYCLOPEDIA	百科全書
-IDS_MM_NEWCAMPAIGN	新戰役
-IDS_MM_SKIRMISH	單人任務
-IDS_MM_SAVE	儲存遊戲
-IDS_MM_EXIT	離開
-IDS_MM_LOAD	載入遊戲
-IDS_MM_RETURN_TO_GAME2	返回目前的遊戲。
-IDS_MM_MULTIPLAYER_HELP	開始多人遊戲。
-IDS_MM_OPTIONS_HELP	調整畫面、音效、遊戲玩法與快捷鍵。
-IDS_MM_ENCYCLOPEDIA_HELP	查閱《BattleTech》宇宙的裝備、人物和歷史。
-IDS_MM_NEWCAMPAIGN_HELP	開始新的戰役。
-IDS_MM_SKIRMISH_HELP	載入已完成的戰役任務，或用任務編輯器建立的任務。
-IDS_MM_SAVE_HELP	儲存目前的任務。
-IDS_MM_EXIT_HELP	離開《MechCommander 2》。
-IDS_MM_LOAD_HELP	載入已儲存的任務。
-IDS_MN_TITLE	任務簡報
-IDS_MN_HEADER	任務簡報
-IDS_MN_MISSION_OBJECTIVES	任務目標
-IDS_MIS_NAME_01	偵察巡邏
+IDS_ACE	王牌
+IDS_ACE_SKILLS	王牌技能
+IDS_ACTIVE_DUTY	現役
+IDS_ADD_MECH	加入機甲
+IDS_AIRSTRIKE_HELP	點選空襲目標。
+IDS_AIRSTRIKE_HELP_NO_LOS	點選空襲目標。
+IDS_ARMOR0	極輕型
+IDS_ARMOR1	輕型
+IDS_ARMOR2	中型
+IDS_ARMOR3	重型
+IDS_ARMOR4	極重型
+IDS_BACK	返回
 IDS_BLURB_01	進行基本系統檢查，並深入匪徒活動區偵察。
+IDS_BLURB_02	匪徒佔領了史坦納基地，讓雷納德上校顏面盡失。消滅守軍並奪回基地總部。
+IDS_BLURB_03	史坦納情報部追蹤到一輛有武裝護衛的匪徒機動總部，正前往匪徒基地。攔截並奪取這輛車。
+IDS_BLURB_04	攔截並摧毀逃往廖氏領地的匪徒車隊。
+IDS_BLURB_05	史坦納開始進攻廖氏。部署至廖氏領地，遇到敵方目標時伺機攻擊。
+IDS_BLURB_06	偵測並攔截企圖深入史坦納領地的敵軍，阻止敵方進攻。
+IDS_BLURB_07	部署至廖氏領地並奪取其總部，然後向西摧毀化學處理廠。
+IDS_BLURB_08	找到史坦納特遣隊的倖存隊員，聯手摧毀匪徒機場。
+IDS_BLURB_09	部署至匪徒領地腹地。沿途盡可能破壞匪徒設施，最後摧毀其總部。
+IDS_BLURB_10	營救被關在史坦納偏遠勞改營的平民。佔領並防守營地，直到廖氏運輸車抵達並撤離囚犯。
+IDS_BLURB_11	從達維恩基地奪取機甲，並用它們攻擊史坦納，挑起兩大家族的衝突。
+IDS_BLURB_12	在達維恩增援部隊抵達並強化各基地之前攔截他們。
+IDS_BLURB_13	達維恩部隊防守卡弗五號星衛星基地的 HPG 發射器。摧毀發射器，切斷卡弗五號星與內天體其他地區的通訊。
+IDS_BLURB_14	潛入敵後，癱瘓保護史坦納領空的軌道砲。
+IDS_BLURB_15	摧毀史坦納的新型突擊戰車原型及生產設施。
+IDS_BLURB_16	趕在增援部隊抵達前，奪取防守薄弱的達維恩基地。
+IDS_BLURB_17	廖氏與史坦納希望會面商議停火。保護傑森・卓並護送他前往會合點。
+IDS_BLURB_18	抵禦廖氏與史坦納的聯手進攻，守住班尼克堡。
+IDS_BLURB_19	突襲卓山增援站，沿途盡可能破壞廖氏設施。
+IDS_BLURB_20	找到並控制達維恩登陸艦，接著救出乘員並癱瘓軌道砲，以便撤離。
+IDS_BLURB_21	盡可能摧毀史坦納的資源，並在時間耗盡前撤離。
+IDS_BLURB_22	突破廖氏防線，摧毀廖氏在卡弗五號星的權力中心：宮殿。
+IDS_BLURB_23	從雷納德手中解放太空港。
+IDS_BLURB_24	摧毀史坦納最高指揮部，為卡弗五號星帶來和平。
+IDS_BLURB_M1	殲滅：擊毀敵方單位即可得分。分數最高者獲勝。
+IDS_BLURB_M10	多人遊戲的情境任務。
+IDS_BLURB_M11	殲滅：擊毀敵方單位即可得分，分數最高者獲勝。\n使用快速開始時，所有玩家都能在這個版本的 Ravines 操控載具。
+IDS_BLURB_M2	生存競賽：消滅所有對手，最後保有可作戰機甲者獲勝。
+IDS_BLURB_M3	山丘之王：控制山頂總部累計時間最長者獲勝。
+IDS_BLURB_M4	山丘決戰：時間耗盡時，控制總部者獲勝。
+IDS_BLURB_M5	領土爭奪：時間耗盡時，控制最多基地者獲勝。控制所有基地即可立即取勝。
+IDS_BLURB_M6	經典奪取基地：佔領對手的總部。
+IDS_BLURB_M7	奪取基地：佔領對手的總部可癱瘓其所有單位。佔領次數最多者獲勝。
+IDS_BLURB_M8	三取二：進攻隊須奪取三座總部中的兩座，防守隊須阻止他們。
+IDS_BLURB_M9	軌道砲：進攻隊須摧毀三門軌道砲中的兩門，防守隊須保護軌道砲。
+IDS_BLURB_T1	學習操控鏡頭、查看戰術地圖與移動部隊。
+IDS_BLURB_T2	學習用目視和感測器發現敵人，並有效向敵人開火。
+IDS_BLURB_T3	學習佔領建築及其戰術用途。
+IDS_BLURB_T4	學習在任務中呼叫與使用支援載具。
+IDS_BLURB_T5	詳細介紹所有可用的戰場支援。
+IDS_BRIEF_01	我方部隊自這個區域起，陸續遭到匪徒伏擊與襲擊。\n\n請啟動 MechCommander 軟體與各項系統，前往該區調查。遇到敵對匪徒時，可逕行消滅，無須向史坦納最高指揮部請示。\n\n戰術官備註：\n指揮官，歡迎來到卡弗五號星。我會在雇主史坦納家族提供的簡報中補上自己的備註。\n\n巡邏路線會穿越一連串小島。機甲和氣墊載具可以渡過淺水區，一般車輛和戰車則無法通行。若遇到大批匪徒，可試著穿過淺水區撤退，將敵方的機甲與車輛分開。
+IDS_BUY_SELL_BUTTON	買賣機甲
+IDS_CAMPAIGN_NAME	卡弗五號星戰役
+IDS_CHANGE_WEAPONS	改裝機甲
+IDS_CHECK_MECHS	選擇要回收的機甲。
+IDS_CM_CAMPAIGN_OVERVIEW_TITLE	戰役概要
+IDS_CM_HEADER	選擇任務
+IDS_CM_HELP_NEXT	前往任務簡報。
+IDS_CM_HELP_PLAY	播放任務概要影片。
+IDS_CM_MISSION_SCREEN_TITLE	任務選擇區
+IDS_CM_MISSION_SELECTION	戰役任務
+IDS_CM_PAUSE	暫停
+IDS_CM_PAUSE_DESC	暫停任務概要影片。
+IDS_CM_PLAY	播放
+IDS_CM_PLAY_BUTTON	播放視訊
+IDS_CM_STOP	停止
+IDS_CM_STOP_BUTTON	停止視訊
+IDS_CM_STOP_DESC	停止任務概要影片。
+IDS_CM_TITLE	選擇任務
+IDS_CM_VIDCOM_TITLE	視訊通訊
+IDS_CM_VIDEO	視訊通訊
+IDS_COMP101	中型自動砲
+IDS_COMP114	機槍陣列
+IDS_COMP120	長程飛彈架
+IDS_COMP25	裝甲
+IDS_COMP_ABBR120	長程飛彈架
+IDS_COMP_ABBR25	裝甲
+IDS_CURRENT_TEAM_HEADER	目前：
+IDS_DEFAULTRANGE	預設射程
+IDS_DEFAULTRANGE_DESC	所選機甲將在各自的預設射程內攻擊。
+IDS_DESPLOYMENT_HEADER	部署小隊
+IDS_DIALOG_ABORT_PROMPT	確定要中止這項任務嗎？
+IDS_DIALOG_ACCEPT_CHANGES	套用變更
+IDS_DIALOG_ACCEPT_CHANGES_TEXT	這架機甲使用尚未取得的武器技術。取得技術前無法儲存為新型號。選擇「儲存」可保留這架機甲的改裝。
+IDS_DIALOG_CANCEL	取消
+IDS_DIALOG_CBILLS	C-Bills：%ld
+IDS_DIALOG_DELETE	刪除
+IDS_DIALOG_DELETE_PROMPT	要刪除 %s 嗎？
+IDS_DIALOG_ENTER_NAME	輸入這架機甲的名稱
+IDS_DIALOG_GAME_LIST	存檔清單
+IDS_DIALOG_LOAD_GAME	載入遊戲
+IDS_DIALOG_NO	否
+IDS_DIALOG_OK	確定
+IDS_DIALOG_OVERWRITE_PROMPT	要覆寫 %s 嗎？
+IDS_DIALOG_QUIT_PROMPT	確定要離開嗎？
+IDS_DIALOG_SAVE	儲存
+IDS_DIALOG_SAVE_GAME	儲存遊戲
+IDS_DIALOG_TIME	時間：%s  %s
+IDS_DIALOG_TRANSCRIPT_LIST	檔案
+IDS_DIALOG_TRANSCRIPT_SAVE	儲存對話紀錄
+IDS_DIALOG_VARIANT_LIST	型號清單
+IDS_DIALOG_VARIANT_SAVE	儲存型號
+IDS_DIALOG_YES	是
+IDS_DONE	完成
+IDS_DONE_HELP_CAPTION	完成
+IDS_DONE_HELP_DESC	前往駕駛員晉升畫面。
+IDS_DROPZONE	部署區
+IDS_ELITE	菁英
+IDS_ELITE_SKILLS3	菁英技能
+IDS_ENERGY_TAB_HELP	能量武器：通常較輕，但相對於傷害會產生較多熱量。
+IDS_EN_ARMOR	裝甲：%s：%ld
+IDS_EN_BUILDINGS	建築：查閱戰場上的各種設施。
+IDS_EN_BUILDING_WEAPON	武器配置
+IDS_EN_BUILDING_WEIGHT	結構耐久：%ld
+IDS_EN_CLASS	級別：%s
+IDS_EN_CLOSE	關閉
+IDS_EN_CLOSE_HELP	返回上一個畫面。
+IDS_EN_ENCYLOPEDIA	百科全書
+IDS_EN_HISTORY	歷史：查閱 BattleTech 宇宙的歷史。
+IDS_EN_HOUSE	家族：%s
+IDS_EN_JUMP	跳躍：%ld 公尺
+IDS_EN_MECHS	機甲：查閱機體的歷史、規格與配置。
+IDS_EN_PERSONALITIES	人物：查閱遊戲中的重要人物。
+IDS_EN_SPEED	速度：%ld 公里／小時
+IDS_EN_TITLE_HELP	查閱機甲、載具、建築、武器、零件、人物與 BattleTech 歷史。
+IDS_EN_VEHICLES	載具：查閱遊戲中會遇到的各種載具。
+IDS_EN_WEAPONS	武器與零件：查閱規格、歷史及優缺點。
+IDS_EN_WEAPONS_HEADER	武器規格
+IDS_EN_WEAPON_AMMO	彈藥：%ld
+IDS_EN_WEAPON_ARMOR	裝甲：%ld
+IDS_EN_WEAPON_ARMOR_HELP	查看裝甲量。
+IDS_EN_WEAPON_COST	費用：%ld
+IDS_EN_WEAPON_DAMAGE	傷害：%ld
+IDS_EN_WEAPON_HEAT	熱量：%ld
+IDS_EN_WEAPON_RANGE	射程：%s
+IDS_EN_WEAPON_RATEOFFIRE	射速：%.1lf
+IDS_EN_WEAPON_WEIGHT	重量：%.0lf 噸
+IDS_EN_WEIGHT	重量：%.0lf 噸
+IDS_ERROR_NOT_CONNECTED	目前無法連線至網際網路。請確認網路連線後重試。
+IDS_EXIT	離開遊戲
+IDS_EXIT_CAPTION	要離開嗎？
+IDS_EXIT_HEADER	離開遊戲
+IDS_EXIT_HELP	離開《MechCommander 2》。
+IDS_EXTREME	極重型
+IDS_FACTION0	史坦納
+IDS_FACTION1	達維恩
+IDS_FACTION2	廖氏
+IDS_FACTION3	氏族
+IDS_FACTION4	全部
+IDS_FACTION5	全部
+IDS_FACTION6	達維恩
+IDS_FACTION7	達維恩
+IDS_FIREFROMCURRENTPOS	原地開火 (C)
+IDS_FIREFROMCURRENTPOS_DESC	命令所選單位停在原地開火。
+IDS_GN_AVAILABLE	可用
+IDS_GN_DROP_WEIGHT	部署重量
+IDS_GN_HEAT_FACTOR	熱量
+IDS_GN_KILLS	擊破
+IDS_GN_MAXIMUM	上限
+IDS_GN_TONS	噸
+IDS_GN_UNITS	單位
+IDS_GREEN	新兵
+IDS_GUARD	護衛 (G)
+IDS_GUARDTOWER	切換壓制射擊 (V)
+IDS_GUARDTOWER_DESC	命令所選固定火砲持續向下一個目標開火。
+IDS_GUARD_DESC	命令所選單位護衛另一個單位。
+IDS_HEAVY_MECH	重型
+IDS_HELP_ALL_CBILLS	可用於購買與改裝機甲的資金。
+IDS_HELP_ALL_MAIN_MENU_BUTTON	返回主選單。
+IDS_HELP_CM_MISSION_OVERVIEW_TEXT_AREA	顯示所選任務的概要。
+IDS_HELP_CM_MISSION_SELECTION_AREA	戰役地圖會顯示已完成與可選任務。選擇任務可看概要和影片，準備好後選擇「下一步」。
+IDS_HELP_CM_MISSION_SELECTION_SCREEN_TITLE	查看目前戰役可執行的任務。
+IDS_HELP_CM_NEXT_BUTTON	前往任務簡報，查看所選任務的細節與目標。
+IDS_HELP_CM_VIDEO_COM	播放軍官提供的任務概要。右下方可控制播放、暫停與停止。
+IDS_HELP_COMP14	中級感測器\n可偵測視距外的敵人。具備感測專長的駕駛員可辨識敵方類型與編成。僅部分機甲配備。
+IDS_HELP_COMP15	進階感測器\n偵測距離比中級感測器更遠。具備感測專長的駕駛員可辨識敵方類型與編成。僅部分機甲配備。
+IDS_HELP_COMP17	氏族進階感測器\n偵測距離比中級感測器更遠。具備感測專長的駕駛員可辨識敵方類型與編成。僅部分機甲配備。
+IDS_HELP_COMP38	電子反制套件\n干擾敵方感測器，便於發動突襲。僅部分機甲配備。
+IDS_HELP_DEPLOYTEAMMW	先選擇待部署機甲，再選擇駕駛員並按「加入駕駛員」。也可以拖曳或按兩下駕駛員。
+IDS_HELP_MB_ARMOR	所選機甲的裝甲量。
+IDS_HELP_MB_BUY_SELL_MECH	前往機甲交易畫面。
+IDS_HELP_MB_DEPLOYMENT_TEAMS	選擇已加入部署小隊的機甲，再按「移除機甲」即可送回庫存。也可拖曳或按兩下機甲。
+IDS_HELP_MB_JUMPJETS	所選機甲的跳躍距離，以公尺計。
+IDS_HELP_MB_MECHSTORAGE	選擇庫存中的機甲後按「加入機甲」，即可加入部署小隊。也可拖曳或按兩下。
+IDS_HELP_MB_MECH_NAME	目前所選機甲的名稱和動畫。
+IDS_HELP_MB_MECH_VARIANT	所選機甲的型號。選擇「改裝機甲」即可更換裝備。
+IDS_HELP_MB_RANGE	所選機甲的主要武器射程。
+IDS_HELP_MB_SPEED	所選機甲的速度，以公里／小時計。
+IDS_HELP_MB_TEAM_WEIGHT_LIMIT	顯示部署小隊的總重量與重量上限。
+IDS_HELP_MB_TITLE	在機甲庫編組部署小隊。
+IDS_HELP_MB_TONNAGE	所選機甲的重量，以噸計。
+IDS_HELP_MB_WEAPONS	顯示所選機甲搭載的武器及零件。
+IDS_HELP_MC_AMMO	所選武器的裝彈量。
+IDS_HELP_MC_ARMOR	裝甲越厚，機甲在戰鬥中便能承受越多火力。
+IDS_HELP_MC_COST_OF_CHANGES	依目前配置計算的改裝費用。
+IDS_HELP_MC_DAMAGE	所選武器造成的傷害。
+IDS_HELP_MC_FIRE_RATE	所選武器每十秒的射擊次數。
+IDS_HELP_MC_HEAT	比較目前配置的發熱量與機甲停機前所能承受的熱量上限。
+IDS_HELP_MC_HEAT_GENERATED	所選武器射擊時產生的熱量。
+IDS_HELP_MC_MECH_LAB_TITLE	可更換武器、裝甲與跳躍噴射器，並建立新型號。
+IDS_HELP_MC_PAYLOAD_MODEL_GRID	顯示已裝備的武器與零件。可選擇後移除、拖曳或按兩下。橙色為空槽，綠色為短程，藍色為中程，紅色為長程，黃色為零件。
+IDS_HELP_MC_RANGE	所選武器的射程。
+IDS_HELP_MC_SELECTED_COMPONENT_AVI	目前所選武器或零件的名稱和動畫。
+IDS_HELP_MC_VARIANT_DROP_DOWN_LIST_BOX	從下拉清單選擇預設或自訂機甲型號。
+IDS_HELP_MEDAL1	戰役一勳帶：授予參與第一場戰役的駕駛員。
+IDS_HELP_MISSION_OBJECTIVES_AREA	查看目前任務的目標與簡報。
+IDS_HELP_MN_MISSION_MAP	顯示任務地形的偵察影像，並配合視訊通訊標示部署區與目標。
+IDS_HELP_MN_TITLE	查看所選任務的地形與目標。
+IDS_HELP_MN_VIDCOM_AREA	播放軍官的通訊，並以立體畫面呈現所選任務的目標。
+IDS_HELP_PM_ARMOR	所選機甲的裝甲量。
+IDS_HELP_PM_AVAILABLE_MECHS	顯示可購買及尚未開放購買的機甲。選擇後按「購買機甲」，也可拖曳或按兩下。
+IDS_HELP_PM_HEADER_TEXT	在此購買與出售機甲。
+IDS_HELP_PM_JUMP	所選機甲的跳躍距離，以公尺計。
+IDS_HELP_PM_MECH_NAME	目前所選機甲的名稱和動畫。
+IDS_HELP_PM_MECH_STORAGE	顯示庫存中的機甲。選擇後按「出售機甲」，也可拖曳或按兩下。
+IDS_HELP_PM_MECH_VARIANT	所選機甲的型號。可在機甲庫改裝。
+IDS_HELP_PM_RANGE	所選機甲的主要武器射程。
+IDS_HELP_PM_SPEED	所選機甲的速度，以公里／小時計。
+IDS_HELP_PM_TONNAGE	所選機甲的重量與級別。
+IDS_HELP_PR_AVAILABLE_PILOTS	選擇待命駕駛員後按「加入駕駛員」，即可分配至所選機甲。也可拖曳或按兩下。顏色依序是綠色新兵、黃色正規、紅色老兵、藍色菁英。
+IDS_HELP_PR_CURRENT_SELECTION	目前所選駕駛員的姓名和照片。
+IDS_HELP_PR_DEPLOYMENT_TEAM	先選擇待部署機甲，再選擇駕駛員並按「加入駕駛員」。也可拖曳或按兩下駕駛員。
+IDS_HELP_PR_GUNNERY_SKILL	所選駕駛員操作武器的熟練程度。
+IDS_HELP_PR_HEADER_TEXT	查看駕駛員資料，並分配至部署小隊的機甲。
+IDS_HELP_PR_KILLS	該駕駛員摧毀的機甲數。
+IDS_HELP_PR_LAUNCH	開始任務。
+IDS_HELP_PR_PILOTING_SKILL	所選駕駛員操縱機甲的熟練程度。
+IDS_HELP_PR_PILOT_NAME	所選駕駛員的姓名。
+IDS_HELP_PR_RANK	依射擊與駕駛技能判定的等級。
+IDS_HELP_PR_SPECIALTY	所選駕駛員的專長。
+IDS_HOTKEY1	短程攻擊
+IDS_HOTKEY10	選取畫面內的單位
+IDS_HOTKEY11	強制開火
+IDS_HOTKEY12	瞄準腿部
+IDS_HOTKEY13	瞄準手臂
+IDS_HOTKEY14	瞄準頭部
+IDS_HOTKEY15	停止／停火
+IDS_HOTKEY16	關閉機甲電源
+IDS_HOTKEY17	啟動機甲電源
+IDS_HOTKEY18	彈射
+IDS_HOTKEY19	奔跑
+IDS_HOTKEY2	中程攻擊
+IDS_HOTKEY20	查看機甲資訊
+IDS_HOTKEY21	空襲
+IDS_HOTKEY22	感測探針
+IDS_HOTKEY23	特殊單位指令
+IDS_HOTKEY24	切換羅盤顯示
+IDS_HOTKEY25	拉近鏡頭
+IDS_HOTKEY26	拉遠鏡頭
+IDS_HOTKEY27	切換目標顯示
+IDS_HOTKEY28	切換快捷鍵列表
+IDS_HOTKEY29	切換暫停
+IDS_HOTKEY3	長程攻擊
+IDS_HOTKEY30	切換目標顯示
+IDS_HOTKEY31	切換目標顯示
+IDS_HOTKEY32	切換目標顯示
+IDS_HOTKEY33	切換固守位置 (H)
+IDS_HOTKEY34	命令所選單位留在原地，直到收到移動或佔領指令。
+IDS_HOTKEY4	最佳射程
+IDS_HOTKEY5	節省彈藥（只用能量武器）
+IDS_HOTKEY6	跳躍
+IDS_HOTKEY7	原地開火
+IDS_HOTKEY8	護衛
+IDS_HOTKEY9	節省彈藥
+IDS_HOTKEY_HEADER	按鍵一覽
+IDS_INFO	資訊 (I)
+IDS_INFOTAB	單位資訊
+IDS_INFOTAB_DESC	查看所選機甲或載具的詳細資訊。
+IDS_INFO_DESC	查看所選機甲或載具的詳細資訊。
+IDS_INMISSION	快速儲存
+IDS_INMISSIONLOAD	快速載入
+IDS_INMISSIONLOAD_HEADER	快速載入
+IDS_INMISSIONLOAD_HELP	載入任務進度。
+IDS_INMISSIONSAVE_HEADER	快速儲存
+IDS_INMISSION_HELP	儲存目前的任務進度。
+IDS_JUMP	跳躍 (J)
+IDS_JUMPDESC	所選單位下次收到移動指令時將以跳躍移動。
+IDS_KILLED_IN_ACTION	陣亡
+IDS_KILLS_NO_COUNT	擊破數：
+IDS_LARGEAIRSTRIKE	空襲 (數字鍵 *)
+IDS_LARGEAIRSTRIKE_DESC	呼叫空襲攻擊指定位置。
+IDS_LAYMINES	切換布雷 (V)
+IDS_LAYMINES_DESC	命令所選布雷車在下次移動時布雷。
+IDS_LIGHT_MECH	輕型
+IDS_LOAD	載入
+IDS_LONGRANGE	長程攻擊 (L)
+IDS_LONGRANGE_DESC	命令所選機甲在長射程攻擊。
+IDS_LONG_RANGE	長程
+IDS_LS_LOADING	載入中…
+IDS_MAIN_MENU_BUTTON	主選單
+IDS_MAP_WRONG_VERSION_CHAT	必須等 %s 取得正確的地圖版本後才能開始遊戲。
+IDS_MB_BACK_HELP	返回任務簡報。
+IDS_MB_DEPLOYMENT_TITLE	部署小隊
+IDS_MB_HELP_ADD_MECH	將機甲庫存中所選的機甲加入部署小隊。
+IDS_MB_HELP_CHANGE_WEAPONS	前往機甲實驗室，更換武器、裝甲與跳躍噴射器。
+IDS_MB_HELP_MAIN_MENU	返回主選單。
+IDS_MB_HELP_REMOVE_MECH	將部署小隊中所選的機甲送回庫存。
+IDS_MB_MECH_WEIGHT	%.0lf 噸 %s
+IDS_MB_NEXT_HELP	前往駕駛員待命區，為部署小隊分配駕駛員。
+IDS_MB_TITLE	機甲庫
+IDS_MC_ACCEPT	套用
+IDS_MC_ACCEPT_HELP	保留變更並返回機甲庫。若為新型號，系統會要求輸入名稱。
+IDS_MC_ADD_COMPONENT	加入
+IDS_MC_ADD_COMPONENT_HELP	將所選武器或零件裝入空槽。
+IDS_MC_ADD_COMPONENT_HELP2	卸下所選武器或零件，放回可用零件清單。
+IDS_MC_AMMO	彈藥
+IDS_MC_AVAILABLE_COMPONENTS	可用零件
+IDS_MC_BALLISTIC_HELP	彈道武器：通常較重，但相對於傷害產生的熱量較少。
+IDS_MC_CANCEL	取消
+IDS_MC_CANCEL_HELP	取消變更並返回機甲庫。
+IDS_MC_CHANGE_COST	改裝費用
+IDS_MC_DAMAGE	傷害
+IDS_MC_FIRERATE	射速
+IDS_MC_HEAT	熱量上限：
+IDS_MC_INSUFFICIENT_CBILLS	C-Bills 不足，無法改裝。
+IDS_MC_JUMPJET_TAB_HELP	零件：查看或購買跳躍噴射器、裝甲等非武器裝備。
+IDS_MC_MECHLAB	機甲實驗室
+IDS_MC_MISSILE_TAB_HELP	飛彈武器：通常重量適中，但相對於傷害會產生較多熱量。
+IDS_MC_RANGE	射程
+IDS_MC_REMOVE_COMPONENT	移除
+IDS_MC_TAB_TITLE3	飛彈
+IDS_MC_TAB_TITLE4	零件
+IDS_MC_UNAVAILABLE_TECH	這件武器尚未開放購買。套用變更後，就無法再把它裝回這架機甲。
+IDS_MC_WEAPON_INFO	武器資訊
+IDS_MECH_BAY_HEADER	機甲庫
+IDS_MECH_LOADOUT	武器配置
+IDS_MECH_STATS	機甲規格
+IDS_MECH_STORAGE	機甲庫存
+IDS_MEDAL	戰役一勳帶：授予參與第一場戰役的駕駛員。
+IDS_MEDIUMRANGE	中程攻擊 (M)
+IDS_MEDIUMRANGE_DESC	命令所選機甲在中射程攻擊。
+IDS_MEDIUM_MECH	中型
+IDS_MED_RANGE	中程
+IDS_MINELAYER	布雷車
+IDS_MINELAYER_DESC	購買並部署布雷車。
+IDS_MINELAYER_HELP	選擇「布雷」，再點選要布雷的位置。
+IDS_MISSION_FAILED	任務失敗
+IDS_MISSION_INFO_TITLE	任務資訊
+IDS_MISSION_MAP_TITLE	任務地圖
+IDS_MISSION_SUCCESS	任務成功！
+IDS_MIS_NAME_01	偵察巡邏
+IDS_MIS_NAME_02	奪回雙子座基地
+IDS_MIS_NAME_03	伏擊並奪取機動總部
+IDS_MIS_NAME_04	搜尋並摧毀匪徒車隊
+IDS_MIS_NAME_05	夜間行動：突襲廖氏
+IDS_MIS_NAME_06	防守反擊：白羊座基地
+IDS_MIS_NAME_07	佔領戰區：駐軍
+IDS_MIS_NAME_08	戰地救援：闊劍
+IDS_MIS_NAME_09	突破匪徒總部
+IDS_MIS_NAME_10	解放勞改營
+IDS_MIS_NAME_11	設施攻堅：劫持
+IDS_MIS_NAME_12	機動攔截：雙領鴴
+IDS_MIS_NAME_13	遠程突擊：蝕影
+IDS_MIS_NAME_14	秘密行動：軌道
+IDS_MIS_NAME_15	設施攻堅：軍團
+IDS_MIS_NAME_16	奪取赫密士基地
+IDS_MIS_NAME_17	儀仗衛隊
+IDS_MIS_NAME_18	防守反擊：班尼克堡
+IDS_MIS_NAME_19	機動突擊：卓山
+IDS_MIS_NAME_20	戰地回收：登陸艦
+IDS_MIS_NAME_21	夜間行動：天蠍
+IDS_MIS_NAME_22	巴克斯特的險棋
+IDS_MIS_NAME_23	解放太空港
+IDS_MIS_NAME_24	歌利亞行動
+IDS_MIS_NAME_T1	訓練一：基本操作
+IDS_MIS_NAME_T2	訓練二：視距與感測器
+IDS_MIS_NAME_T3	訓練三：佔領
+IDS_MIS_NAME_T4	訓練四：戰場支援
+IDS_MIS_NAME_T5	訓練五：進階支援
+IDS_MM_ENCYCLOPEDIA	百科全書
+IDS_MM_ENCYCLOPEDIA_HELP	查閱《BattleTech》宇宙的裝備、人物和歷史。
+IDS_MM_EXIT	離開
+IDS_MM_EXIT_HELP	離開《MechCommander 2》。
+IDS_MM_LEGAL_BUTTON_HELP	查看產品識別碼。
+IDS_MM_LOAD	載入遊戲
+IDS_MM_LOAD_HELP	載入已儲存的任務。
+IDS_MM_MULTIPLAYER	多人遊戲
+IDS_MM_MULTIPLAYER_HELP	開始多人遊戲。
+IDS_MM_NEWCAMPAIGN	新戰役
+IDS_MM_NEWCAMPAIGN_HELP	開始新的戰役。
+IDS_MM_OPTIONS	選項
+IDS_MM_OPTIONS_HELP	調整畫面、音效、遊戲玩法與快捷鍵。
+IDS_MM_RETURN_TO_GAME	返回遊戲
+IDS_MM_RETURN_TO_GAME2	返回目前的遊戲。
+IDS_MM_SAVE	儲存遊戲
+IDS_MM_SAVE_HELP	儲存目前的任務。
+IDS_MM_SKIRMISH	單人任務
+IDS_MM_SKIRMISH_HELP	載入已完成的戰役任務，或用任務編輯器建立的任務。
+IDS_MN_BACK_HELP	返回任務選擇畫面。
+IDS_MN_HEADER	任務簡報
+IDS_MN_MISSION_MAP	視訊通訊：任務地圖
+IDS_MN_MISSION_OBJECTIVES	任務目標
+IDS_MN_NEXT_HELP	前往機甲庫準備機甲、武器與裝備。
+IDS_MN_PAUSE	暫停
+IDS_MN_PAUSE_HELP	暫停任務簡報影片。
+IDS_MN_PLAY	播放
+IDS_MN_PLAY_HELP	播放任務簡報影片。
+IDS_MN_STOP	停止
+IDS_MN_STOP_HELP	停止任務簡報影片。
+IDS_MN_TEXTINFO	任務目標
+IDS_MN_TITLE	任務簡報
+IDS_MPLAYER_GAME_ABOUT_TO_START	遊戲將在 5 秒後開始。取消勾選「準備」即可中止。
+IDS_MPS_CONNECTION_TYPE	連線方式
+IDS_MP_CHAT_CHATHELP_TOGGLE_HELP	在滑鼠提示與聊天訊息之間切換。
+IDS_MP_CHAT_MAXIMIZEMINIMIZE_TOGGLE_HELP	放大或縮小聊天區。
+IDS_MP_CHAT_TEAMONLYALL_TOGGLE_HELP	切換只傳給隊友或傳給所有玩家。
+IDS_MP_CONNECTION_ERROR_FULL	房間已滿。
+IDS_MP_CONNECTION_ERROR_WRONG_VERSION	遊戲版本不同，無法連線。
+IDS_MP_CONNECTION_HOSTIPADDRESS_HELP	輸入房主提供的 IP 位址。點選向下箭頭可選用先前的位址。
+IDS_MP_CONNECT_ERROR_IN_PROGRESS	遊戲已開始。
+IDS_MP_CONNECT_ERROR_LOCKED	房間已鎖定。
+IDS_MP_CONNECT_ERROR_NO_CONNECTION	無法建立連線。
+IDS_MP_CONNECT_ERROR_NO_HOST	找不到房主。
+IDS_MP_CONNECT_NO_SESSION	房間已關閉。
+IDS_MP_CON_IP_RADIO_HELP	選擇直接 TCP/IP 連線，輸入 IP 位址後加入遊戲，或自行建立房間。
+IDS_MP_CON_MODEM_CONNECTING	正在連線至 %s
+IDS_MP_CON_TITLE_HELP	選擇多人遊戲的連線方式。
+IDS_MP_CON_ZONE_WARNING	遊戲即將關閉並開啟 Zone。
+IDS_MP_CON_ZONE_WARNING_NEXT	繼續
+IDS_MP_DATA_MISMATCH	無法連線：你的遊戲資料或模組與房主不同。
+IDS_MP_LANBROW_BACK_HELP	返回連線方式畫面。
+IDS_MP_LANBROW_GAMENAME_HELP	顯示區域網路中的房間。點選欄名可依房名排序。
+IDS_MP_LANBROW_HOSTGAME_HELP	開啟建立房間視窗，設定新房間名稱。
+IDS_MP_LANBROW_JOINGAME_HELP	加入所選房間並進入任務設定畫面。
+IDS_MP_LANBROW_MAPNAME_HELP	顯示區域網路各房間使用的地圖。點選欄名可依地圖名稱排序。
+IDS_MP_LANBROW_PING_HELP	顯示各房間的連線延遲。綠色較低、黃色中等、紅色較高。
+IDS_MP_LANBROW_PLAYERS_HELP	顯示各房間的目前人數與上限。點選欄名可依目前人數排序。
+IDS_MP_LANBROW_TITLE_HELP	查看、加入或建立區域網路房間。點選欄名可排序。白色為已選，橙色為可加入，灰色為無法選擇。
+IDS_MP_LAN_LOCKED_HELP	鎖頭圖示表示房主已鎖定房間，無法加入。
+IDS_MP_LAUNCH_ABORTED	已取消開始遊戲。
+IDS_MP_LM_LOAD_MAP	載入地圖
+IDS_MP_LM_MAP_LIST	地圖清單
+IDS_MP_LM_MAP_LIST_MAP_INFO	其他地圖資訊
+IDS_MP_LM_MAP_LIST_MAP_NAME	地圖名稱：%s
+IDS_MP_LM_MAP_LIST_MAX_PLAYERS	最多 %ld 名玩家
+IDS_MP_LM_MAP_LIST_TYPE	任務類型：%s
+IDS_MP_LM_TYPE0	殲滅
+IDS_MP_LM_TYPE1	山丘之王
+IDS_MP_LM_TYPE2	奪取基地
+IDS_MP_LM_TYPE3	領土爭奪
+IDS_MP_LM_TYPE4	生存競賽
+IDS_MP_LM_TYPE5	山丘決戰
+IDS_MP_LM_TYPE6	複合任務
+IDS_MP_LOAD_MAP_ACCEPT_HELP	套用所選地圖並返回上一頁。
+IDS_MP_LOAD_MAP_CANCEL_HELP	取消選擇並返回上一頁。
+IDS_MP_LOAD_MAP_MAP_INFO_HELP	顯示所選地圖的資訊。
+IDS_MP_LOAD_MAP_MAP_LIST_HELP	選擇地圖可預覽戰術地圖，按「套用」即可載入。若清單中找不到地圖，請確認檔案已放在遊戲的 Data/Missions 資料夾。
+IDS_MP_LOAD_MAP_TITLE_HELP	查看並選擇本局的地圖與任務。
+IDS_MP_LOCAL_IP	你的 IP 位址：%s
+IDS_MP_MAP_INFO	地圖資訊
+IDS_MP_MAP_INFO_CLOSE	關閉
+IDS_MP_NET_NO_PAUSES	暫停次數已用完。每位玩家每局可暫停三次。
+IDS_MP_NET_PAUSED	%s 已暫停遊戲。
+IDS_MP_NET_RESUMED	%s 已恢復遊戲。
+IDS_MP_PARAMETERS_AIRSTRIKE_HELP	允許呼叫空襲。
+IDS_MP_PARAMETERS_ALL_TECH_HELP	開放所有機甲與裝備。
+IDS_MP_PARAMETERS_BACK_HELP	返回上一個畫面。
+IDS_MP_PARAMETERS_CANT_BOOT	請選擇要移除的玩家。
+IDS_MP_PARAMETERS_CBILLSB_HELP	地圖提供的隊伍起始資金會平均分配給隊員。房主可用箭頭調整金額，分配結果顯示在 C-Bills 欄。
+IDS_MP_PARAMETERS_CBILLS_HELP	玩家加入或換隊時，資金會重新平均分配。編隊完成後，房主可用箭頭調整各玩家的金額。
+IDS_MP_PARAMETERS_CHAT_DISPLAY_HELP	顯示最新聊天訊息。玩家名稱的強調色代表隊伍。白色訊息傳給所有人，綠色只傳給隊友。
+IDS_MP_PARAMETERS_DROP_WEIGHT_HELP	設定每位玩家部署小隊的重量上限。預設值由地圖決定，房主可用箭頭調整。
+IDS_MP_PARAMETERS_FACTION_HELP	在後勤模式選擇陣營，以使用該陣營的機甲與裝備。開放全部技術後，才可選擇所有陣營。
+IDS_MP_PARAMETERS_FIXED_ARTILLERY_HELP	允許部署固定火砲。
+IDS_MP_PARAMETERS_HOST_IP_HELP	想以 IP 位址加入房間的玩家需要這個位址。
+IDS_MP_PARAMETERS_LAUNCH_HELP	開始任務。只有房主可操作。
+IDS_MP_PARAMETERS_LOCK_GAME_HELP	鎖定後會禁止其他玩家加入。只有房主可操作。
+IDS_MP_PARAMETERS_MAP_IMAGE_HELP	顯示目前地圖的戰術地圖。
+IDS_MP_PARAMETERS_MINELAYER_HELP	允許部署布雷車。
+IDS_MP_PARAMETERS_NO_VARIANTS_HELP	禁止使用自訂機甲型號。
+IDS_MP_PARAMETERS_PLAYER_HELP	顯示已連線玩家、部隊名稱與徽章。
+IDS_MP_PARAMETERS_PLAYER_PREFS_HELP	設定玩家名稱、部隊名稱、徽章及塗裝。
+IDS_MP_PARAMETERS_QUICKSTART_HELP	跳過後勤準備，直接使用地圖預設的機甲與裝備。
+IDS_MP_PARAMETERS_READY_HELP	勾選表示接受房主設定並已準備好。房主修改設定後，所有玩家須重新確認。
+IDS_MP_PARAMETERS_REMOVE_PLAYER_HELP	將所選玩家移出房間，並清除所有人的準備狀態。只有房主可操作。
+IDS_MP_PARAMETERS_REPAIR_TRUCK_HELP	允許部署維修車。
+IDS_MP_PARAMETERS_RESOURCE_BLDG_HELP	在地圖上隨機配置資源建築。
+IDS_MP_PARAMETERS_RESOURCE_PTS_HELP	設定每位玩家的起始資源點。預設值由地圖決定，房主可用箭頭調整。
+IDS_MP_PARAMETERS_RP_FOR_MECHS_HELP	摧毀機甲或迫使駕駛員彈射時可取得資源點，機甲越重獎勵越多。同一架機甲須被回收並再次投入戰鬥，才可再次取得獎勵。
+IDS_MP_PARAMETERS_SALVAGE_CRAFT_HELP	允許部署回收載具。
+IDS_MP_PARAMETERS_SCOUT_COPTER_HELP	允許部署偵察直升機。
+IDS_MP_PARAMETERS_SENSOR_PROBE_HELP	允許使用感測探針。
+IDS_MP_PARAMETERS_TEAM_HELP	從下拉清單選擇要加入的隊伍。
+IDS_MP_PARAMETERS_TIME_LIMIT_HELP	設定任務時間上限。房主可用箭頭調整，部分任務不允許取消時限。
+IDS_MP_PARAMETERS_UNLIMITED_AMMO_HELP	讓玩家擁有無限彈藥。
+IDS_MP_PARAMETER_NO_MAP_CHAT	必須等 %s 取得地圖後才能開始遊戲。
+IDS_MP_PARAMTERS_BOOT_PROMPT	要移除 %s 嗎？
+IDS_MP_PARAM_AMMUNITION_HELP	設定任務是否提供無限彈藥。
+IDS_MP_PARAM_CBILLS_HELP	每隊資金會平均分配給隊員。房主可更改地圖預設的金額。
+IDS_MP_PARAM_DROPWEIGHT	部署重量上限
+IDS_MP_PARAM_ERROR_TOO_MANY_PLAYERS	玩家人數超過這張地圖的上限。
+IDS_MP_PARAM_HOST_IP	房主 IP 位址：%s
+IDS_MP_PARAM_HOST_TITLE_HELP	房主可在此設定任務參數。其他玩家可查看設定、編組隊伍及調整個人設定。
+IDS_MP_PARAM_LOADMAP_HELP	開啟載入地圖視窗，由房主選擇地圖。
+IDS_MP_PARAM_MAPINFO_HELP	顯示所選地圖的概要與作者資訊。
+IDS_MP_PARAM_MAP_WRONG_VERSION	你的地圖版本與房主不同。要前往以下網址下載嗎？\n%s
+IDS_MP_PARAM_NO_MAP	你沒有地圖「%s」。要前往以下網址下載嗎？\n%s
+IDS_MP_PARAM_RESOURCEPOINTS_HELP	設定起始資源點。
+IDS_MP_PARAM_RP_FOR_MECHS	擊破機甲獎勵
+IDS_MP_PARAM_TIMELIMIT_HELP	設定任務的時間上限。部分地圖不允許取消時限。
+IDS_MP_PARAM_UNLIMITED	無限制
+IDS_MP_PARAM_VARIANTS_HELP	設定是否允許使用自訂機甲型號。
+IDS_MP_PLAYERPREFS_ACCEPT_HELP	保留變更並返回任務設定。
+IDS_MP_PLAYERPREFS_BASE_TAB_HELP	選擇部隊的主色。組隊時只有隊長能設定隊伍主色。
+IDS_MP_PLAYERPREFS_CANCEL_HELP	取消變更並返回任務設定。
+IDS_MP_PLAYERPREFS_COLORS_HELP	選擇主色或條紋色。標有 X 的顏色無法選用。
+IDS_MP_PLAYERPREFS_PLAYERNAME_HELP	輸入新玩家名稱，或從下拉清單選擇現有名稱。
+IDS_MP_PLAYERPREFS_STRIPE_TAB_HELP	選擇部隊的條紋色。
+IDS_MP_PLAYERPREFS_TITLE_HELP	選擇玩家名稱、部隊名稱、徽章及塗裝。
+IDS_MP_PLAYERPREFS_UNITNAME_HELP	輸入新部隊名稱，或從下拉清單選擇現有名稱。
+IDS_MP_PLAYER_KICKED	你已被移出遊戲。
+IDS_MP_PLAYER_READY	%s 已準備好。
+IDS_MP_PREFS_BASE_COLOR	主色
+IDS_MP_PREFS_HEADER	玩家設定
+IDS_MP_PREFS_PLAYER_COLORS	玩家塗裝
+IDS_MP_PREFS_PLAYER_NAME	玩家名稱
+IDS_MP_PREFS_STRIPE_COLOR2	條紋色
+IDS_MP_PREFS_UNIT_INSIGNIA	部隊徽章
+IDS_MP_PREFS_UNIT_NAME	部隊名稱
+IDS_MP_ROOM_OTHER_DATA	遊戲資料不同
+IDS_MP_ROOM_OTHER_VERSION	版本 %s
+IDS_MP_STATS_HEADER	戰績統計
+IDS_MP_STATS_HEADER8	儲存對話紀錄
+IDS_MP_STATS_KILLS	擊破
+IDS_MP_STATS_LOSSES	損失
+IDS_MP_STATS_PLAYER_NAME	玩家
+IDS_MP_STATS_RECAP_CLOSE_HELP	返回任務設定畫面。
+IDS_MP_STATS_RECAP_SAVE_TRANSCRIPT_HELP	儲存本局對話紀錄。
+IDS_MP_STATS_SCORE	分數
+IDS_MP_STATS_TEAM	隊伍
+IDS_MP_VERSION_HOST_NEWER	要開啟版本 %s 的下載頁面嗎？
+IDS_MP_VERSION_HOST_NEWER_INFO	可從 github.com/hyouka0904/mc2/releases 下載版本 %s。
+IDS_MP_VERSION_HOST_OLDER	房主須更新至版本 %s。
+IDS_MP_VERSION_MISMATCH	無法連線：房主的版本為 %s，你的版本為 %s。雙方須使用相同版本。
+IDS_MULTIPLAYER_PLAYERJOINED	%s 已加入遊戲。
+IDS_MV_LONG	長程
+IDS_MV_SHORT	短程
+IDS_NEXT	下一步
+IDS_NOPILOT	無駕駛員
+IDS_OBJECTIVES	任務目標
 IDS_OBJECTIVES_1_1	1. 調查廢棄機場
 IDS_OBJECTIVES_1_2	2. 摧毀機庫
 IDS_OBJECTIVES_1_3	3. 消滅匪徒巡邏隊
 IDS_OBJECTIVES_1_4	4. 完成維修後前往北島
 IDS_OBJECTIVES_1_5	5. 找出並消滅匪徒
 IDS_OBJECTIVES_1_6	6. 將所有機甲移至撤離點
-IDS_BRIEF_01	我方部隊自這個區域起，陸續遭到匪徒伏擊與襲擊。\n\n請啟動 MechCommander 軟體與各項系統，前往該區調查。遇到敵對匪徒時，可逕行消滅，無須向史坦納最高指揮部請示。\n\n戰術官備註：\n指揮官，歡迎來到卡弗五號星。我會在雇主史坦納家族提供的簡報中補上自己的備註。\n\n巡邏路線會穿越一連串小島。機甲和氣墊載具可以渡過淺水區，一般車輛和戰車則無法通行。若遇到大批匪徒，可試著穿過淺水區撤退，將敵方的機甲與車輛分開。
+IDS_OBJECTIVES_COMMAND	目標清單 (F9)
+IDS_OBJECTIVES_COMMAND_DESC	顯示或隱藏目前的任務目標。
+IDS_OBJECTIVES_HELP	顯示或隱藏目前的任務目標。
+IDS_OBJECTIVES_HELPHEADER	目標清單
+IDS_ONE_MEDAL_AWARD	獲頒勳章：
+IDS_ONE_MEDAL_AWARD2	獲頒勳章：
+IDS_OPTIONS	選項
+IDS_OPTIONS_ACCENT_COLOR	條紋色
+IDS_OPTIONS_ACCEPT_ALL_SCREENS	保留所有變更並返回上一頁。
+IDS_OPTIONS_AUDIO	音效
+IDS_OPTIONS_BASE_COLOR	主色
+IDS_OPTIONS_CARD	顯示卡
+IDS_OPTIONS_CLICK	使用左鍵選取、右鍵下令
+IDS_OPTIONS_COMMAND	指令
+IDS_OPTIONS_COMPUTER_VOLUME	電腦提示音量
+IDS_OPTIONS_DIFFICULTY	遊戲難度
+IDS_OPTIONS_ELITE	菁英
+IDS_OPTIONS_FAR	遠
+IDS_OPTIONS_FOG_DISTANCE	能見距離
+IDS_OPTIONS_FULL_SCREEN	全螢幕
+IDS_OPTIONS_FULL_SCREEN3	陰影
+IDS_OPTIONS_GAMEPLAY	遊戲玩法
+IDS_OPTIONS_GRAPHICS	畫面
+IDS_OPTIONS_GREEN	新兵
+IDS_OPTIONS_HEADER	選項
+IDS_OPTIONS_HELP	調整玩法、畫面、音效與操作。
+IDS_OPTIONS_HELP_AUDIO_TAB	調整遊戲的音效選項。
+IDS_OPTIONS_HELP_CANCEL_ALL_SCREENS	捨棄所有變更並返回上一頁。
+IDS_OPTIONS_HELP_COMPUTER_MESSAGE_VOLUME	調整電腦提示音量。滑桿移到最左端可靜音。
+IDS_OPTIONS_HELP_DEFAULT_ALL_SCREENS	恢復遊戲安裝時自動選擇的設定。
+IDS_OPTIONS_HELP_DETAIL_TEXTURES	開啟地形及水面細節貼圖。關閉後可能大幅改善效能。
+IDS_OPTIONS_HELP_DIFFICULTY_LEVEL	選擇遊戲難度。
+IDS_OPTIONS_HELP_FOG_DISTANCE	設定地形和物件的可見距離。縮短距離可能大幅改善效能。
+IDS_OPTIONS_HELP_FULL_SCREEN	啟用時以全螢幕呈現遊戲，停用時使用視窗。
+IDS_OPTIONS_HELP_GAMEPLAY_TAB	調整遊戲玩法選項。
+IDS_OPTIONS_HELP_GRAPHICS_TAB	調整遊戲畫面。關閉部分效果可改善效能。
+IDS_OPTIONS_HELP_HARDWARE_MOUSE_UPDATE	每秒更新滑鼠 30 次，不受遊戲幀率影響。部分顯示卡可能不相容。
+IDS_OPTIONS_HELP_HARDWARE_RASTERIZER	啟用硬體渲染可改善畫質與效能。變更後須重新啟動電腦。
+IDS_OPTIONS_HELP_HIGH_OBJECT_DETAIL	提高物件細節。關閉後可能改善效能。
+IDS_OPTIONS_HELP_HOTKEYS_TAB	在指令欄選擇指令並按下新按鍵。可一次設定多個快捷鍵，再按「套用」。
+IDS_OPTIONS_HELP_LOCAL_SHADOWS	控制武器開火、爆炸等特效產生的陰影。關閉後可能大幅改善效能。
+IDS_OPTIONS_HELP_MASTER_DIGITAL_VOLUME	調整遊戲總音量。滑桿移到最左端可靜音。
+IDS_OPTIONS_HELP_MOUSE_CONTROL	啟用時用左鍵選取、右鍵下令。停用時兩者都使用左鍵，與初代相同。
+IDS_OPTIONS_HELP_MUSIC_VOLUME	調整音樂音量。滑桿移到最左端可靜音。
+IDS_OPTIONS_HELP_NONWEAPON_EFFECTS	控制煙塵、水面尾流等特效。關閉後可能改善效能。
+IDS_OPTIONS_HELP_OPTIONS_TITLE	調整畫面、音效、遊戲玩法及快捷鍵。
+IDS_OPTIONS_HELP_PILOT_VIDEOS	播放任務中的駕駛員通訊影片。關閉後可能大幅改善效能。
+IDS_OPTIONS_HELP_RADIO_CHATTER_VOLUME	調整無線電通訊音量。滑桿移到最左端可靜音。
+IDS_OPTIONS_HELP_RESOLUTION	選擇任務中的畫面解析度。較高解析度會增加運算負擔，且無法在任務進行中變更。
+IDS_OPTIONS_HELP_SAVE_MULTIPLAYER_TRANSCRIPTS	將多人遊戲戰績及任務資料儲存成文字檔。
+IDS_OPTIONS_HELP_SHADOWS	開啟陰影。關閉後可能大幅改善效能。
+IDS_OPTIONS_HELP_TRAINING_MISSIONS	播放教學語音並顯示操作提示。首次遊玩時建議保留。
+IDS_OPTIONS_HELP_UNIT_COLORS	選擇單人任務部隊的塗裝。切換主色或條紋色後，再到色盤選色。
+IDS_OPTIONS_HELP_UNLIMITED_AMMO	讓所有單位擁有無限彈藥。停用時須使用維修車或維修站補給，也可下令節省彈藥。
+IDS_OPTIONS_HELP_VIDEO_CARD	選擇要使用的顯示卡。
+IDS_OPTIONS_HHEADER	選項
+IDS_OPTIONS_HIGH_OBJECT_DETAIL	高物件細節
+IDS_OPTIONS_HOTKEY	快捷鍵
+IDS_OPTIONS_HOTKEYS	快捷鍵
+IDS_OPTIONS_HOTKEY_ERROR	此快捷鍵已在使用。要覆寫嗎？
+IDS_OPTIONS_LOCAL_SHADOWS	特效陰影
+IDS_OPTIONS_MASTER_VOLUME	主音量
+IDS_OPTIONS_MUSIC_VOLUME	音樂音量
+IDS_OPTIONS_NEAR	近
+IDS_OPTIONS_NON_WEAPON_EFFECTS	非武器特效
+IDS_OPTIONS_PILOT_VIDEOS	駕駛員影片
+IDS_OPTIONS_RADIO_VOLUME	無線電音量
+IDS_OPTIONS_RASTERIZER	硬體渲染
+IDS_OPTIONS_REGULAR	正規
+IDS_OPTIONS_RESET	恢復預設
+IDS_OPTIONS_RESOLUTION	解析度
+IDS_OPTIONS_SAVE_TRANSCRIPTS	儲存多人遊戲紀錄
+IDS_OPTIONS_SFX_VOLUME	音效音量
+IDS_OPTIONS_TERRAIN_DETAIL	細節貼圖
+IDS_OPTIONS_TUTORIALS	訓練任務
+IDS_OPTIONS_UNIT_COLORS	部隊塗裝
+IDS_OPTIONS_UNLIMITED_AMMO	無限彈藥
+IDS_OPTIONS_USE_ASYNC_MOUSE	硬體滑鼠更新
+IDS_OPTIONS_VETERAN	老兵
+IDS_OPTIONS_VOLUME_HIGH	高
+IDS_OPTIONS_VOLUME_LOW	低
+IDS_PC_1	王牌
+IDS_PC_2	菁英
+IDS_PC_3	老兵
+IDS_PC_4	正規
+IDS_PC_5	新兵
+IDS_PILOT_KILLS	擊破：%ld
+IDS_PILOT_MISSIONS	任務：%ld
+IDS_PILOT_NAME	姓名：%s
+IDS_PILOT_PROMOTED	晉升為 %s
+IDS_PILOT_RANK	等級：%s
+IDS_PILOT_REVIEW	駕駛員評估
+IDS_PLAYER_LEFT	%s 已離開遊戲。
+IDS_PM_ACCEPT	套用
+IDS_PM_ACCEPT_HELP	保留變更並返回機甲庫。
+IDS_PM_AVAILABLE	可購買機甲
+IDS_PM_BUY	購買機甲
+IDS_PM_BUY_HELP	購買清單中所選的機甲。也可拖曳或按兩下機甲。
+IDS_PM_CANCEL	取消
+IDS_PM_CANCEL_HELP	取消變更並返回機甲庫。
+IDS_PM_HEADER	機甲交易
+IDS_PM_PURCHASE	購買機甲
+IDS_PM_SELL	出售機甲
+IDS_PM_SELL_HELP	出售庫存中所選的機甲。也可拖曳或按兩下機甲。
+IDS_PM_STORAGE	機甲庫存
+IDS_PRIMARY	主要目標
+IDS_PROMOTION_HEADER	駕駛員晉升
+IDS_PROMOTION_SELECTION_PROMPT	請從下方選擇一項專長
+IDS_PROMOTION_SKILL	輕型機甲專家\n駕駛輕型機甲時，可閃避更多敵方火力。
+IDS_PROMOTION_SKILL10	脈衝雷射專家\n提高脈衝雷射及大型脈衝雷射的命中率。
+IDS_PROMOTION_SKILL11	增程雷射專家\n提高增程雷射及大型增程雷射的命中率。
+IDS_PROMOTION_SKILL12	長程飛彈專家\n提高所有長程飛彈的命中率。
+IDS_PROMOTION_SKILL13	偵察專家\n可發現一般視距外的敵人。
+IDS_PROMOTION_SKILL14	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
+IDS_PROMOTION_SKILL15	重型機甲專家\n駕駛重型機甲時可閃避部分敵方火力。
+IDS_PROMOTION_SKILL16	粒子砲專家\n提高所有粒子投射砲的命中率。
+IDS_PROMOTION_SKILL17	重型自動砲專家\n提高所有重型自動砲的命中率。
+IDS_PROMOTION_SKILL18	短程射擊專家\n提高對 60 公尺內目標的命中率。
+IDS_PROMOTION_SKILL19	中程射擊專家\n提高對 30 至 120 公尺內目標的命中率。
+IDS_PROMOTION_SKILL2	雷射專家\n提高雷射、大型雷射、重型雷射及重型大型雷射的命中率。
+IDS_PROMOTION_SKILL20	長程射擊專家\n提高對 60 公尺外目標的命中率。
+IDS_PROMOTION_SKILL21	突擊型機甲專家\n駕駛突擊型機甲時可閃避部分敵方火力。
+IDS_PROMOTION_SKILL22	高斯砲專家\n提高高斯砲及輕型高斯砲的命中率。
+IDS_PROMOTION_SKILL23	神射手\n提高瞄準敵方機甲特定部位時的命中率。
+IDS_PROMOTION_SKILL24	精準射手\n提高瞄準敵方機甲特定部位時的命中率。
+IDS_PROMOTION_SKILL25	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
+IDS_PROMOTION_SKILL26	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
+IDS_PROMOTION_SKILL27	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
+IDS_PROMOTION_SKILL28	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
+IDS_PROMOTION_SKILL29	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
+IDS_PROMOTION_SKILL3	輕型自動砲專家\n提高所有輕型自動砲的命中率。
+IDS_PROMOTION_SKILL30	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
+IDS_PROMOTION_SKILL4	中型自動砲專家\n提高所有中型自動砲的命中率。
+IDS_PROMOTION_SKILL5	短程飛彈專家\n提高所有短程飛彈的命中率。
+IDS_PROMOTION_SKILL6	輕武器專家\n提高機槍和火焰噴射器的命中率。
+IDS_PROMOTION_SKILL7	感測專家\n可從感測資料得知更多資訊。駕駛員等級越高，資訊越詳細。
+IDS_PROMOTION_SKILL8	強韌專家\n能在足以讓一般駕駛員喪命的傷勢下存活。
+IDS_PROMOTION_SKILL9	中型機甲專家\n駕駛中型機甲時可閃避更多敵方火力。
+IDS_PROMOTION_SPECIALTY_SKILLS	專長技能
+IDS_PROMPT_TO_DISCONNECT	要中斷多人遊戲連線嗎？
+IDS_PR_ADD_HELP	將所選駕駛員分配至部署小隊中所選的機甲。
+IDS_PR_ADD_PILOT	加入駕駛員
+IDS_PR_AVAILABLE_PILOTS	待命駕駛員
+IDS_PR_DEPLOYMENT_TEAMS	部署小隊
+IDS_PR_HELP_BACK	返回機甲庫。
+IDS_PR_HELP_NEXT	前往任務檢閱。
+IDS_PR_PILOT_READY	駕駛員待命區
+IDS_PR_REMOVE	移除駕駛員
+IDS_PR_REMOVE_HELP	解除目前的機甲分配，讓駕駛員回到待命清單。
+IDS_QUICKSAVE_VERSION_WRONG	快速存檔的版本與遊戲不符，無法載入。請選擇「繼續」。
+IDS_RECOVER_HELP	點選失去行動能力的機甲進行回收。
+IDS_REGULAR	正規
+IDS_REGULAR_SKILLS	正規技能
+IDS_REMOVE_MECH	移除機甲
+IDS_REPAIR	維修
+IDS_REPAIR_DESC	讓所選維修車進入維修模式。
+IDS_REPAIR_HELP	點選受損機甲進行維修。
+IDS_REPAIR_VEHICLE	維修車
+IDS_REPAIR_VEHICLE_DESC	購買並部署維修車。
+IDS_RESTART	中止任務
+IDS_RESTARTHEADER	中止任務
+IDS_RESTART_HELP	結束目前任務。
+IDS_RETURN_TOGAME	返回遊戲
+IDS_RETURN_TOGAME_HEADER	返回遊戲
+IDS_RETURN_TOGAME_HELP	繼續目前任務。
+IDS_RP	資源點：%ld
+IDS_RUN	奔跑 (空白鍵)
+IDS_RUN_DESC	命令所選單位在下次移動時奔跑。
+IDS_SALVAGE	回收
+IDS_SALVAGE_ARMOR_HELP	所選機甲的裝甲量。
+IDS_SALVAGE_CBILLS_HELP	目前資金。選擇回收機甲時會更新金額。
+IDS_SALVAGE_CHECKBOXITEMHELP_HEADER	回收按鈕
+IDS_SALVAGE_CHECKBOX_HELP	點選以回收這架機甲。
+IDS_SALVAGE_DESC	讓所選回收載具進入回收模式。
+IDS_SALVAGE_IMAGE_HELP	目前所選機甲的名稱和圖像。
+IDS_SALVAGE_JUMPJETS_HELP	所選機甲的跳躍距離，以公尺計。
+IDS_SALVAGE_LISTBOXITEMHELP_HEADER	點選以查看機甲規格。
+IDS_SALVAGE_LISTBOX_HELP	機甲
+IDS_SALVAGE_MECH	機甲回收
+IDS_SALVAGE_RANGE_HELP	所選機甲的主要武器射程。
+IDS_SALVAGE_SALVAGE_LIST_HELP	選擇要回收的機甲。
+IDS_SALVAGE_SCREENMECH_LOADOUT	機甲配置
+IDS_SALVAGE_SPEED_HELP	所選機甲的速度，以公里／小時計。
+IDS_SALVAGE_TITLE_HELP	回收在戰場上失去行動能力的機甲。
+IDS_SALVAGE_TONNAGE_HELP	所選機甲的重量與級別。
+IDS_SALVAGE_VEHICLE	回收載具
+IDS_SALVAGE_VEHICLE_DESC	購買並部署回收載具。
+IDS_SAVE	系統選單 (Esc)
+IDS_SAVE_DESC	顯示或關閉系統選單。選單開啟時任務會暫停。
+IDS_SCOUT	偵察直升機
+IDS_SCOUT_DESC	購買並部署偵察直升機。
+IDS_SECONDARY	次要目標
+IDS_SENSORPROBE	感測探針 (數字鍵 /)
+IDS_SENSORPROBE_DESC	在指定位置部署感測探針。
+IDS_SERVER_MIGRATING	正在嘗試連線至伺服器…
+IDS_SHORTRANGE	短程攻擊 (S)
+IDS_SHORTRANGE_DESC	命令所選機甲在短射程攻擊。
+IDS_SHORT_RANGE	短程
+IDS_SKILL0	駕駛
+IDS_SMALLAIRSTRIKE	固定火砲
+IDS_SMALLAIRSTRIKE_DESC	購買固定火砲並部署至指定位置。
+IDS_SPECIALTY	輕型機甲專家
+IDS_SPECIALTY_HELP1	駕駛輕型機甲時，可閃避更多敵方火力。
+IDS_STOP	停止／停火 (Backspace)
+IDS_STOP_DESC	停止執行所選單位目前的指令。
+IDS_STOP_VEHICLE	取消部署
+IDS_STOP_VEHICLE_DESC	取消所選部署。
+IDS_STRING26002	網際網路 (Zone.com)
+IDS_STRING26003	區域網路
+IDS_STRING26004	網際網路 (直接 TCP/IP)
+IDS_STRING26005	前往 Zone
+IDS_STRING26006	此連線方式會透過 MSN Gaming Zone 進行多人遊戲。
+IDS_STRING26007	關閉遊戲並在瀏覽器開啟 MSN Gaming Zone 的遊戲大廳。
+IDS_STRING26008	遊戲將關閉並開啟 MSN Gaming Zone 的遊戲大廳。須有免費的 Zone 帳號才能遊玩。
+IDS_STRING26009	選擇區域網路後，可以開啟房間列表加入遊戲，或自行建立房間。
+IDS_STRING26010	透過區域網路和其他玩家連線。使用前請先連上同一個區域網路。
+IDS_STRING26011	瀏覽區域網路
+IDS_STRING26012	加入遊戲
+IDS_STRING26013	輸入房主的 IP 位址後按此按鈕。房間已鎖定、已滿或遊戲已開始時無法加入。
+IDS_STRING26014	建立房間
+IDS_STRING26015	建立新的多人遊戲房間。
+IDS_STRING26016	透過 IP 位址加入遊戲。建立房間時，請把你的 IP 位址提供給其他玩家。
+IDS_STRING26017	透過房主提供的 IP 位址進行多人遊戲。
+IDS_STRING26018	房主 IP 位址
+IDS_STRING26019	從下拉清單選擇位址，或輸入房主的 IP 位址，再按「加入遊戲」。房間已鎖定、已滿或遊戲已開始時無法加入。
+IDS_STRING26050	區域網路房間
+IDS_STRING26051	建立房間
+IDS_STRING26052	房間名稱
+IDS_STRING26053	玩家
+IDS_STRING26054	地圖名稱
+IDS_STRING26055	延遲
+IDS_STRING26056	加入
+IDS_STRING26100	建立房間
+IDS_STRING26101	新房間名稱
+IDS_STRING26102	開放全部技術
+IDS_STRING26103	玩家人數上限
+IDS_STRING26150	任務設定：房主
+IDS_STRING26151	玩家
+IDS_STRING26152	隊伍
+IDS_STRING26153	陣營
+IDS_STRING26155	準備
+IDS_STRING26157	時間上限
+IDS_STRING26158	自訂型號
+IDS_STRING26159	彈藥
+IDS_STRING26160	資源點
+IDS_STRING26161	空襲
+IDS_STRING26162	布雷車
+IDS_STRING26163	偵察直升機
+IDS_STRING26164	固定火砲
+IDS_STRING26165	無限彈藥
+IDS_STRING26166	全部技術
+IDS_STRING26167	感測探針
+IDS_STRING26168	維修車
+IDS_STRING26169	回收載具
+IDS_STRING26170	資源建築
+IDS_STRING26171	禁用自訂型號
+IDS_STRING26172	快速開始
+IDS_STRING26173	玩家設定
+IDS_STRING26174	載入地圖
+IDS_STRING26175	地圖資訊
+IDS_STRING26250	加入電腦玩家
+IDS_STRING26252	輸入名稱
+IDS_STRING26254	經驗
+IDS_STRING26256	陣營
+IDS_STRING26258	電腦玩家的機甲／載具欄位
+IDS_STRING27171	開始任務
+IDS_SWAP_RESOLUTION_WARNING	新解析度將在下次開始任務時生效。
+IDS_TACMAP	戰術地圖
+IDS_TACMAP_DESC	顯示感測器偵測結果、目標、單位位置等資訊。
+IDS_TEAM_WEIGHT_LIMIT	小隊重量上限
+IDS_TOTAL	總計：%ld
+IDS_TUTORIAL_NAME	模擬訓練
+IDS_UPDATE_DOWNLOAD	下載
+IDS_UPDATE_DOWNLOADING	正在下載 %s：%d%%
+IDS_UPDATE_FAILED	更新失敗（%s）。\n\n要在瀏覽器開啟下載頁面嗎？
+IDS_UPDATE_INSTALL	更新
+IDS_UPDATE_INSTALL_NOW	安裝
+IDS_UPDATE_LATER	稍後
+IDS_UPDATE_NOTICE	有新版本 %s，點選查看
+IDS_UPDATE_PROMPT	《MechCommander 2》%s 已推出。目前版本為 %s。\n\n要在瀏覽器開啟下載頁面嗎？
+IDS_UPDATE_PROMPT_INSTALL	《MechCommander 2》%s 已推出。目前版本為 %s。\n\n要立即下載並安裝嗎？完成後遊戲會重新啟動，存檔與設定會保留。
+IDS_UPDATE_READY	版本 %s 已下載，點選安裝
+IDS_UPDATE_READY_PROMPT	已下載並驗證版本 %s。\n\n要立即安裝並重新啟動遊戲嗎？
+IDS_UPDATE_READY_PROMPT_MAC	已下載並驗證版本 %s。\n\n要開啟磁碟映像嗎？請將 MechCommander 2 拖到「應用程式」以取代舊版本。
+IDS_UPDATE_TEST_CHANNEL	接收測試版本
+IDS_VEHICLE_CLASS	載具
+IDS_VEHICLE_DESCRIPTION_0	裝甲車可搭載指揮人員或情報人員。由於裝甲薄、僅搭載機槍陣列，容易被火力強於步兵的單位摧毀。
+IDS_VEHICLE_STATS	載具規格
+IDS_VEHICLE_TAB	支援面板
+IDS_VEHICLE_TAB_DESC	顯示火砲與載具增援選項。
+IDS_VERY_HEAVY	突擊型
+IDS_VERY_LIGHT	極輕型
+IDS_VETERAN	老兵
+IDS_VETERAN_SKILLS	老兵技能
+IDS_WAITHOST2	任務設定

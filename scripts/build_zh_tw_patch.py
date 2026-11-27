@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Traditional Chinese preview from a prepared game and a local Noto font."""
+"""Build the Traditional Chinese patch from a prepared game and a local Noto font."""
 
 import argparse
 from pathlib import Path
@@ -12,6 +12,7 @@ from PIL import Image, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 HEADER = struct.Struct("<5I")
 GLYPH = struct.Struct("<I5i3I")
+PRINTF_TOKEN = re.compile(r"%%|%[-+#0 ]*(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:hh|ll|[hljztL])?[diouxXfFeEgGaAcspn]")
 
 
 def load_translations():
@@ -20,12 +21,18 @@ def load_translations():
         (ROOT / "test_scripts/res_conv/resource.h").read_text(),
         re.MULTILINE,
     ))
+    originals = dict(re.findall(
+        r'\{\s*(IDS_\w+)\s*,\s*"((?:\\.|[^"\\])*)"\s*\}',
+        (ROOT / "test_scripts/res_conv/strings.res.cpp").read_text(encoding="cp1252"),
+    ))
     entries = {}
     for line in (ROOT / "localization/zh-TW/strings.txt").read_text(encoding="utf-8").splitlines():
         symbol, translation = line.split("\t", 1)
         number = int(symbols[symbol])
         if number in entries:
             raise ValueError(f"Duplicate translation for {symbol} ({number})")
+        if PRINTF_TOKEN.findall(originals[symbol]) != PRINTF_TOKEN.findall(translation):
+            raise ValueError(f"Format placeholders differ from the original for {symbol}")
         entries[number] = translation
     return entries
 
@@ -58,13 +65,17 @@ def bake_font(source, target, font_path, face_index, characters):
     pitch_x = max(right - left for _, _, left, _, right, _, _ in bitmaps) + 2
     pitch_y = max(bottom - top for _, _, _, top, _, bottom, _ in bitmaps) + 2
     margin_x = max(2, max(left for _, _, left, _, _, _, _ in bitmaps))
-    atlas_width = max(512, original.width)
-    columns = (atlas_width - margin_x) // pitch_x
-    rows = (len(bitmaps) + columns - 1) // columns
-    used_height = original.height + rows * pitch_y
+    for atlas_width in (512, 1024, 2048):
+        if atlas_width < original.width:
+            continue
+        columns = (atlas_width - margin_x) // pitch_x
+        rows = (len(bitmaps) + columns - 1) // columns
+        used_height = original.height + rows * pitch_y
+        if used_height <= 2048:
+            break
+    else:
+        raise ValueError(f"Font exceeds its single-page atlas limit: {source}")
     atlas_height = 1 << (used_height - 1).bit_length()
-    if atlas_width > 2048 or atlas_height > 2048:
-        raise ValueError(f"Preview font exceeds its single-page atlas limit: {source}")
 
     atlas = Image.new("RGBA", (atlas_width, atlas_height))
     atlas.paste(original, (0, 0))
@@ -105,7 +116,7 @@ def main():
         table = "".join(f"{number}\t{text}\n" for number, text in sorted(translations.items()))
         (output / "strings.tsv").write_text(table, encoding="utf-8")
     except (OSError, ValueError, KeyError) as error:
-        parser.exit(1, f"Could not build zh-TW preview: {error}\n")
+        parser.exit(1, f"Could not build zh-TW patch: {error}\n")
 
     print(f"Built {len(translations)} translations and {len(characters)} glyphs in {len(sources)} fonts.")
 

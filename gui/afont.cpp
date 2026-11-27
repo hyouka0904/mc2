@@ -73,7 +73,7 @@ unsigned long aFont::height( ) const
 void	aFont::getSize( DWORD& width, DWORD& height, const char* pText )
 {
 	gos_TextSetAttributes (gosFont, 0, size, false, true, false, false);
-	gos_TextStringLength(&width,&height,pText);
+	gos_TextStringLength(&width,&height,"%s", pText);
 
 }
 
@@ -83,7 +83,7 @@ unsigned long aFont::height( const char* st, int areaWidth ) const
 	DWORD width, height;
 	gos_TextSetAttributes (gosFont, 0, size, false, true, false, false);
 	gos_TextSetRegion( 0, 0, areaWidth, Environment.screenHeight );
-	gos_TextStringLength(&width,&height,st);
+	gos_TextStringLength(&width,&height,"%s", st);
 
 	if (const DWORD wrappedHeight = gos_TextCjkWrappedHeight(st, areaWidth))
 		return wrappedHeight;
@@ -137,7 +137,7 @@ unsigned long aFont::height( const char* st, int areaWidth ) const
 					if ( !isleadbyte( tmp ) )
 					{
 						*(pTmpLine) = '\0';
-						gos_TextStringLength( &curLineWidth, &height, pLine );
+						gos_TextStringLength( &curLineWidth, &height, "%s", pLine );
 						if ( curLineWidth > areaWidth )
 						{
 							lineCount++;
@@ -157,13 +157,13 @@ unsigned long aFont::height( const char* st, int areaWidth ) const
 			else if ( isspace( *pTmp ) )
 			{
 				*(pTmpLine) = '\0';
-				gos_TextStringLength( &curLineWidth, &height, pLine );
+				gos_TextStringLength( &curLineWidth, &height, "%s", pLine );
 				if ( curLineWidth > areaWidth )
 				{
 					int last_word_offset = pLastWord - st - lineStart;
 					pLine[last_word_offset] = '\0';
 					//gos_TextStringLength( &curLineWidth, &height, pLastWord );
-					gos_TextStringLength( &curLineWidth, &height, pLine);
+					gos_TextStringLength( &curLineWidth, &height, "%s", pLine);
 					// No whole word before this one on the line (last_word_offset
 					// <= 0): the word alone is wider than the area. Going back to
 					// pLastWord would restart at the same place forever (this hung
@@ -211,7 +211,7 @@ unsigned long aFont::height( const char* st, int areaWidth ) const
 
 		// one last check
 		*pTmpLine = '\0';
-		gos_TextStringLength( &curLineWidth, &height, pLine );
+		gos_TextStringLength( &curLineWidth, &height, "%s", pLine );
 		if ( curLineWidth > areaWidth )
 		{
 			lineCount++;
@@ -230,7 +230,7 @@ unsigned long aFont::width( const char* st ) const
 {
 	DWORD width, height;
 	gos_TextSetAttributes (gosFont, 0, size, false, true, false, false);
-	gos_TextStringLength(&width,&height,st);
+	gos_TextStringLength(&width,&height,"%s", st);
 	return width;
 }
 
@@ -262,7 +262,7 @@ void aFont::render( const char* text, int xPos, int yPos, int areaWidth, int are
 		if ( alignment == 1 )
 		{
 			DWORD width, height;
-			gos_TextStringLength( &width, &height, text );
+			gos_TextStringLength( &width, &height, "%s", text );
 			xPos -= width;
 			areaWidth = width + 1;
 		}
@@ -275,7 +275,7 @@ void aFont::render( const char* text, int xPos, int yPos, int areaWidth, int are
 		if ( alignment == 3  ) // bottom
 		{
 			DWORD width, height;
-			gos_TextStringLength( &width, &height, text );
+			gos_TextStringLength( &width, &height, "%s", text );
 			yPos -= height;
 			areaHeight = height + 1;
 		}
@@ -287,7 +287,7 @@ void aFont::render( const char* text, int xPos, int yPos, int areaWidth, int are
 	gos_TextSetRegion( xPos, yPos, xPos + areaWidth, yPos + areaHeight );
 	
 	gos_TextSetPosition( xPos, yPos );
-	gos_TextDraw( text );	
+	gos_TextDraw( "%s", text );
 
 }
 

@@ -11,7 +11,7 @@
 | Mod 載入與執行中生成／回收 | `GameOS/gameos/mods/`、`tools/mc2mod/`；`code/ablmc2.cpp` 的 `execCreateInfantry` | Mod 資料載入與 ABL 執行是兩個入口。單位生成和移除走 `code/mission.cpp` 的 `Mission::addMover`、`removeMover`，重用槽位要一起檢查 `code/objmgr.cpp` 及感測器、外觀、無線電和移動資源。 | `unit_mods`、`tool_mc2mod`；用關卡腳本反覆生成與移除，檢查槽位及檔案描述符 |
 | 資源點 HUD 與多人同步 | `code/logisticsdata.cpp` 的 `LogisticsData::addResourcePoints`、`decrementResourcePoints`、`syncResourcePoints` | `code/controlgui.cpp` 顯示、預扣及退回點數，`code/multplyr_sync.cpp` 交換變動並套用主機快照，`code/saveload.cpp` 處理存讀檔。 | 用主客端各自確認支援指令預扣與取消，並檢查低解析度 HUD |
 | 維修命令與脫困 | `code/warrior.cpp` 的 `MechWarrior::orderRefit`；`code/missiongui.cpp` | UI 下令後由單位執行維修，檢查脫困移動與替換命令時的維修預約和目標狀態。維修命令的續行判定在 `code/tacordr.cpp`，可搜尋 `TACTICAL_ORDER_REFIT`。 | 令維修車在卡住並脫困後繼續維修，再下替換命令確認取消 |
-| 繁中預覽 | `localization/zh-TW/strings.txt`、`scripts/build_zh_tw_patch.py`；`res/libmain.cpp` | 字串用原版資源 ID 覆寫。 `GameOS/gameos/gos_font.cpp` 讀取擴充字形，`gameos_graphics.cpp` 解碼、斷行與繪製，`gui/afont.cpp` 測量簡報清單的行高。 | 按[繁中預覽文件](localization.zh-TW.md)產生補丁，核對主選單與第一關，並比較預設英文截圖 |
+| 繁中預覽 | `localization/zh-TW/strings.txt`、`scripts/build_zh_tw_patch.py`；`res/libmain.cpp` | 字串用原版資源 ID 覆寫。 `GameOS/gameos/gos_font.cpp` 讀取擴充字形，`gameos_graphics.cpp` 解碼、斷行與繪製，`gui/afont.cpp` 測量簡報清單的行高。 | 按[繁中補丁文件](localization.zh-TW.md)產生補丁，核對設定、戰役、戰鬥與多人房間，並比較預設英文截圖 |
 
 測試入口（從 repo 根目錄執行，`build` 與 `game` 需先依開發說明準備）：
 
