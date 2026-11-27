@@ -521,6 +521,8 @@ git push origin v0.1.0
 遊戲資料和編譯好的著色器（SPIR-V / MSL / HLSL）與平台無關，只在 Linux 建置一次，再交給 Windows 和 macOS 使用。
 **測試版**：在 Actions 頁面手動執行（Actions > Release > Run workflow，選分支），會發佈一個**預發布版** `v<下一個修訂號>-test.<執行編號>`（例如 `v0.1.0` 之後是 `v0.1.1-test.42`），附上安裝包和 `SHA256SUMS.txt`，tag 打在該分支的 commit 上。打開「Receive test versions」的遊戲會提示更新到它；其他人看不到（`releases/latest` 不回傳預發布版，而且 `0.1.1-test.42` 排在 `0.1.1` 之前）。只保留最新 5 個測試版和它們的 tag。選項：`version` 手動指定版本；取消 `publish` 只保留 workflow artifact；取消 `macos` 跳過 macOS（測試版本來就不等 macOS）。修改 `packaging/`、`scripts/package.py` 時，會以 `0.0.0-test` 建置並測試安裝包但不發佈，每個安裝包各自保留為一個 workflow artifact（不再另外壓縮）。Release 另外附上區塊更新用的區塊和清單（見[版本檢查](#版本檢查)）。
 
+從 `dev` 發佈新的測試版後，一併更新 `README.md`、`README.zh-TW.md` 的測試版版本號與直達連結。
+
 Windows 與 macOS 的 CI 機器沒有可用的 GPU，所以那兩個平台只測安裝流程與程式能否啟動，沒有實際進入遊戲。
 
 安裝包測試曾經抓到的問題（都已修正）：

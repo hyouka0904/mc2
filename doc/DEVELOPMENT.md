@@ -528,6 +528,8 @@ git push origin v0.1.0
 The game data and the compiled shaders (SPIR-V / MSL / HLSL) are platform-independent, so they are built once on Linux and handed to Windows and macOS.
 **Test versions.** Running the workflow by hand (Actions > Release > Run workflow, pick the branch) publishes a **pre-release** `v<next patch>-test.<run number>` (for example `v0.1.1-test.42` after `v0.1.0`) with the packages and `SHA256SUMS.txt`, tagged at the branch's commit. Games with "Receive test versions" on offer it as an update; everyone else never sees it (`releases/latest` skips pre-releases, and `0.1.1-test.42` sorts before `0.1.1`). Only the 5 newest test pre-releases and their tags are kept. Options: `version` sets the version by hand, unticking `publish` only keeps workflow artifacts, unticking `macos` skips the macOS job (a test pre-release does not wait for macOS anyway). Changing `packaging/` or `scripts/package.py` builds and tests the packages as `0.0.0-test` without publishing; each package is kept as a separate workflow artifact (not zipped again). Releases also carry the parts and manifests for part updates (see [Update check](#update-check)).
 
+After publishing a new test build from `dev`, update the version and direct download link in both `README.md` and `README.zh-TW.md`.
+
 The Windows and macOS CI machines have no usable GPU, so on those platforms only installation and startup are tested, not actual play.
 
 Bugs the package tests caught (all fixed):

@@ -4,9 +4,9 @@
 
 ## [⬇ 下載最新版](https://github.com/hyouka0904/mc2/releases/latest)
 
-**[⬇ 下載測試版](https://github.com/hyouka0904/mc2/releases)**
+**[⬇ 下載測試版（v0.1.1-test.33）](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.33)**
 
-請選最新一筆標示 **Pre-release** 的版本，支援的平台以該版本的 Assets 為準。目前正式版（v0.1.0）尚未內建更新功能。
+舊版可在[所有版本](https://github.com/hyouka0904/mc2/releases)找到，支援的平台以該版本的 Assets 為準。目前正式版（v0.1.0）尚未內建更新功能。
 
 在 Release 頁面下方的 Assets 選擇你的平台：
 
