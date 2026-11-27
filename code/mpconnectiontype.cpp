@@ -140,7 +140,23 @@ void MPConnectionType::init(FitIniFile* file)
 		tcpipPanel.init(&PNfile);
 	}
 
-	// The MSN Gaming Zone is gone: start on the LAN panel.
+	// The MSN Gaming Zone is gone: hide its row (radio button, outline and
+	// logo) and move the LAN and TCP/IP rows up into its place.
+	if ( aButton* zone = getButton( FIRST_BUTTON_ID+1 ) )
+	{
+		const float rowStep = getButton( FIRST_BUTTON_ID+2 )->globalY() - zone->globalY();
+		zone->showGUIWindow( false );
+		rects[0].showGUIWindow( false );
+		if ( staticCount > 26 )
+			statics[26].showGUIWindow( false );
+		for ( int row = 2; row <= 3; ++row )
+		{
+			getButton( FIRST_BUTTON_ID+row )->move( 0, -rowStep );
+			rects[row].move( 0, -rowStep );
+		}
+	}
+
+	// Start on the LAN panel.
 	connectionType = 1;
 
 	buttons[indexOfButtonWithID(FIRST_BUTTON_ID+1)].press(!((1 == connectionType) || (2 == connectionType) || (3 == connectionType)));
@@ -195,6 +211,12 @@ void MPConnectionType::begin()
 
 void MPConnectionType::end()
 {
+	if ( status == GOTOSPLASH && MPlayer )
+	{
+		MPlayer->closeSession();
+		delete MPlayer;
+		MPlayer = NULL;
+	}
 }
 
 void MPConnectionType::render(int xOffset, int yOffset )
@@ -231,7 +253,9 @@ int	MPConnectionType::handleMessage( unsigned long message, unsigned long who)
 		case 57/*MB_MSG_MAINMENU*/:
 			{
 				getButton( 57/*MB_MSG_MAINMENU*/ )->press( 0 );
-				status = MAINMENU;
+				// Leave multiplayer for the title menu (MAINMENU only opened
+				// the menu over this screen).
+				status = GOTOSPLASH;
 			}
 			break;
 		case 51/*MB_MSG_PREV*/:
