@@ -6,6 +6,7 @@
 //===========================================================================//
 
 #include"chatwindow.h"
+#include <algorithm>
 #include"mclib.h"
 #include"multplyr.h"
 #include "../resource.h"
@@ -138,7 +139,15 @@ int ChatWindow::getAudiences(int* targets)
 {
     int count = 0;
     targets[count++] = ChatEveryone;
-    targets[count++] = ChatTeam;
+    // Team chat only means something with a teammate (team against team).
+    const auto* local = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    bool teammate = false;
+    for (const auto& player : MPlayer->playerInfo)
+        if (local && local->team >= 0 && player.player && !player.leftSession && player.commanderID >= 0 &&
+            player.commanderID != MPlayer->commanderID && player.team == local->team)
+            teammate = true;
+    if (teammate)
+        targets[count++] = ChatTeam;
     for (const auto& player : MPlayer->playerInfo)
         if (player.player && !player.leftSession && player.commanderID >= 0 &&
             player.commanderID != MPlayer->commanderID)
@@ -277,7 +286,16 @@ void ChatWindow::render( int xOffset, int yOffset )
         }
         audienceFont.render(label, rect.left + 4, rect.top, labelWidth, AudienceHeight, 0xffffffff, false, 3);
         if (!row)
-            audienceFont.render("v", rect.right - 13, rect.top, 11, AudienceHeight, 0xffffffff, false, 3);
+        {
+            // The menu opens upwards: point up while closed, down while open.
+            const long cx = rect.right - 8;
+            const long cy = rect.top + AudienceHeight / 2;
+            for (long k = 0; k < 4; ++k)
+            {
+                const long y = audienceOpen ? cy + 1 - k : cy - 2 + k;
+                drawRect({cx - k, y, cx + k + 1, y + 1}, 0xffffffff);
+            }
+        }
     };
 
     renderAudience(audience, 0);
@@ -295,6 +313,9 @@ void ChatWindow::update()
 {
     int targets[MAX_MC_PLAYERS + 2];
     const int targetCount = getAudiences(targets);
+    // The last teammate left or changed team.
+    if (audience == ChatTeam && std::find(targets, targets + targetCount, ChatTeam) == targets + targetCount)
+        audience = ChatEveryone;
 
     if (userInput->isLeftClick() && !getButton(MP_CHAT_HELPTOGGLE)->isPressed())
     {
