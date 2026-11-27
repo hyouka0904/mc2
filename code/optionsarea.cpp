@@ -61,6 +61,7 @@ extern SoundSystem *sndSystem;
 #define MSG_TEST_VERSIONS	408
 #define MSG_SAVE_TRANSCRIPT	408
 #define MSG_TUTORIALS		409
+#define MSG_TRADITIONAL_CHINESE 410
 
 #define CTRL	0x10000000
 #define SHIFT	0x01000000
@@ -256,6 +257,7 @@ int	OptionsXScreen::handleMessage( unsigned long message, unsigned long who)
 				int oldResX = prefs.resolutionX;
 				int oldResY = prefs.resolutionY;
 				int oldDepth = prefs.bitDepth;
+				auto* gameplay = static_cast<OptionsGamePlay*>(tabAreas[2]);
 				for ( int i = 0; i < 4; i++ )
 					tabAreas[i]->end();
 
@@ -267,9 +269,19 @@ int	OptionsXScreen::handleMessage( unsigned long message, unsigned long who)
 				int newResY = prefs.resolutionY;
 				int newDepth = prefs.bitDepth;
 
-				if ( newResX != oldResX || newResY != oldResY || newDepth != oldDepth )
+				const bool resolutionChanged = newResX != oldResX || newResY != oldResY || newDepth != oldDepth;
+				const bool languageChanged = gameplay->languagePreferenceChanged();
+				const bool languageSaved = !languageChanged || savePreferredLanguage(gameplay->wantsTraditionalChinese());
+				const bool restartRequired = languageChanged && languageSaved &&
+					gameplay->wantsTraditionalChinese() != gos_TraditionalChineseActive();
+				if ( resolutionChanged || restartRequired || !languageSaved )
 				{
-					LogisticsOneButtonDialog::instance()->setText( IDS_SWAP_RESOLUTION_WARNING, IDS_DIALOG_OK, IDS_DIALOG_OK );
+					int warning = IDS_SWAP_RESOLUTION_WARNING;
+					if ( !languageSaved )
+						warning = IDS_LANGUAGE_SAVE_FAILED;
+					else if ( restartRequired )
+						warning = resolutionChanged ? IDS_LANGUAGE_AND_RESOLUTION_WARNING : IDS_LANGUAGE_RESTART_WARNING;
+					LogisticsOneButtonDialog::instance()->setText( warning, IDS_DIALOG_OK, IDS_DIALOG_OK );
 					LogisticsOneButtonDialog::instance()->begin();
 					bShowWarning = true;
 				}
@@ -874,15 +886,23 @@ void OptionsGamePlay::init(long xOffset, long yOffset)
 		testVersions.setText( IDS_UPDATE_TEST_CHANNEL );
 		testVersions.setHelpID( 0 );
 		testVersionsDY = 2.f * ( click->globalY() - ammo->globalY() );
-		placeTestVersions();
+		showLanguageOption = traditionalChineseAvailable();
+		if ( showLanguageOption )
+		{
+			traditionalChinese = *ammo;
+			traditionalChinese.setID( MSG_TRADITIONAL_CHINESE );
+			traditionalChinese.setText( IDS_OPTION_TRADITIONAL_CHINESE );
+			traditionalChinese.setHelpID( 0 );
+		}
+		placeGameplayOptions();
 	}
 
 	helpTextArrayID = 2;
 	
 }
 
-// Keeps the test versions box below the other two when the screen moves
-void OptionsGamePlay::placeTestVersions()
+// Keeps the extra checkboxes aligned when the screen moves.
+void OptionsGamePlay::placeGameplayOptions()
 {
 	aButton* ammo = getButton( MSG_UNLIMITED_AMMO );
 	if ( !ammo )
@@ -891,6 +911,9 @@ void OptionsGamePlay::placeTestVersions()
 	const float dy = ammo->globalY() + testVersionsDY - testVersions.globalY();
 	if ( dx || dy )
 		testVersions.move( dx, dy );
+	if ( showLanguageOption )
+		traditionalChinese.move( ammo->globalX() - traditionalChinese.globalX(),
+			ammo->globalY() + 1.5f * testVersionsDY - traditionalChinese.globalY() );
 }
 
 int		OptionsGamePlay::handleMessage( unsigned long message, unsigned long fromWho )
@@ -909,6 +932,8 @@ int		OptionsGamePlay::handleMessage( unsigned long message, unsigned long fromWh
 	{
 		case MSG_RESET:
 			reset(originalSettings);
+			if ( showLanguageOption )
+				traditionalChinese.press( false );
 			break;
 
 		case MSG_BASE:
@@ -949,8 +974,10 @@ void OptionsGamePlay::render()
 	rects[37].render();
 	rects[36].render();
 
-	placeTestVersions();
+	placeGameplayOptions();
 	testVersions.render();
+	if ( showLanguageOption )
+		traditionalChinese.render();
 
 	camera.render();
 
@@ -962,8 +989,10 @@ void OptionsGamePlay::update()
 
 	LogisticsScreen::update();
 
-	placeTestVersions();
+	placeGameplayOptions();
 	testVersions.update();
+	if ( showLanguageOption )
+		traditionalChinese.update();
 	
 	aRect* pRect = getButton( MSG_BASE )->isPressed() ? 
 		&rects[36] : &rects[37];
@@ -991,6 +1020,11 @@ void OptionsGamePlay::begin()
 {
 	helpTextArrayID = 2;
 	reset(prefs);
+	if ( showLanguageOption )
+	{
+		initialTraditionalChinese = preferredTraditionalChinese();
+		traditionalChinese.press( initialTraditionalChinese );
+	}
 
 	//Do NOT setup a camera in mission.
 	// A.  We don't need it cause the option is greyed out.
@@ -1038,6 +1072,16 @@ void OptionsGamePlay::end()
 	}
 
 }
+bool OptionsGamePlay::languagePreferenceChanged()
+{
+	return showLanguageOption && wantsTraditionalChinese() != initialTraditionalChinese;
+}
+
+bool OptionsGamePlay::wantsTraditionalChinese()
+{
+	return traditionalChinese.isPressed();
+}
+
 void OptionsGamePlay::reset(const CPrefs& newPrefs)
 {
 	for ( int i  = MSG_GREEN; i < MSG_ELITE + 1; i++ )

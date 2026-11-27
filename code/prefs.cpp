@@ -2,6 +2,14 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.                 //
 //===========================================================================//
 
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#ifdef _WIN32
+#include <process.h>
+#endif
+
 #include"platform_io.h" // for _chmod()
 
 #include"prefs.h"
@@ -108,6 +116,57 @@ void initUserPrefsPaths()
 		if (_stat("orgprefs.cfg", &st) != -1)
 			CopyFile("orgprefs.cfg", gOrgPrefsCfgPath, true);
 	}
+}
+
+bool traditionalChineseAvailable()
+{
+	return std::ifstream("localization/zh-TW/strings.tsv").is_open();
+}
+
+static std::filesystem::path languagePath()
+{
+	char dir[1024];
+	if (!gos_GetUserDataDirectory(dir, sizeof(dir)))
+		return {};
+	return std::filesystem::u8path(dir) / "language.cfg";
+}
+
+bool preferredTraditionalChinese()
+{
+	std::ifstream file(languagePath());
+	std::string language;
+	if (file >> language && (language == "zh-TW" || language == "en"))
+		return language == "zh-TW";
+
+	const char* environment = std::getenv("MC2_LANGUAGE");
+	return environment && std::strcmp(environment, "zh-TW") == 0;
+}
+
+bool savePreferredLanguage(bool traditionalChinese)
+{
+	const auto path = languagePath();
+	if (path.empty())
+		return false;
+
+	auto temporary = path;
+#ifdef _WIN32
+	const auto processId = _getpid();
+#else
+	const auto processId = getpid();
+#endif
+	temporary += ".tmp." + std::to_string(processId);
+	std::ofstream file(temporary);
+	file << (traditionalChinese ? "zh-TW" : "en") << '\n';
+	file.close();
+	std::error_code error;
+	if (file)
+	{
+		std::filesystem::rename(temporary, path, error);
+		if (!error)
+			return true;
+	}
+	std::filesystem::remove(temporary, error);
+	return false;
 }
 
 int CPrefs::load( const char* pPath ) {

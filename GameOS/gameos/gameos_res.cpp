@@ -31,7 +31,14 @@ static const char* DL_GetError() {
 	return last;
 }
 
-HSTRRES __stdcall gos_OpenResourceDLL(char const* FileName, const char** strings, int num)
+static bool traditionalChineseActive = false;
+
+bool gos_TraditionalChineseActive()
+{
+    return traditionalChineseActive;
+}
+
+HSTRRES __stdcall gos_OpenResourceDLL(char const* FileName, const char** strings, int num, const char* language)
 {
     const char *error;
     void *module;
@@ -77,7 +84,21 @@ HSTRRES __stdcall gos_OpenResourceDLL(char const* FileName, const char** strings
         fprintf(stderr, "Couldn't find hello: %s\n", error);
         return NULL;
     }
-    init_fptr();
+    if (!language)
+        language = getenv("MC2_LANGUAGE");
+    auto initLocalized = reinterpret_cast<void (*)(const char*)>(
+        DL_LoadFunction(module, "initStringResourcesForLanguage"));
+    if (!initLocalized)
+        language = getenv("MC2_LANGUAGE");
+    traditionalChineseActive = language && strcmp(language, "zh-TW") == 0;
+
+    if (initLocalized)
+        initLocalized(traditionalChineseActive ? "zh-TW" : "en");
+    else {
+        // An older resource library still supports its original initializer.
+        DL_GetError();
+        init_fptr();
+    }
 
     gos_StringRes* pstrres = new gos_StringRes();
     pstrres->getStringByIdFptr = fptr;

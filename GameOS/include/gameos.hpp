@@ -836,7 +836,8 @@ typedef struct _gosIME_Appearance
 //
 // Opens a DLL and returns a handle
 //
-HSTRRES __stdcall gos_OpenResourceDLL( const char* FileName, const char** strings, int num);
+HSTRRES __stdcall gos_OpenResourceDLL( const char* FileName, const char** strings, int num, const char* language = nullptr);
+bool gos_TraditionalChineseActive();
 
 //
 // Use to close a resource DLL

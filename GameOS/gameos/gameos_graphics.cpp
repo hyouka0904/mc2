@@ -2503,8 +2503,7 @@ gosFont* gosFont::load(const char* fontFile) {
     const auto destroyFont = [](gosFont* font) { delete font; };
     std::unique_ptr<gosFont, decltype(destroyFont)> font(new gosFont(), destroyFont);
 
-    const char* language = std::getenv("MC2_LANGUAGE");
-    if (language && strcmp(language, "zh-TW") == 0) {
+    if (gos_TraditionalChineseActive()) {
         const std::string localizedBase = std::string("localization/zh-TW/fonts/") + fname;
         if (FILE* texture = fopen((localizedBase + ".bmp").c_str(), "rb")) {
             fclose(texture);

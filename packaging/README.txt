@@ -20,12 +20,10 @@ Linux     AppImage: chmod +x MechCommander2-*.AppImage and run it
 
 Traditional Chinese preview
 ---------------------------
-Set MC2_LANGUAGE=zh-TW when starting the game. The preview packages already
-include the translations and fonts. For PowerShell in the game folder:
-  $env:MC2_LANGUAGE = 'zh-TW'
-  .\mc2.exe
-On Linux, use MC2_LANGUAGE=zh-TW ./mc2 (or the AppImage filename).
-On macOS, run the app's Contents/MacOS/mc2 from Terminal with the same prefix.
+Open Options > Gameplay, check Traditional Chinese, click Accept and restart
+the game. To switch back, open 選項 > 遊戲玩法, clear 繁體中文, click 套用 and
+restart. Windows PowerShell users can also set $env:MC2_LANGUAGE = 'zh-TW'
+before any language preference is saved.
 
 Saved games and settings
 ------------------------
@@ -78,11 +76,8 @@ Linux     AppImage：chmod +x MechCommander2-*.AppImage 後執行（需要 FUSE 
 
 繁體中文預覽
 ------------
-測試版已內附譯文和字型。Windows 請在遊戲資料夾開啟 PowerShell 並執行：
-  $env:MC2_LANGUAGE = 'zh-TW'
-  .\mc2.exe
-Linux 請執行 MC2_LANGUAGE=zh-TW ./mc2（AppImage 請改用其檔名）。
-macOS 請在終端機以同樣的環境變數執行 app 裡的 Contents/MacOS/mc2。
+開啟 Options > Gameplay，勾選 Traditional Chinese，按 Accept，再重新啟動遊戲。
+切回英文時，在「選項 > 遊戲玩法」取消勾選「繁體中文」，套用並重新啟動。
 
 存檔與設定
 ----------

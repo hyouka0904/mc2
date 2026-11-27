@@ -18,6 +18,9 @@
 extern char gOptionsCfgPath[1024];
 extern char gOrgPrefsCfgPath[1024];
 void initUserPrefsPaths();
+bool traditionalChineseAvailable();
+bool preferredTraditionalChinese();
+bool savePreferredLanguage(bool traditionalChinese);
 
 class CPrefs {
 public:

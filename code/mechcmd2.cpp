@@ -826,16 +826,18 @@ void __stdcall InitializeGameEngine()
     // sebi WTF? do we ned to do it for InitDW?
 	//__asm push esi;
 
+	const char* language = preferredTraditionalChinese() && traditionalChineseAvailable() ? "zh-TW" : "en";
+
 	// gotta have this no matter what
 	// looked up next to the executable, then in the game directory
 #if defined(_WIN64)
-	gosResourceHandle = gos_OpenResourceDLL("mc2res_64.dll", NULL, 0);
+	gosResourceHandle = gos_OpenResourceDLL("mc2res_64.dll", NULL, 0, language);
 #elif defined(_WIN32)
-	gosResourceHandle = gos_OpenResourceDLL("mc2res_32.dll", NULL, 0);
+	gosResourceHandle = gos_OpenResourceDLL("mc2res_32.dll", NULL, 0, language);
 #elif defined(__APPLE__)
-	gosResourceHandle = gos_OpenResourceDLL("libmc2res.dylib", NULL, 0);
+	gosResourceHandle = gos_OpenResourceDLL("libmc2res.dylib", NULL, 0, language);
 #else
-	gosResourceHandle = gos_OpenResourceDLL("libmc2res.so", NULL, 0);
+	gosResourceHandle = gos_OpenResourceDLL("libmc2res.so", NULL, 0, language);
 #endif
 
 	//Check for enough SwapFile Space FIRST!!!

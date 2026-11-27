@@ -182,6 +182,8 @@ public:
 	virtual int		handleMessage( unsigned long message, unsigned long fromWho );
 
 	void resetCamera();
+	bool languagePreferenceChanged();
+	bool wantsTraditionalChinese();
 
 	private:
 
@@ -190,7 +192,10 @@ public:
 	// row below the mouse control one (the layout file has no third box)
 	aAnimButton		testVersions;
 	float			testVersionsDY;
-	void			placeTestVersions();
+	aAnimButton		traditionalChinese;
+	bool			showLanguageOption = false;
+	bool			initialTraditionalChinese = false;
+	void			placeGameplayOptions();
 };
 
 class HotKeyListItem : public aListItem

@@ -15,6 +15,7 @@ extern "C" {
 
 DLL_EXPORT const char* CDECL getStringById(unsigned int id);
 DLL_EXPORT void CDECL initStringResources();
+DLL_EXPORT void CDECL initStringResourcesForLanguage(const char* language);
 DLL_EXPORT void CDECL freeStringResources();
 
 #ifdef __cplusplus
@@ -22,7 +23,7 @@ DLL_EXPORT void CDECL freeStringResources();
 #endif
 
 const char* getStringById__(unsigned int id);
-void initStringResources__();
+void initStringResources__(const char* language);
 void freeStringResources__();
 
 #endif // LIBMAIN_H

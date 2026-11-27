@@ -1,6 +1,5 @@
 #include "strings.res.cpp"
 #include <charconv>
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <map>
@@ -10,9 +9,8 @@
 static std::map<unsigned int, const char*>* gpStrings;
 static std::map<unsigned int, std::string> localizedStrings;
 
-static void loadTraditionalChinese()
+static void loadTraditionalChinese(const char* language)
 {
-    const char* language = std::getenv("MC2_LANGUAGE");
     if (!language || std::strcmp(language, "zh-TW") != 0)
         return;
 
@@ -38,7 +36,7 @@ static void loadTraditionalChinese()
     }
 }
 
-void /*__attribute__ ((constructor))*/ initStringResources__()
+void /*__attribute__ ((constructor))*/ initStringResources__(const char* language)
 {
     gpStrings = new std::map<unsigned int, const char*>();
 
@@ -47,7 +45,7 @@ void /*__attribute__ ((constructor))*/ initStringResources__()
         const StringResRecord& rec = StringRecords[i];
         gpStrings->insert(std::make_pair((unsigned int)rec.id_, rec.str_));
     }
-    loadTraditionalChinese();
+    loadTraditionalChinese(language);
 }
 
 void /*__attribute__ ((destructor))*/ freeStringResources__()
