@@ -478,6 +478,13 @@ class MC_TextureManager
 		// Frees a specific textureNode. 
 		void removeTextureNode (DWORD textureNode);
 
+		//------------------------------------------------------
+		// Drops one user of a texture node (by node ID, as returned by
+		// loadTexture) and frees it with the last one. Unlike looking the
+		// gos handle up first, it neither caches a texture back in to free
+		// it nor trips over a node purged between missions.
+		void releaseTextureNode (DWORD nodeId);
+
 		
         void resetLightData();
 

@@ -394,6 +394,20 @@ void MC_TextureManager::removeTextureNode (DWORD textureNode)
 }
 
 //----------------------------------------------------------------------
+void MC_TextureManager::releaseTextureNode (DWORD nodeId)
+{
+	if (nodeId >= MC_MAXTEXTURES)
+		return;
+	MC_TextureNode& node = masterTextureNodes[nodeId];
+	if ((node.gosTextureHandle == 0xffffffff) || (node.gosTextureHandle == 0x0))
+		return;		// purged between missions, or never loaded
+	if (node.numUsers > 0)
+		node.numUsers--;
+	if (node.numUsers == 0)
+		node.destroy();
+}
+
+//----------------------------------------------------------------------
 void MC_TextureManager::removeTexture (DWORD gosHandle)
 {
 	//-----------------------------------------------------------

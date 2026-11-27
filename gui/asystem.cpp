@@ -185,9 +185,7 @@ void aObject::destroy()
 
 	if ( textureHandle )
 	{
-		int gosID = mcTextureManager->get_gosTextureHandle( textureHandle );
-		if ( gosID && gosID != -1 )
-			mcTextureManager->removeTexture( gosID );
+		mcTextureManager->releaseTextureNode( textureHandle );
 		textureHandle = 0;
 	}
 
@@ -445,11 +443,7 @@ void	aObject::setTexture( const char* fileName )
 {
 	
 	if ( textureHandle )
-	{
-		int gosID = mcTextureManager->get_gosTextureHandle( textureHandle );
-		if ( gosID > 0 )	
-			mcTextureManager->removeTexture( gosID );
-	}
+		mcTextureManager->releaseTextureNode( textureHandle );
 	textureHandle = mcTextureManager->loadTexture( fileName, gos_Texture_Keyed, 0, 0, 0x2);
 	int gosID = mcTextureManager->get_gosTextureHandle( textureHandle );
 	if ( gosID )
@@ -469,11 +463,7 @@ void	aObject::setTexture(unsigned long newHandle )
 	//Gotta check handle.  If its the same as the new one,
 	// We don't gotta delete the old one.  The texture manager already did!!
 	if ( textureHandle && textureHandle != newHandle)
-	{
-		int gosID = mcTextureManager->get_gosTextureHandle( textureHandle );
-		if ( gosID > 0 )
-			mcTextureManager->removeTexture( gosID );
-	}
+		mcTextureManager->releaseTextureNode( textureHandle );
 	
 	textureHandle = newHandle;
 	
