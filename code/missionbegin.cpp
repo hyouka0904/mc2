@@ -814,10 +814,18 @@ const char* MissionBegin::update()
 			}
 			else if ( pCurScreen->getStatus() == LogisticsScreen::MAINMENU )
 			{
-				bSplash = true;
-				mainMenu->setDrawBackground( false );
-				mainMenu->begin();
-				animJustBegun = true;
+				// Main Menu leaves for the title menu without asking: campaign
+				// progress is saved first, a multiplayer session is closed.
+				if ( !MPlayer && !LogisticsData::instance->isSingleMission() )
+					autoSaveCampaign();
+				beginSplash();
+				if ( MPlayer )
+				{
+					MPlayer->closeSession();
+					delete MPlayer;
+					MPlayer = NULL;
+				}
+				return NULL;
 			}
 			else if ( pCurScreen->getStatus() == LogisticsScreen::SKIPONENEXT )
 			{
@@ -960,6 +968,25 @@ void MissionBegin::render()
 	}
 
 	animJustBegun = false;
+}
+
+// Name of the save written when Main Menu leaves a campaign. Kept in English
+// so the file name stays ASCII in every language.
+static const char* const kMainMenuSaveName = "Autosave";
+
+void MissionBegin::autoSaveCampaign()
+{
+	char name[1024];
+	snprintf( name, sizeof(name), "%s%s.fit", savePath, kMainMenuSaveName );
+	CreateDirectory( savePath, NULL );
+	FitIniFile file;
+	if ( NO_ERR == file.createWithCase( name ) )
+	{
+		LogisticsData::instance->save( file );
+		file.close();
+	}
+	else
+		fprintf( stderr, "autosave: couldn't write %s\n", name );
 }
 
 void MissionBegin::beginSplash( const char* playerName)

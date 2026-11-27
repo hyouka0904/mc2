@@ -46,6 +46,7 @@ class MissionBegin
 		bool readyToLoad() { return bReadyToLoad; }
 
 		void beginSplash( const char* playerName = 0 );
+		void autoSaveCampaign();
 
 		void beginMPlayer();
 		void beginSPlayer();

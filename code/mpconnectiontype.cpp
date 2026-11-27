@@ -211,12 +211,6 @@ void MPConnectionType::begin()
 
 void MPConnectionType::end()
 {
-	if ( status == GOTOSPLASH && MPlayer )
-	{
-		MPlayer->closeSession();
-		delete MPlayer;
-		MPlayer = NULL;
-	}
 }
 
 void MPConnectionType::render(int xOffset, int yOffset )
@@ -253,9 +247,7 @@ int	MPConnectionType::handleMessage( unsigned long message, unsigned long who)
 		case 57/*MB_MSG_MAINMENU*/:
 			{
 				getButton( 57/*MB_MSG_MAINMENU*/ )->press( 0 );
-				// Leave multiplayer for the title menu (MAINMENU only opened
-				// the menu over this screen).
-				status = GOTOSPLASH;
+				status = MAINMENU;
 			}
 			break;
 		case 51/*MB_MSG_PREV*/:

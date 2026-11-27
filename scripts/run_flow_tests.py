@@ -16,6 +16,8 @@ STOP, assertion or crash in the log:
   exit           Exit -> Yes quits
   campaign       new campaign, win the first mission (debug key), results,
                  briefing, 'mech bay, pilots, launch of the second mission
+  main_menu      Main Menu in the 'mech bay saves the campaign (Autosave)
+                 and goes to the title menu
   load_game      Load Game lists the campaign save and loads it
   solo_mission   Solo Mission lists the completed mission; briefing, 'mech bay
                  and pilot screens of that mission
@@ -112,6 +114,16 @@ FLOWS["campaign"] = {
               click(2310, *NEXT) + click(2510, *NEXT),
     "frames": 3000,
     "expect_files": ["savegame/After_Mission_mc2_01.fit"],
+}
+# Main Menu in the 'mech bay leaves for the title menu without a dialog
+# and saves the campaign first
+FLOWS["main_menu"] = {
+    "args": [],
+    "script": menu(600, "campaign") + click(710, 550, 436) + combo(1300, "W") +
+              click(1700, 710, 536) + click(1910, *NEXT) + click(2110, *NEXT) +
+              click(2210, 702, 28),
+    "frames": 2500,
+    "expect_files": ["savegame/Autosave.fit"],
 }
 # Load game with that save: the list shows it, Load opens the logistics
 FLOWS["load_game"] = {
