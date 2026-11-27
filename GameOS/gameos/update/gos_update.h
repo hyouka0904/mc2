@@ -232,6 +232,8 @@ bool installDownloaded(std::string* error);
 void setLaunchCommand(int argc, char** argv);
 void cleanupAfterUpdate(const std::string& currentVersion);
 // main(), after shutdown: starts the new version if installDownloaded asked for it.
+// Relaunch the current game after normal shutdown.
+bool queueGameRestart();
 void launchPendingRestart();
 
 } // namespace gos_update

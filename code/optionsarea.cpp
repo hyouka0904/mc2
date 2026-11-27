@@ -207,7 +207,8 @@ void OptionsXScreen::init(FitIniFile* file)
 
 	getButton( MSB_TAB0 )->press( true );
 
-	bShowWarning = 0;
+	bShowWarning = false;
+	bOfferRestart = false;
 }
 
 void OptionsXScreen::render()
@@ -227,9 +228,11 @@ void OptionsXScreen::render()
 	if ( curTab >= 2 )
 		tabAreas[curTab]->render();
 
-	if ( bShowWarning )
-	{
-		LogisticsOneButtonDialog::instance()->render();
+    if (bOfferRestart)
+        LogisticsOKDialog::instance()->render();
+    else if ( bShowWarning )
+    {
+        LogisticsOneButtonDialog::instance()->render();
 	}
 }
 
@@ -281,9 +284,20 @@ int	OptionsXScreen::handleMessage( unsigned long message, unsigned long who)
 						warning = IDS_LANGUAGE_SAVE_FAILED;
 					else if ( restartRequired )
 						warning = resolutionChanged ? IDS_LANGUAGE_AND_RESOLUTION_WARNING : IDS_LANGUAGE_RESTART_WARNING;
-					LogisticsOneButtonDialog::instance()->setText( warning, IDS_DIALOG_OK, IDS_DIALOG_OK );
-					LogisticsOneButtonDialog::instance()->begin();
-					bShowWarning = true;
+                    if (restartRequired)
+                    {
+                        auto* dialog = LogisticsOKDialog::instance();
+                        dialog->setText(warning, IDS_LANGUAGE_RESTART_LATER, IDS_LANGUAGE_RESTART_NOW);
+                        dialog->begin();
+                        bOfferRestart = true;
+                    }
+                    else
+                    {
+                        auto* dialog = LogisticsOneButtonDialog::instance();
+                        dialog->setText(warning, IDS_DIALOG_OK, IDS_DIALOG_OK);
+                        dialog->begin();
+                        bShowWarning = true;
+                    }
 				}
 				else
 					bDone = true;
@@ -315,6 +329,21 @@ bool OptionsXScreen::isDone()
 
 void OptionsXScreen::update()
 {
+    if (bOfferRestart)
+    {
+        auto* dialog = LogisticsOKDialog::instance();
+        dialog->update();
+        if (dialog->isDone())
+        {
+            const bool restart = dialog->getStatus() == YES;
+            dialog->end();
+            bOfferRestart = false;
+            if (restart && gos_update::queueGameRestart())
+                gos_TerminateApplication();
+            bDone = true;
+        }
+        return;
+    }
 
 	if ( bShowWarning )
 	{

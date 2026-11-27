@@ -1185,12 +1185,17 @@ Installer& installer()
     return *i;
 }
 
-std::string exeDir()
+std::string executablePath()
 {
 #ifdef _WIN32
-    char path[MAX_PATH * 2];
-    const DWORD n = GetModuleFileNameA(nullptr, path, sizeof(path));
-    std::string p(path, n);
+    wchar_t path[32768];
+    const DWORD n = GetModuleFileNameW(nullptr, path, sizeof(path) / sizeof(path[0]));
+    if (!n || n >= sizeof(path) / sizeof(path[0]))
+        return {};
+    const int size = WideCharToMultiByte(CP_UTF8, 0, path, n, nullptr, 0, nullptr, nullptr);
+    std::string p(size, '\0');
+    if (size)
+        WideCharToMultiByte(CP_UTF8, 0, path, n, &p[0], size, nullptr, nullptr);
 #elif defined(__APPLE__)
     char path[4096];
     uint32_t size = sizeof(path);
@@ -1200,6 +1205,12 @@ std::string exeDir()
     const ssize_t n = readlink("/proc/self/exe", path, sizeof(path) - 1);
     std::string p = n > 0 ? std::string(path, (size_t)n) : std::string();
 #endif
+    return p;
+}
+
+std::string exeDir()
+{
+    const std::string p = executablePath();
     const size_t slash = p.find_last_of("/\\");
     return slash == std::string::npos ? std::string() : p.substr(0, slash + 1);
 }
@@ -1806,6 +1817,24 @@ void cleanupAfterUpdate(const std::string& currentVersion)
     }
 }
 
+bool queueGameRestart()
+{
+    std::string exe = appImagePath();
+    if (exe.empty())
+        exe = executablePath();
+    if (exe.empty())
+        return false;
+
+    Installer& in = installer();
+    std::lock_guard<std::mutex> lock(in.m);
+    if (!in.restart) {
+        in.relaunch = std::move(exe);
+        in.args.clear();
+        in.restart = true;
+    }
+    return true;
+}
+
 void launchPendingRestart()
 {
     Installer& in = installer();
@@ -1813,9 +1842,9 @@ void launchPendingRestart()
     if (!in.restart || in.relaunch.empty())
         return;
     in.restart = false;
-    fprintf(stderr, "update: starting %s\n", in.relaunch.c_str());
+    fprintf(stderr, "restart: starting %s\n", in.relaunch.c_str());
     if (!startProcess(in.relaunch, in.args))
-        fprintf(stderr, "update: cannot start %s\n", in.relaunch.c_str());
+        fprintf(stderr, "restart: cannot start %s\n", in.relaunch.c_str());
 }
 
 } // namespace gos_update

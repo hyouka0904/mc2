@@ -49,6 +49,7 @@ private:
 	LogisticsScreen*		tabAreas[4];
 	int						curTab;
 	bool			bShowWarning;
+	bool			bOfferRestart;
 
 
 };

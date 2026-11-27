@@ -3315,6 +3315,8 @@ StringResRecord StringRecords[] = {
 	{ IDS_MP_CHAT_WHISPER_TO, "Whisper #%d %s:" },
 	{ IDS_MP_CHAT_WHISPER, "[Whisper]" },
 	{ IDS_MP_CHAT_RECIPIENT_LEFT, "Recipient left. Choose who to send to." },
+	{ IDS_LANGUAGE_RESTART_NOW, "Restart now" },
+	{ IDS_LANGUAGE_RESTART_LATER, "Later" },
 	{ IDS_MP_CHAT_RECIPIENT_MISSING, "Select recipient" },
 	{ IDS_STRING26018, "Host IP Address" },
 	{ IDS_MP_PARAMETERS_LOCK_GAME_HELP, "LOCK GAME     Prevent players from joining the game. Only the host can select Lock Game." },

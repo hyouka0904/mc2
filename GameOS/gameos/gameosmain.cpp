@@ -500,7 +500,7 @@ int main(int argc, char** argv)
     gos_DestroyAudio();
     gos_ModsShutdown();
 
-    // After an update: start the new version
+    // Relaunch after an update or a confirmed language change.
     gos_update::launchPendingRestart();
 
     return 0;
