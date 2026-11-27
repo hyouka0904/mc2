@@ -45,12 +45,17 @@ def bake_font(source, target, font_path, face_index, characters):
 
     font = ImageFont.truetype(str(font_path), max(7, line_height - 2), index=face_index)
     missing = bytes(font.getmask(chr(0x10FFFF)))
+    # Small CJK glyphs have several strokes between solid pixels. Strengthen
+    # their partial coverage without expanding their bounds or changing layout.
+    coverage = [round(255 * (alpha / 255) ** 0.72) for alpha in range(256)]
     bitmaps = []
     for char in characters:
         mask = font.getmask(char)
         if bytes(mask) == missing or not mask.getbbox():
             raise ValueError(f"Missing glyph {char!r} (U+{ord(char):04X})")
         glyph = Image.frombytes("L", mask.size, bytes(mask))
+        if line_height <= 20:
+            glyph = glyph.point(coverage)
         left, top, right, bottom = font.getbbox(char, anchor="ls")
         advance = round(font.getlength(char))
         bitmaps.append((char, glyph, left, top, right, bottom, advance))
