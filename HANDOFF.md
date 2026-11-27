@@ -5,10 +5,20 @@
 
 中英文 README 的測試版下載區已補上切回正式版更新頻道、手動安裝及備份存檔的步驟。更新器仍只提供較新的版本，回退後的存檔相容性待驗證。
 
+## Main Menu 一律回到標題主選單（2026-11-27）
+
+- 所有整備與聯機畫面的 Main Menu 原本只在畫面上疊出主選單，現在統一在 `MissionBegin::update` 的 `MAINMENU` 分支處理，不跳任何對話框：
+  - 戰役（非 Solo Mission、非聯機）：先自動存檔到 `savegame/Autosave.fit`（固定英文檔名，覆蓋上一次），再回標題。之後用 Load Game 讀取 Autosave 即可接著玩。
+  - 聯機：關閉連線、釋放 MPlayer 後回標題。房主這樣離開時，客端應走原本的「主機已離開」流程（未實測）。
+  - Solo Mission：沒有進度可存，直接回標題。
+- 連線類型畫面先前的 `GOTOSPLASH` 特例已改回 `MAINMENU`，走同一條路。
+- 驗證：mech bay 按 Main Menu → 標題主選單、Autosave.fit 寫入；開房 → Main Menu → 標題 → 再開房正常。新增流程測試 `main_menu`。
+- 標題畫面的 Return to Game 按鈕維持原樣（標題畫面下沒有作用）。
+
 ## 連線類型畫面與機甲字型統一（2026-11-27）
 
 - Zone.com：隱藏那一列（按鈕、外框、Zone 圖示），LAN 與 TCP/IP 往上移一格。
-- Main Menu：連線類型畫面的 Main Menu 原本只在畫面上疊出主選單（`MAINMENU`），改為 `GOTOSPLASH` 回到標題主選單並釋放 MPlayer。已驗證：回到標題後再進多人模式正常。房間列表、直接 TCP/IP、房間設定的 Main Menu 仍是疊出主選單，未改。
+- Main Menu：連線類型畫面的 Main Menu 原本只在畫面上疊出主選單，改為回到標題主選單（後來統一到 `MissionBegin`，見上一節）。
 - 機甲字型：拿掉退回 6 號字的邏輯，機甲名一律用 Mecha 字型。量過所有機甲名，最寬的 BUSHWACKER 約 63 像素，格子約 70 像素；超過的只有直升機，不會出現在出戰格子。
 
 ## 多個 IP 位址的顯示（2026-11-27）

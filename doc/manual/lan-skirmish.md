@@ -18,6 +18,8 @@
 4. The host picks the map and rules. Everyone picks a team and faction, then selects **Prepare**. Read the briefing, assemble a lance and assign pilots, then select **Finish prep** to return to the room.
 5. The host can select **Start game** once everyone is ready, within budget and meets the room rules. Rule changes require players to prepare again.
 
+**Main Menu** (top right) leaves the room (disconnects) and returns to the title menu without asking.
+
 The chat recipient menu offers everyone, your team or one player. Select the recipient, type your message, and press **Enter**.
 
 ## During the mission
