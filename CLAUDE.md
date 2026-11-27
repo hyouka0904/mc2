@@ -12,6 +12,7 @@ See [AGENTS.md](AGENTS.md) for the feature map and targeted reading workflow.
 - Always run the game under `timeout` (it can hang; test scripts have their own timeouts).
 - Do not work on DXIL (D3D12 shaders) without the user's go-ahead.
 - Keep `HANDOFF.md` up to date (goal, done, open items, decisions, test commands and results, next steps) after every significant stage, not only at the end.
+- After a test pre-release is published (Release workflow run by hand), update the test-version download link at the top of `README.md` and `README.zh-TW.md` to the new tag without being asked. Do it only once the release exists.
 - Roadmap work stops at each milestone in `doc/ROADMAP_MULTIPLAYER_ZH.md` until the user reports real-machine test results.
 
 ## Build
