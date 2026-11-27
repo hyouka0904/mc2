@@ -22,7 +22,8 @@
 - Linux 驗證：`ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 共 23 項通過。`scripts/smoke_test.sh game mc2_01 20` 通過。雙機整備開局載入兩台玩家配置機甲，戰鬥比對 90 秒，兩端同意一台失能及擊殺／損失統計，最大位置偏差 79。LAN 預設測試走同一個整備流程，並比對擊毀與失能狀態。
 - 其他驗證：三個 Linux 遊戲實例確認悄悄話封包只送到指定訪客。英翻中及中翻英各成功觸發一次重新啟動，「稍後」仍儲存設定。繁中產生器重建 12 套字型。
 - 連線驗證：`scripts/run_net_test.py game --scenario logistics` 與 `--scenario version` 都通過。房主畫面確認已移除快速開局，未準備時「開始遊戲」呈停用狀態。
-- 待完成：推送後檢查 Linux 與 Windows CI，通過後合併至 dev。Windows 實機與玩家回報的字體清晰度仍待驗收。
+- CI：提交 `c702e52` 的 Linux Debug、RelWithDebInfo、smoke test、Windows 與 macOS 均通過，具備快轉合併至 `dev` 的條件。[CI 結果](https://github.com/hyouka0904/mc2/actions/runs/46009702601)
+- 待完成：M1、U1–U3 的 Windows 實機驗收，以及玩家回報的字體清晰度複驗。
 
 ## 任務目標
 
