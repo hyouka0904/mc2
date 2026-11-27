@@ -82,6 +82,8 @@ void LogisticsLeaveDialog::update()
 	if ( !enterAnim.isDone() || status != RUNNING )
 		return;
 
+	// Not LogisticsDialog::update: that one answers NO to Esc or a click
+	// outside, which here means "Don't save".
 	LogisticsScreen::update();
 	if ( status != RUNNING )
 		return;

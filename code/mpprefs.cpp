@@ -31,7 +31,17 @@ MPPrefs* MPPrefs::s_instance = NULL;
 
 static const char* path2insignia = "data" PATH_SEPARATOR "multiplayer" PATH_SEPARATOR "insignia" PATH_SEPARATOR;
 
+// Bounded copy into a fixed size name field.
+template <size_t N> static void copyField(char (&dst)[N], const char* src)
+{
+    const size_t n = src ? strnlen(src, N - 1) : 0;
+    memcpy(dst, src ? src : "", n);
+    dst[n] = '\0';
+}
+
 // File names (no directory) of the insignia images, sorted, without duplicates.
+// Names too long for MC2Player::insigniaFile are left out: they could not be
+// stored or sent to the other players.
 static std::vector<std::string> listInsignias()
 {
     std::vector<std::string> names;
@@ -43,7 +53,8 @@ static std::vector<std::string> listInsignias()
     {
         do
         {
-            if ((findResult.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+            if ((findResult.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 &&
+                strlen(findResult.cFileName) < MAXLEN_INSIGNIA_FILE)
                 names.push_back(findResult.cFileName);
         } while (FindNextFile(searchHandle, &findResult) != 0);
         FindClose(searchHandle);
@@ -67,7 +78,8 @@ static std::vector<std::string> listInsignias()
             const std::string name = normalized(files[j].pfe->name);
             if (name.size() > prefix.size() + 4 && name.compare(0, prefix.size(), prefix) == 0 &&
                 name.find('/', prefix.size()) == std::string::npos &&
-                name.compare(name.size() - 4, 4, ".tga") == 0)
+                name.compare(name.size() - 4, 4, ".tga") == 0 &&
+                name.size() - prefix.size() < MAXLEN_INSIGNIA_FILE)
                 names.push_back(name.substr(prefix.size()));
         }
     }
@@ -338,7 +350,8 @@ void MPPrefs::update()
 
 		MC2Player* pInfo = MPlayer->getPlayerInfo( MPlayer->commanderID );
 
-		strcpy( pInfo->insigniaFile, pName );
+		if ( pInfo )
+			copyField( pInfo->insigniaFile, pName );
 
 		MPlayer->sendPlayerUpdate( 0, 5, -1 );
 
@@ -615,8 +628,10 @@ void MPPrefs::saveSettings()
 	}
 	
 	MC2Player* pInfo = MPlayer->getPlayerInfo( MPlayer->commanderID );
+	if ( !pInfo )
+		return;
 
-	strcpy( pInfo->name, txt );
+	copyField( pInfo->name, txt );
 
 	// check and see if name has changed
 	comboBox[1].EditBox().getEntry( txt );
@@ -627,7 +642,7 @@ void MPPrefs::saveSettings()
 	}
 
 	if ( txt )
-		strcpy( pInfo->unitName, txt );
+		copyField( pInfo->unitName, txt );
 
 
 	// colors should already be updated by now
@@ -639,8 +654,8 @@ void MPPrefs::saveSettings()
 		if ( pItem )
 		{
 			const char* pName = pItem->getBmp();
-			strcpy( prefs.insigniaFile, pName );
-			strcpy( pInfo->insigniaFile, pName );
+			copyField( prefs.insigniaFile, pName );
+			copyField( pInfo->insigniaFile, pName );
 		}
 	}
 
@@ -661,10 +676,12 @@ void MPPrefs::saveSettings()
 void MPPrefs::cancelSettings()
 {
 	MC2Player* pInfo = MPlayer->getPlayerInfo( MPlayer->commanderID );
-	strcpy( pInfo->name, prefs.playerName[0] );
+	if ( !pInfo )
+		return;
+	copyField( pInfo->name, prefs.playerName[0] );
 
-	strcpy( pInfo->unitName, prefs.unitName[0] );
-	strcpy( pInfo->insigniaFile, prefs.insigniaFile );
+	copyField( pInfo->unitName, prefs.unitName[0] );
+	copyField( pInfo->insigniaFile, prefs.insigniaFile );
 
 	MPlayer->sendPlayerUpdate( 0, 5, -1 );
 	prefs.save();
