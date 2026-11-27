@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 #include "utils/string_utils.h"
 
 #ifdef _DEBUG
@@ -75,7 +76,10 @@ int __cdecl InternalFunctionPause( const char* fmt, ... )
     logmsg("PAUSE", fmt, ap);
     va_end(ap);
 
-    return enter_debugger;
+    // A PAUSE is a warning the game carries on from (e.g. a quick save from
+    // another build): unattended runs (MC2_NO_DIALOGS) must not stop on it
+    // in Debug builds.
+    return enter_debugger && !getenv("MC2_NO_DIALOGS");
 
 }
 void __cdecl InternalFunctionSpew( const char* Group, const char* fmt, ... )
