@@ -34,8 +34,9 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
 - 目標：在同一分支先完成主要遊戲介面譯文，使用 Linux 截圖檢查版面。中文輸入法留待後續。
 - 已完成：涵蓋設定與快捷鍵、存讀檔、戰前部署、戰鬥與支援面板、結算、百科介面、多人房間與更新提示。加入全部戰役和訓練關卡的標題及概要，保留原有英文備援。
 - 決策：保留存檔檔名樣式、預設連線名稱與機甲型號。產生工具檢查格式參數並按需要放寬單頁字型貼圖寬度。共用字型元件將已格式化的文字視為字面值，以正確顯示百分號。
-- 補丁產生：`python3 scripts/build_zh_tw_patch.py game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 843 條譯文、792 個擴充字形、12 套字型。直接載入資源函式庫逐筆比對 843 條譯文，並驗證存檔名稱及預設英文。
-- Linux Release 的 `ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 通過 23 項。英文 `run_screenshot_tests.py` 的主選單、戰役與第一關三張比對均通過。以 `MC2_LANGUAGE=zh-TW` 執行 `run_flow_tests.py --renderer gl`，已核對設定、戰役、存讀檔、單人任務與百科流程。
+- 補丁產生：`python3 scripts/build_zh_tw_patch.py game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 887 條譯文、796 個擴充字形、12 套字型。直接載入資源函式庫逐筆比對 887 條譯文，並驗證存檔名稱及預設英文。
+- Linux Release 的 `ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 通過 23 項。英文 `run_screenshot_tests.py` 的主選單、戰役與第一關三張比對均通過。以 `MC2_LANGUAGE=zh-TW` 執行 `run_flow_tests.py --renderer gl`，設定、戰役、存讀檔、單人任務、百科、暫停與快速存讀檔流程通過。800×600 的繁中截圖另核對戰鬥操作提示、資源點、連線方式及多人任務設定。
+- 區網測試：標準 `run_net_test.py` 在設定的 280 秒時限內完成 89 秒同步比對，主機未在時限內退出。以同一驗證器縮短主客端幀數後重跑通過，兩端均正常退出，共比對 90 秒、8 個單位遭擊破，存活單位最大位置差 41，最終擊破與損失一致。
 - 待辦：完整關卡簡報和目標（第一關已譯）、百科內文、未涵蓋的裝備與原版資料檔或貼圖文字、Windows 實機與其他解析度。M1、U1–U3 實機驗收及 M2 狀態維持原排程。
 
 ### 初始預覽

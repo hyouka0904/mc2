@@ -3,12 +3,18 @@ IDS_ACE_SKILLS	王牌技能
 IDS_ACTIVE_DUTY	現役
 IDS_ADD_MECH	加入機甲
 IDS_AIRSTRIKE_HELP	點選空襲目標。
+IDS_AIRSTRIKE_HELP2	在目標上按右鍵以呼叫空襲。
 IDS_AIRSTRIKE_HELP_NO_LOS	點選空襲目標。
+IDS_AIRSTRIKE_HELP_NO_LOS_2	在目標上按右鍵以呼叫空襲。
+IDS_AMMO_CONSERVE_CURSOR_LEFT_HELP	點選目標，只用能量武器攻擊。
+IDS_AMMO_CONSERVE_CURSOR_RIGHT_HELP	在目標上按右鍵，只用能量武器攻擊。
 IDS_ARMOR0	極輕型
 IDS_ARMOR1	輕型
 IDS_ARMOR2	中型
 IDS_ARMOR3	重型
 IDS_ARMOR4	極重型
+IDS_ATTACK_CURSOR_LEFT_HELP	點選目標即可攻擊。
+IDS_ATTACK_CURSOR_RIGHT_HELP	在目標上按右鍵即可攻擊。
 IDS_BACK	返回
 IDS_BLURB_01	進行基本系統檢查，並深入匪徒活動區偵察。
 IDS_BLURB_02	匪徒佔領了史坦納基地，讓雷納德上校顏面盡失。消滅守軍並奪回基地總部。
@@ -154,6 +160,10 @@ IDS_FACTION6	達維恩
 IDS_FACTION7	達維恩
 IDS_FIREFROMCURRENTPOS	原地開火 (C)
 IDS_FIREFROMCURRENTPOS_DESC	命令所選單位停在原地開火。
+IDS_FIRE_FROM_CURRENT_POSITION_CURSOR_LEFT_HELP	點選目標，從目前位置開火。
+IDS_FIRE_FROM_CURRENT_POSITION_CURSOR_RIGHT_HELP	在目標上按右鍵，從目前位置開火。
+IDS_FORCE_FIRE_CURSOR_LEFT_HELP	點選目標以強制開火。
+IDS_FORCE_FIRE_CURSOR_RIGHT_HELP	在目標上按右鍵以強制開火。
 IDS_GN_AVAILABLE	可用
 IDS_GN_DROP_WEIGHT	部署重量
 IDS_GN_HEAT_FACTOR	熱量
@@ -166,6 +176,7 @@ IDS_GUARD	護衛 (G)
 IDS_GUARDTOWER	切換壓制射擊 (V)
 IDS_GUARDTOWER_DESC	命令所選固定火砲持續向下一個目標開火。
 IDS_GUARD_DESC	命令所選單位護衛另一個單位。
+IDS_GUARD_RECIPIENT_RIGHT_HELP	在單位上按右鍵，指派護衛。
 IDS_HEAVY_MECH	重型
 IDS_HELP_ALL_CBILLS	可用於購買與改裝機甲的資金。
 IDS_HELP_ALL_MAIN_MENU_BUTTON	返回主選單。
@@ -277,6 +288,10 @@ IDS_INMISSIONSAVE_HEADER	快速儲存
 IDS_INMISSION_HELP	儲存目前的任務進度。
 IDS_JUMP	跳躍 (J)
 IDS_JUMPDESC	所選單位下次收到移動指令時將以跳躍移動。
+IDS_JUMP_CURSOR_LEFT_HELP	點選地面，命令所選單位跳到該處。
+IDS_JUMP_CURSOR_RIGHT_HELP	在地面按右鍵，命令所選單位跳到該處。
+IDS_JUMP_WAYPOINT_CURSOR_LEFT_HELP	點選地面以設定跳躍路徑點。
+IDS_JUMP_WAYPOINT_CURSOR_RIGHT_HELP	在地面按右鍵以設定跳躍路徑點。
 IDS_KILLED_IN_ACTION	陣亡
 IDS_KILLS_NO_COUNT	擊破數：
 IDS_LARGEAIRSTRIKE	空襲 (數字鍵 *)
@@ -288,6 +303,8 @@ IDS_LOAD	載入
 IDS_LONGRANGE	長程攻擊 (L)
 IDS_LONGRANGE_DESC	命令所選機甲在長射程攻擊。
 IDS_LONG_RANGE	長程
+IDS_LONG_RANGE_CURSOR_LEFT_HELP	點選目標，以長射程開火。
+IDS_LONG_RANGE_CURSOR_RIGHT_HELP	在目標上按右鍵，以長射程開火。
 IDS_LS_LOADING	載入中…
 IDS_MAIN_MENU_BUTTON	主選單
 IDS_MAP_WRONG_VERSION_CHAT	必須等 %s 取得正確的地圖版本後才能開始遊戲。
@@ -332,10 +349,13 @@ IDS_MEDAL	戰役一勳帶：授予參與第一場戰役的駕駛員。
 IDS_MEDIUMRANGE	中程攻擊 (M)
 IDS_MEDIUMRANGE_DESC	命令所選機甲在中射程攻擊。
 IDS_MEDIUM_MECH	中型
+IDS_MEDIUM_RANGE_CURSOR_LEFT_HELP	點選目標，以中射程開火。
+IDS_MEDIUM_RANGE_CURSOR_RIGHT_HELP	在目標上按右鍵，以中射程開火。
 IDS_MED_RANGE	中程
 IDS_MINELAYER	布雷車
 IDS_MINELAYER_DESC	購買並部署布雷車。
 IDS_MINELAYER_HELP	選擇「布雷」，再點選要布雷的位置。
+IDS_MINELAYER_HELP2	選擇「布雷」，再在要布雷的位置按右鍵。
 IDS_MISSION_FAILED	任務失敗
 IDS_MISSION_INFO_TITLE	任務資訊
 IDS_MISSION_MAP_TITLE	任務地圖
@@ -627,6 +647,8 @@ IDS_OPTIONS_USE_ASYNC_MOUSE	硬體滑鼠更新
 IDS_OPTIONS_VETERAN	老兵
 IDS_OPTIONS_VOLUME_HIGH	高
 IDS_OPTIONS_VOLUME_LOW	低
+IDS_PATROL_CURSOR_LEFT_HELP	點選第一個路徑點或所選單位，建立巡邏路線。
+IDS_PATROL_CURSOR_RIGHT_HELP	在第一個路徑點按右鍵可建立環形巡邏，在所選單位按右鍵可建立往返巡邏。
 IDS_PC_1	王牌
 IDS_PC_2	菁英
 IDS_PC_3	老兵
@@ -697,12 +719,14 @@ IDS_PR_REMOVE	移除駕駛員
 IDS_PR_REMOVE_HELP	解除目前的機甲分配，讓駕駛員回到待命清單。
 IDS_QUICKSAVE_VERSION_WRONG	快速存檔的版本與遊戲不符，無法載入。請選擇「繼續」。
 IDS_RECOVER_HELP	點選失去行動能力的機甲進行回收。
+IDS_RECOVER_HELP2	在失去行動能力的機甲上按右鍵以回收。
 IDS_REGULAR	正規
 IDS_REGULAR_SKILLS	正規技能
 IDS_REMOVE_MECH	移除機甲
 IDS_REPAIR	維修
 IDS_REPAIR_DESC	讓所選維修車進入維修模式。
 IDS_REPAIR_HELP	點選受損機甲進行維修。
+IDS_REPAIR_HELP2	在受損機甲上按右鍵以維修。
 IDS_REPAIR_VEHICLE	維修車
 IDS_REPAIR_VEHICLE_DESC	購買並部署維修車。
 IDS_RESTART	中止任務
@@ -713,7 +737,11 @@ IDS_RETURN_TOGAME_HEADER	返回遊戲
 IDS_RETURN_TOGAME_HELP	繼續目前任務。
 IDS_RP	資源點：%ld
 IDS_RUN	奔跑 (空白鍵)
+IDS_RUN_CURSOR_LEFT_HELP	點選地面，讓所選單位跑向該處。
+IDS_RUN_CURSOR_RIGHT_HELP	在地面按右鍵，讓所選單位跑向該處。
 IDS_RUN_DESC	命令所選單位在下次移動時奔跑。
+IDS_RUN_WAYPOINT_CURSOR_LEFT_HELP	點選地面以設定奔跑路徑點。
+IDS_RUN_WAYPOINT_CURSOR_RIGHT_HELP	在地面按右鍵以設定奔跑路徑點。
 IDS_SALVAGE	回收
 IDS_SALVAGE_ARMOR_HELP	所選機甲的裝甲量。
 IDS_SALVAGE_CBILLS_HELP	目前資金。選擇回收機甲時會更新金額。
@@ -740,10 +768,13 @@ IDS_SCOUT_DESC	購買並部署偵察直升機。
 IDS_SECONDARY	次要目標
 IDS_SENSORPROBE	感測探針 (數字鍵 /)
 IDS_SENSORPROBE_DESC	在指定位置部署感測探針。
+IDS_SENSOR_PROBE_HELP_LOS2	在指定位置按右鍵以投放感測探針。
 IDS_SERVER_MIGRATING	正在嘗試連線至伺服器…
 IDS_SHORTRANGE	短程攻擊 (S)
 IDS_SHORTRANGE_DESC	命令所選機甲在短射程攻擊。
 IDS_SHORT_RANGE	短程
+IDS_SHORT_RANGE_CURSOR_LEFT_HELP	點選目標，以短射程開火。
+IDS_SHORT_RANGE_CURSOR_RIGHT_HELP	在目標上按右鍵，以短射程開火。
 IDS_SKILL0	駕駛
 IDS_SMALLAIRSTRIKE	固定火砲
 IDS_SMALLAIRSTRIKE_DESC	購買固定火砲並部署至指定位置。
@@ -761,14 +792,14 @@ IDS_STRING26006	此連線方式會透過 MSN Gaming Zone 進行多人遊戲。
 IDS_STRING26007	關閉遊戲並在瀏覽器開啟 MSN Gaming Zone 的遊戲大廳。
 IDS_STRING26008	遊戲將關閉並開啟 MSN Gaming Zone 的遊戲大廳。須有免費的 Zone 帳號才能遊玩。
 IDS_STRING26009	選擇區域網路後，可以開啟房間列表加入遊戲，或自行建立房間。
-IDS_STRING26010	透過區域網路和其他玩家連線。使用前請先連上同一個區域網路。
-IDS_STRING26011	瀏覽區域網路
-IDS_STRING26012	加入遊戲
-IDS_STRING26013	輸入房主的 IP 位址後按此按鈕。房間已鎖定、已滿或遊戲已開始時無法加入。
-IDS_STRING26014	建立房間
-IDS_STRING26015	建立新的多人遊戲房間。
-IDS_STRING26016	透過 IP 位址加入遊戲。建立房間時，請把你的 IP 位址提供給其他玩家。
-IDS_STRING26017	透過房主提供的 IP 位址進行多人遊戲。
+IDS_STRING26010	開啟區域網路房間清單。
+IDS_STRING26011	透過區域網路和其他玩家連線。使用前請先連上同一個區域網路。
+IDS_STRING26012	瀏覽房間
+IDS_STRING26013	加入遊戲
+IDS_STRING26014	輸入房主的 IP 位址後按此按鈕。房間已鎖定、已滿或遊戲已開始時無法加入。
+IDS_STRING26015	建立房間
+IDS_STRING26016	建立新的多人遊戲房間。
+IDS_STRING26017	透過房主提供的 IP 位址進行多人遊戲。建立房間時，請把你的 IP 位址提供給其他玩家。
 IDS_STRING26018	房主 IP 位址
 IDS_STRING26019	從下拉清單選擇位址，或輸入房主的 IP 位址，再按「加入遊戲」。房間已鎖定、已滿或遊戲已開始時無法加入。
 IDS_STRING26050	區域網路房間
@@ -815,9 +846,15 @@ IDS_STRING27171	開始任務
 IDS_SWAP_RESOLUTION_WARNING	新解析度將在下次開始任務時生效。
 IDS_TACMAP	戰術地圖
 IDS_TACMAP_DESC	顯示感測器偵測結果、目標、單位位置等資訊。
+IDS_TACMAP_HELP	點選戰術地圖即可移動鏡頭。
+IDS_TACMAP_HELP2	在戰術地圖按左鍵可移動鏡頭，按右鍵可移動所選單位。
 IDS_TEAM_WEIGHT_LIMIT	小隊重量上限
 IDS_TOTAL	總計：%ld
 IDS_TUTORIAL_NAME	模擬訓練
+IDS_UNIT_HELP	點選地面，將所選單位移到該處。
+IDS_UNIT_HELP2	在地面按右鍵，將所選單位移到該處。
+IDS_UNIT_SELECT_HELP	點選單位即可選取。
+IDS_UNIT_SELECT_HELP2	用左鍵選取單位。
 IDS_UPDATE_DOWNLOAD	下載
 IDS_UPDATE_DOWNLOADING	正在下載 %s：%d%%
 IDS_UPDATE_FAILED	更新失敗（%s）。\n\n要在瀏覽器開啟下載頁面嗎？
@@ -833,6 +870,11 @@ IDS_UPDATE_READY_PROMPT_MAC	已下載並驗證版本 %s。\n\n要開啟磁碟映
 IDS_UPDATE_TEST_CHANNEL	接收測試版本
 IDS_VEHICLE_CLASS	載具
 IDS_VEHICLE_DESCRIPTION_0	裝甲車可搭載指揮人員或情報人員。由於裝甲薄、僅搭載機槍陣列，容易被火力強於步兵的單位摧毀。
+IDS_VEHICLE_GUARD_TOWER_HELP2	在部隊視野內按右鍵以部署固定火砲。完成部署後無法移動。
+IDS_VEHICLE_MINELAYER_HELP2	在部隊視野內按右鍵以部署布雷車。
+IDS_VEHICLE_RECOVERY_HELP2	在失去行動能力的機甲上按右鍵，部署回收載具。
+IDS_VEHICLE_REPAIRTRUCK_HELP2	在部隊視野內按右鍵以部署維修車。
+IDS_VEHICLE_SCOUT_HELP2	在部隊視野內按右鍵以部署偵察直升機。
 IDS_VEHICLE_STATS	載具規格
 IDS_VEHICLE_TAB	支援面板
 IDS_VEHICLE_TAB_DESC	顯示火砲與載具增援選項。
@@ -841,3 +883,5 @@ IDS_VERY_LIGHT	極輕型
 IDS_VETERAN	老兵
 IDS_VETERAN_SKILLS	老兵技能
 IDS_WAITHOST2	任務設定
+IDS_WALK_WAYPOINT_CURSOR_LEFT_HELP	點選地面以設定路徑點。
+IDS_WALK_WAYPOINT_CURSOR_RIGHT_HELP	在地面按右鍵以設定路徑點。
