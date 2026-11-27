@@ -960,7 +960,9 @@ int EString::Compare( const EChar* p_String, bool Case_Sensitive ) const
 	//}
 	if ( Case_Sensitive )
 	{
-		if ( 0 == memcmp( m_pBuffer->Data(), p_String, Length ) )
+		// compare the common part only: memcmp over Length read past a
+		// shorter buffer (the result is decided by the lengths below)
+		if ( 0 == memcmp( m_pBuffer->Data(), p_String, ( myLength < Length ? myLength : Length ) * sizeof(EChar) ) )
 		{
 			if ( Length == myLength )
 				return 0;
