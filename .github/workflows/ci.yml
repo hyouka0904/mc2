@@ -147,6 +147,9 @@ jobs:
       - name: LAN multiplayer, host on another version
         run: python3 scripts/run_net_test.py game --scenario version --out net_version --timeout 300
 
+      - name: LAN multiplayer, away and System menu clear Ready
+        run: python3 scripts/run_net_test.py game --scenario away --out net_away --timeout 900
+
       - name: Upload screenshot and log
         if: always()
         uses: actions/upload-artifact@v4
@@ -161,6 +164,7 @@ jobs:
             flows_gpu/
             net/
             net_version/
+            net_away/
 
   build-macos:
     # Apple Silicon, Metal through SDL3 GPU. No GPU on the runner for the

@@ -95,6 +95,7 @@ protected:
 
 	bool					bHasFocus;
 	long					commanderID;
+	bool					bAway;
 
 	friend class MPParameterScreen;
 };
@@ -190,6 +191,9 @@ private:
     uint32_t preparationRevision = 0;
     int preparationBudget = 0;
     int preparationFaction = -1;
+    int preparationTeam = -1;
+    bool preparedOk = false;     // the last preparation passed the room rules
+    aAnimButton awayButton;
 
 public:
     void completePreparation();
@@ -198,6 +202,11 @@ private:
     void renderLobbyAction(aButton& button, int labelId, int xOffset, int yOffset);
     void renderHoverLabel();
     bool prepareLoadout();
+    bool preparationValid();
+    // Ready shows only while the player is in the room, back from a valid
+    // preparation and not away.
+    void setPresent(bool present);
+    void toggleAway();
     bool canStartGame();
 
 	

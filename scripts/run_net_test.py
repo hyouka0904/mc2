@@ -3,7 +3,7 @@
 """LAN multiplayer end to end: two game instances on this machine.
 
     run_net_test.py <game_dir> [--renderer gl|gpu] [--out DIR] [--timeout S]
-                    [--scenario battle|logistics|version]
+                    [--scenario battle|logistics|version|away]
 
 Both instances run headless (Xvfb, fixed time step, scripted mouse and
 keys), each with its own user data directory, and talk over 127.0.0.1:
@@ -29,6 +29,11 @@ to the room. The client reopens preparation, backs out, then completes it
 again. The host must observe ready, unready and ready before launching.
 Both games must load the two prepared mechs.
 
+--scenario away: after preparing, the client steps away (Away), comes back
+(I'm back), opens the System menu and closes it. The host tries to start
+while the client is away. The host must see ready, away, ready, unready,
+ready, and the game must only start after that.
+
 --scenario version: the host pretends to be release 9.9.9 with another
 network protocol (MC2_NET_TEST_VERSION / MC2_NET_TEST_PROTOCOL). The client
 must list the room as incompatible, show the version dialog when Join is
@@ -53,7 +58,7 @@ from run_screenshot_tests import FIXED_ARGS, start_xvfb  # noqa: E402
 from run_flow_tests import FORBIDDEN, click  # noqa: E402
 
 MP_BUTTON = (402, 264)        # main menu: Multiplayer
-LAN = (406, 243)              # connection type: Local network
+LAN = (406, 150)              # connection type: Local network
 LAN_BROWSER = (597, 398)      # LAN panel: Go to LAN browser
 HOST_GAME = (597, 447)        # LAN panel: Host game
 HOST_NAME_EDIT = (297, 219)   # host dialog
@@ -63,6 +68,9 @@ START_GAME = (643, 488)       # room: Start game
 FIRST_ROOM = (200, 116)       # LAN browser list
 PREPARE = (722, 566)          # room: Prepare
 BACK = (65, 566)              # briefing: Back
+AWAY = (330, 28)              # room: Away / I'm back
+SYSTEM = (702, 28)            # room: System menu
+SYSTEM_CLOSE = (402, 358)     # System menu: Close
 
 HOST_FRAMES = 15000
 CLIENT_FRAMES = 9500
@@ -125,7 +133,7 @@ def load_state(path):
     return units, kills
 
 
-def check(host_dir, client_dir, host_status, client_status, logistics=False):
+def check(host_dir, client_dir, host_status, client_status, logistics=False, away=False):
     problems = []
     host_log = open(os.path.join(host_dir, "game.log"), errors="replace").read()
     client_log = open(os.path.join(client_dir, "game.log"), errors="replace").read()
@@ -152,6 +160,19 @@ def check(host_dir, client_dir, host_status, client_status, logistics=False):
     common = sorted(set(h_units) & set(c_units))
     if not common or h_units[common[0]] != c_units[common[0]] or len(h_units[common[0]]) != 2:
         problems.append("both players must load the two prepared mechs")
+    if away:
+        updates = re.findall(r"player update from commander 1: ready ([01]) away ([01])", host_log)
+        states = [r + a for r, a in updates]
+        transitions = [st for i, st in enumerate(states) if i == 0 or st != states[i - 1]]
+        # ready, away (not ready), ready, System menu (not ready), ready
+        if "".join(t[0] + t[1] for t in transitions[-5:]) != "1001100010":
+            problems.append("client states seen by the host: %s (expected ... 10 01 10 00 10)"
+                            % " ".join(transitions))
+        last_ready = host_log.rfind("player update from commander 1: ready 1 away 0")
+        setup = host_log.find("[net] mission setup")
+        if setup != -1 and setup < last_ready:
+            problems.append("the game started before the client was back and ready")
+        return problems
     if logistics:
         ready_updates = re.findall(r"player update from commander 1: ready ([01])", host_log)
         transitions = "".join(state for i, state in enumerate(ready_updates)
@@ -223,7 +244,7 @@ def main():
     ap.add_argument("--renderer", default="gl")
     ap.add_argument("--out", default=None, help="logs, state files and captures (default: temporary)")
     ap.add_argument("--timeout", type=int, default=900, help="seconds for the whole test")
-    ap.add_argument("--scenario", choices=("battle", "logistics", "version"), default="battle")
+    ap.add_argument("--scenario", choices=("battle", "logistics", "version", "away"), default="battle")
     args = ap.parse_args()
     game_dir = os.path.abspath(args.game_dir)
     out = os.path.abspath(args.out) if args.out else tempfile.mkdtemp(prefix="mc2net-")
@@ -235,11 +256,18 @@ def main():
     try:
         version_test = args.scenario == "version"
         logistics = args.scenario == "logistics"
+        away = args.scenario == "away"
         # Try starting before preparation, then give both players time to finish.
         start_frame = 7900 if logistics else 6700
         host_preparation = (host_room_script() + click(1500, *START_GAME) +
                             prepare_mech(1700) + click(start_frame, *START_GAME))
-        if logistics:
+        if away:
+            # the first Start falls while the client is away and must do nothing
+            script = (host_room_script() + prepare_mech(1700) + click(5600, *START_GAME) +
+                      click(9000, *START_GAME))
+            host, host_dir = start("host", script, 12000, game_dir, out, args.renderer, display,
+                                   {"MC2_NET_LOG": "2"}, captures="5500,8000")
+        elif logistics:
             host, host_dir = start("host", host_preparation, 9800, game_dir, out, args.renderer, display,
                                    {"MC2_NET_LOG": "2"}, captures="1480,1770,2470,2770,2870,8500")
         elif version_test:
@@ -257,6 +285,12 @@ def main():
         if version_test:
             client, client_dir = start("client", join_room_script(), 1600, game_dir, out,
                                        args.renderer, display, {}, captures="1380,1560")
+        elif away:
+            script = (join_room_script() + prepare_mech(2200) +
+                      click(3700, *AWAY) + click(6200, *AWAY) +
+                      click(6600, *SYSTEM) + click(7000, *SYSTEM_CLOSE))
+            client, client_dir = start("client", script, 11000, game_dir, out, args.renderer, display, {},
+                                       captures="3600,3900,6400,6800")
         elif logistics:
             script = (join_room_script() + prepare_mech(2200) +
                       click(3850, *PREPARE) + click(4200, *BACK) +
@@ -294,7 +328,7 @@ def main():
     if version_test:
         problems = check_version(host_dir, client_dir, statuses["host"], statuses["client"])
     else:
-        problems = check(host_dir, client_dir, statuses["host"], statuses["client"], logistics)
+        problems = check(host_dir, client_dir, statuses["host"], statuses["client"], logistics, away)
     for p in problems:
         print("  FAIL: " + p)
     print("PASS" if not problems else "FAILED")

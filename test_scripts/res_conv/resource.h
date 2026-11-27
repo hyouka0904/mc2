@@ -4456,6 +4456,8 @@
 #define IDS_PROMPT_LEAVE_ROOM            60096
 #define IDS_DIALOG_DONT_SAVE             60097
 #define IDS_LOGISTICS_MENU_HELP          60098
+#define IDS_MP_AWAY                      60099
+#define IDS_MP_BACK                      60100
 */
 
 #include "strings.res.h"

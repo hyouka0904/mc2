@@ -61,6 +61,8 @@ extern bool quitGame;
 #define MP_LEGACY_QUICKSTART		219
 #define MP_RP_FORMMECHS		220
 #define MP_PREPARE_LOADOUT 221
+#define MP_AWAY 222
+#define MP_PLAYER_PREFS_BUTTON 120
 
 #define MP_INCREMENT_PLAYER_CBILLS 250
 #define MP_DECREMENT_PLAYER_CBILLS 251
@@ -168,6 +170,21 @@ void MPParameterScreen::init(FitIniFile* file)
     prepareButton.setMessageOnRelease();
     addChild(&prepareButton);
 
+    // Away sits left of Player Prefs, with the same art
+    if (auto* prefsButton = static_cast<aAnimButton*>(getButton(MP_PLAYER_PREFS_BUTTON)))
+    {
+        awayButton = *prefsButton;
+        awayButton.setID(MP_AWAY);
+        awayButton.setText(IDS_MP_AWAY);
+        awayButton.setHelpHeader(0);
+        awayButton.setHelpID(0);
+        awayButton.setMessageOnRelease();
+        awayButton.setPressFX(LOG_VIDEOBUTTONS);
+        awayButton.setHighlightFX(LOG_DIGITALHIGHLIGHT);
+        awayButton.move(-(prefsButton->width() + 10.f), 0.f);
+        addChild(&awayButton);
+    }
+
     // The original art defines the Quick Start row and its outline separately.
     if (auto* legacyQuickStart = getButton(MP_LEGACY_QUICKSTART))
         legacyQuickStart->showGUIWindow(false);
@@ -246,10 +263,16 @@ void MPParameterScreen::begin()
 	bDisconnectDlg = 0;
 
     const bool returningFromPreparation = status == PREPAREMULTIPLAYER;
-    if (!returningFromPreparation)
+    // Back from the System menu, Player Prefs or Add AI: the preparation
+    // still counts (setPresent below shows Ready again)
+    const bool returning = returningFromPreparation || status == MAINMENU || status == UP || status == DOWN;
+    if (!returning)
     {
         hasPreparation = false;
+        preparedOk = false;
         MPlayer->initParametersScreen();
+        if (auto* me = MPlayer->getPlayerInfo(MPlayer->commanderID))
+            me->away = false;
     }
 
 	if ( MPlayer->isHost() )
@@ -263,13 +286,14 @@ void MPParameterScreen::begin()
 				strcpy( MPlayer->missionSettings.map, "mc2_m01" );
 		}
 		if ( strlen( MPlayer->missionSettings.map ) )
-			setMission( MPlayer->missionSettings.map, !returningFromPreparation && status != UP && status != NEXT );
+			setMission( MPlayer->missionSettings.map, !returning && status != NEXT );
 	}
 	else if ( strlen( MPlayer->missionSettings.map ) )
 		setMissionClientOnly( MPlayer->missionSettings.map );
 
 	delayTime = 0.f;
 	status = RUNNING;
+	setPresent( true );
 
 	bHostLeftDlg = 0;
 	bootPlayerID = -1;
@@ -324,6 +348,9 @@ void MPParameterScreen::render(int xOffset, int yOffset )
     prepareButton.move(xOffset, yOffset);
     prepareButton.render();
     prepareButton.move(-xOffset, -yOffset);
+    awayButton.move(xOffset, yOffset);
+    awayButton.render();
+    awayButton.move(-xOffset, -yOffset);
 
 	if ( bMapInfoDlg )
 	{
@@ -473,6 +500,7 @@ bool MPParameterScreen::prepareLoadout()
 void MPParameterScreen::cancelPreparation()
 {
     auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    preparedOk = false;
     if (!player->ready && !player->loadoutCost && !player->preparedRevision)
         return;
 
@@ -487,12 +515,45 @@ void MPParameterScreen::completePreparation()
     auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
     const int remaining = LogisticsData::instance->getCBills();
     const int faction = player->faction >= 0 && player->faction < 4 ? player->faction : 0;
-    player->ready = hasPreparation && preparationRevision == MPlayer->missionSettings.preparationRevision
+    preparedOk = hasPreparation && preparationRevision == MPlayer->missionSettings.preparationRevision
         && preparationBudget == player->cBills && preparationFaction == faction
         && remaining >= 0 && remaining <= preparationBudget
         && LogisticsData::instance->getCurrentDropWeight() <= MPlayer->missionSettings.dropWeight;
+    preparationTeam = player->team;
+    player->ready = preparedOk && !player->away;
     player->preparedRevision = preparationRevision;
-    player->loadoutCost = player->ready ? preparationBudget - remaining : 0;
+    player->loadoutCost = preparedOk ? preparationBudget - remaining : 0;
+    MPlayer->sendPlayerUpdate(0, 5, MPlayer->commanderID);
+}
+
+bool MPParameterScreen::preparationValid()
+{
+    const auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    const int faction = player->faction >= 0 && player->faction < 4 ? player->faction : 0;
+    return preparedOk && hasPreparation
+        && player->preparedRevision == MPlayer->missionSettings.preparationRevision
+        && preparationBudget == player->cBills && preparationFaction == faction
+        && preparationTeam == player->team;
+}
+
+void MPParameterScreen::setPresent(bool present)
+{
+    auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    if (!player)
+        return;
+    const bool ready = present && !player->away && preparationValid();
+    awayButton.setText(player->away ? IDS_MP_BACK : IDS_MP_AWAY);
+    if (player->ready == ready)
+        return;
+    player->ready = ready;
+    MPlayer->sendPlayerUpdate(0, 5, MPlayer->commanderID);
+}
+
+void MPParameterScreen::toggleAway()
+{
+    auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    player->away = !player->away;
+    setPresent(true);
     MPlayer->sendPlayerUpdate(0, 5, MPlayer->commanderID);
 }
 
@@ -522,15 +583,8 @@ int	MPParameterScreen::handleMessage( unsigned long message, unsigned long who)
 		case 57/*MB_MSG_MAINMENU*/:
 			{
 				getButton( 57/*MB_MSG_MAINMENU*/ )->press( 0 );
-				if (MPlayer->commanderID > -1) {
-					MC2Player* pInfo = MPlayer->getPlayerInfo( MPlayer->commanderID );
-					if ( pInfo->ready )
-						pInfo->ready = 0;
-					if (!MPlayer->isHost())
-					{
-						MPlayer->sendPlayerUpdate( 0, 5, MPlayer->commanderID );
-					}
-				}
+				if (MPlayer->commanderID > -1)
+					setPresent( false );	// not Ready while the System menu is open
 				status = MAINMENU;
 			}
 			break;
@@ -556,6 +610,10 @@ int	MPParameterScreen::handleMessage( unsigned long message, unsigned long who)
 				MPlayer->sendChat( 0, -1, text );
 			}
 			break;
+        case MP_AWAY:
+            awayButton.press(false);
+            toggleAway();
+            break;
         case MP_PREPARE_LOADOUT:
             if (prepareButton.isEnabled() && prepareLoadout())
                 status = PREPAREMULTIPLAYER;
@@ -574,6 +632,7 @@ int	MPParameterScreen::handleMessage( unsigned long message, unsigned long who)
 			{
 				//add ai
 				getButton( 102/*add ai player*/ )->press( 0 );
+				setPresent( false );
 				status = DOWN;
 				return 1;
 			}
@@ -588,14 +647,7 @@ int	MPParameterScreen::handleMessage( unsigned long message, unsigned long who)
 		case MP_PLAYER_PREFS:
 			{
 
-				MC2Player* pInfo = MPlayer->getPlayerInfo( MPlayer->commanderID );
-				if ( pInfo->ready )
-					pInfo->ready = 0;
-				if (!MPlayer->isHost())
-				{
-					MPlayer->sendPlayerUpdate( 0, 5, MPlayer->commanderID );
-				}
-	
+				setPresent( false );
 				status = UP;
 			}
 
@@ -1326,6 +1378,7 @@ void MPParameterScreen::update()
 		{
 			LogisticsScreen::update();
             prepareButton.update();
+            awayButton.update();
             if (status == PREPAREMULTIPLAYER)
                 return;
 		}
@@ -1671,6 +1724,7 @@ aPlayerParams::aPlayerParams()
 	textObjects = 0;
 	staticCount = rectCount = textCount = 0;
 	bHasFocus = 0;
+	bAway = 0;
 }
 
 aPlayerParams::~aPlayerParams()
@@ -2201,6 +2255,10 @@ void	aPlayerParams::setData( const _MC2Player* data)
 	bDisable = ( data->cBills >= 1000000 );
 	CBillsSpinnerUpButton.disable( bDisable );
 
+	// an away player shows AWAY instead of the Ready box
+	bAway = data->away;
+	ReadyButton.showGUIWindow( !bAway );
+
 	ReadyButton.disable(false);
 	if (data->ready && data->preparedRevision == MPlayer->missionSettings.preparationRevision)
 	{
@@ -2341,6 +2399,19 @@ int aPlayerParams::handleMessage( unsigned long message, unsigned long who )
 void aPlayerParams::render()
 {
 	aObject::render();
+
+	if ( bAway && textObjects && textCount )
+	{
+		char text[64];
+		cLoadString( IDS_MP_AWAY, text, sizeof(text) - 1 );
+		aFont& font = textObjects[0].font;
+		const long width = font.width( text );
+		const long height = font.height();
+		const long left = ReadyButton.globalLeft() + ( ReadyButton.width() - width ) / 2;
+		const long top = ReadyButton.globalTop() + ( ReadyButton.height() - height ) / 2;
+		// a region exactly as wide as the text wraps it
+		font.render( text, left, top, width + 16, height, 0xffff941e, false, 0 );
+	}
 }
 
 void aPlayerParams::move( float offsetX, float offsetY )

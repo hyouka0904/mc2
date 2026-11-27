@@ -283,6 +283,7 @@ typedef struct _MC2Player {
 	int			resourcePoints;
 	int			rank;
 	bool			ready;
+	bool			away;			// stepped away from the room (shown, blocks the start)
 	uint32_t		preparedRevision;
 	int				loadoutCost;
 	int             score;

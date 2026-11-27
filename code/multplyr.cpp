@@ -243,7 +243,7 @@ void ShutdownNetworking (void) {
 #include <chrono>
 #include <cstddef>
 
-#define MC2_NET_PROTOCOL_STAMP	"MC2NET-3"		// bump when the wire format changes
+#define MC2_NET_PROTOCOL_STAMP	"MC2NET-4"		// bump when the wire format changes
 
 // Tests pretend to be another release with MC2_NET_TEST_VERSION and
 // MC2_NET_TEST_PROTOCOL (scripts/run_net_test.py --scenario version).
@@ -1654,7 +1654,7 @@ void MultiPlayer::handlePlayerUpdate (NETPLAYER sender, MCMSG_PlayerUpdate* msg)
 		// A client changed its own entry; take the fields players may edit.
 		MC2Player& info = playerInfo[cid];
 		const MC2Player& in = msg->info;
-		NETLOG(2, "player update from commander %ld: ready %d team %d cbills %d", cid, (int)in.ready, (int)in.team, in.cBills);
+		NETLOG(2, "player update from commander %ld: ready %d away %d team %d cbills %d", cid, (int)in.ready, (int)in.away, (int)in.team, in.cBills);
 		CopyString(info.name, in.name, MAXLEN_PLAYER_NAME);
 		CopyString(info.unitName, in.unitName, MAXLEN_UNIT_NAME);
 		CopyString(info.insigniaFile, in.insigniaFile, MAXLEN_INSIGNIA_FILE);
@@ -1662,6 +1662,7 @@ void MultiPlayer::handlePlayerUpdate (NETPLAYER sender, MCMSG_PlayerUpdate* msg)
 		info.faction = in.faction;
         info.preparedRevision = in.preparedRevision;
         info.loadoutCost = in.loadoutCost;
+        info.away = in.away;
         info.ready = in.ready && in.preparedRevision == missionSettings.preparationRevision &&
             in.loadoutCost >= 0 && in.loadoutCost <= info.cBills;
 		if ((in.team >= 0) && (in.team < MAX_TEAMS) && (in.team != info.team))
@@ -2120,7 +2121,7 @@ bool MultiPlayer::allPlayersReady (void) {
 
 	for (long i = 0; i < MAX_MC_PLAYERS; i++)
 		if ((playerInfo[i].commanderID > -1) && playerInfo[i].player && !playerInfo[i].leftSession
-            && (!playerInfo[i].ready || playerInfo[i].preparedRevision != missionSettings.preparationRevision
+            && (!playerInfo[i].ready || playerInfo[i].away || playerInfo[i].preparedRevision != missionSettings.preparationRevision
                 || playerInfo[i].loadoutCost < 0 || playerInfo[i].loadoutCost > playerInfo[i].cBills))
 			return(false);
 	return(true);
