@@ -1,3 +1,4 @@
+#include <vector>
 #include <queue>
 #include "gameos.hpp"
 #include "toolos.hpp"
@@ -36,8 +37,10 @@ int unpack(const char* pak_file, const char* out_path)
 		return -1;
 	}
 
-    if(create_path(out_path))
+    if(create_path(out_path)) {
+        delete pakFile;
         return -1;
+    }
 
 	MemoryPtr packet_buffer = NULL;
 	size_t packet_buffer_len = 0;
@@ -72,6 +75,8 @@ int unpack(const char* pak_file, const char* out_path)
         }
     }
 
+    delete[] packet_buffer;
+    delete pakFile;
     return 0;
 }
 
@@ -93,7 +98,8 @@ int pack(const char* pak_file, const char* rsp_file, bool b_compress) {
 	const char* rsp_path_prefix = ".";
 
 	size_t rsp_file_len = strlen(rsp_file);
-	char* rsp_file_dir = new char[rsp_file_len + 1];
+	std::vector<char> rsp_file_dir_buf(rsp_file_len + 1);
+	char* rsp_file_dir = rsp_file_dir_buf.data();
 	for (int i = 0; i < rsp_file_len; ++i)
 	{
 		if (rsp_file[i] == '\\')

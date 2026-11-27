@@ -169,10 +169,6 @@ int main(int argc, char** argv)
         if(!gm[i].valid)
             continue;
 
-        char buf[256];
-        sprintf(buf, "tmp/glyph%d.bmp", i);
-        SDL_SaveBMP(gs[i], buf);
-
         SDL_Rect r;
 
 		r.x = x;// + gm[i].minx;

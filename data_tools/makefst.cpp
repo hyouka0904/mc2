@@ -128,6 +128,7 @@ int unpack(const char* fst_file, const char* out_path)
     }
 
     delete[] content;
+    delete ff;
     return 0;
 }
 
@@ -263,7 +264,7 @@ int pack(const char* in_path, const char* fst_file, const char* mount, const cha
 
     while(!files2pack.empty())
     {
-        const char* filename = files2pack.front();
+        char* filename = files2pack.front();
         files2pack.pop();
 
         S_snprintf(filename_buf, filenamebuf_size, "%s" PATH_SEPARATOR "%s", prefix, filename);
@@ -295,19 +296,13 @@ int pack(const char* in_path, const char* fst_file, const char* mount, const cha
             fclose(fh);
 
             if(mount) {
-
-				if (strstr(filename, "pmwbubba.fit")) {
-				}
-
                 S_snprintf(filename_buf, filenamebuf_size, "%s" PATH_SEPARATOR "%s", mount, filename);
                 out_ff.writeFast(filename_buf, filebuf, len);
             } else {
                 out_ff.writeFast(filename, filebuf, len);
             }
-
-
-
         }
+        delete[] filename;
     }
 
     delete[] chunk;
