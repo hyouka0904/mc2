@@ -5,20 +5,28 @@
 
 中英文 README 的測試版下載區已補上切回正式版更新頻道、手動安裝及備份存檔的步驟。更新器仍只提供較新的版本，回退後的存檔相容性待驗證。
 
-## Main Menu 一律回到標題主選單（2026-11-27）
+## 右上角 System 選單（2026-11-27）
 
-- 所有整備與聯機畫面的 Main Menu 原本只在畫面上疊出主選單，現在統一在 `MissionBegin::update` 的 `MAINMENU` 分支處理，不跳任何對話框：
-  - 戰役（非 Solo Mission、非聯機）：先自動存檔到 `savegame/Autosave.fit`（固定英文檔名，覆蓋上一次），再回標題。之後用 Load Game 讀取 Autosave 即可接著玩。
-  - 聯機：關閉連線、釋放 MPlayer 後回標題。房主這樣離開時，客端應走原本的「主機已離開」流程（未實測）。
-  - Solo Mission：沒有進度可存，直接回標題。
-- 連線類型畫面先前的 `GOTOSPLASH` 特例已改回 `MAINMENU`，走同一條路。
-- 驗證：mech bay 按 Main Menu → 標題主選單、Autosave.fit 寫入；開房 → Main Menu → 標題 → 再開房正常。新增流程測試 `main_menu`。
-- 標題畫面的 Return to Game 按鈕維持原樣（標題畫面下沒有作用）。
+- 所有整備與聯機畫面右上角原本的 Main Menu 按鈕，改名為 **SYSTEM**（系統），提示文字改為「選項、百科全書，或回到主選單」。按下後，畫面調暗（不再全黑），中間跳出小選單：Options、Encyclopedia、Back to main menu、Close。程式在 `code/logisticsmenu.{h,cpp}`，由 `MissionBegin` 開關。
+  - 舊做法會把整個標題選單疊在畫面上，開場動畫結束後背景改用不透明黑色，所以周圍全黑。
+  - 按鈕沿用標題選單的圖（`mcl_mm.fit`），不畫背景圖，只畫半透明遮罩和橘色外框的面板。
+  - Esc、點選單外面或 Close 都會關閉選單，回到原畫面（呼叫原畫面的 `begin()`，和舊的疊加選單相同）。
+  - Options、Encyclopedia 關閉後回到小選單。
+- Back to main menu 會先跳確認框（`LogisticsLeaveDialog`，沿用 `mcl_dialog.fit`；Esc 或點框外 = 取消，回到小選單）：
+  - 戰役：「回到主選單前要儲存戰役嗎？」不儲存／儲存。按儲存會寫入 `savegame/Autosave.fit`（固定檔名，覆蓋上一次），再回標題。
+  - 聯機：「離開房間並回到主選單？」否／是。按是會斷線並釋放 MPlayer，再回標題。房主這樣離開時，客端應走原本的「主機已離開」流程（未實測）。
+  - Solo Mission：不問，直接回標題。
+- 新字串 60092–60098（中英）。`aObject` 新增 `setHelpHeader`。
+- 驗證：
+  - 戰役：Encyclopedia 和 Options 關閉後都回到小選單；Close 回到原畫面；確認框按 Esc 回到小選單；按「不儲存」回標題，沒有寫存檔；按「儲存」回標題，有寫 Autosave。
+  - 聯機：按「否」回到小選單；按「是」回標題，之後再開房正常。
+  - 流程測試 `main_menu` 改為 System → Back to main menu → Save。
+- 標題畫面的 Return to Game 維持原樣（在標題畫面沒有作用）。
 
 ## 連線類型畫面與機甲字型統一（2026-11-27）
 
 - Zone.com：隱藏那一列（按鈕、外框、Zone 圖示），LAN 與 TCP/IP 往上移一格。
-- Main Menu：連線類型畫面的 Main Menu 原本只在畫面上疊出主選單，改為回到標題主選單（後來統一到 `MissionBegin`，見上一節）。
+- Main Menu：之後改成 System 選單，見上一節。
 - 機甲字型：拿掉退回 6 號字的邏輯，機甲名一律用 Mecha 字型。量過所有機甲名，最寬的 BUSHWACKER 約 63 像素，格子約 70 像素；超過的只有直升機，不會出現在出戰格子。
 
 ## 多個 IP 位址的顯示（2026-11-27）
