@@ -963,6 +963,8 @@ int		OptionsGamePlay::handleMessage( unsigned long message, unsigned long fromWh
 			reset(originalSettings);
 			if ( showLanguageOption )
 				traditionalChinese.press( false );
+			if ( !mission || !strlen( mission->getMissionFileName() ) )
+				camera.setMech( "Bushwacker", rects[36].getColor(), rects[37].getColor(), rects[37].getColor() );
 			break;
 
 		case MSG_BASE:
@@ -1120,8 +1122,9 @@ void OptionsGamePlay::reset(const CPrefs& newPrefs)
 
 	getButton( MSG_GREEN + newPrefs.GameDifficulty )->press( true );
 
-	rects[36].setColor( newPrefs.baseColor );
-	rects[37].setColor( newPrefs.highlightColor );
+	// The preference files store the colors without alpha, the swatches with it.
+	rects[36].setColor( newPrefs.baseColor | 0xff000000 );
+	rects[37].setColor( newPrefs.highlightColor | 0xff000000 );
 
 	getButton( MSG_UNLIMITED_AMMO )->press( newPrefs.useUnlimitedAmmo );
 	getButton( MSG_LEFT_CLICK )->press( newPrefs.useLeftRightMouseProfile );
