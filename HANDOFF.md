@@ -5,6 +5,17 @@
 
 中英文 README 的測試版下載區已補上切回正式版更新頻道、手動安裝及備份存檔的步驟。更新器仍只提供較新的版本，回退後的存檔相容性待驗證。
 
+## 房間的準備狀態與暫離（2026-11-27）
+
+- 「準備」改為只在三個條件都成立時顯示：完成整備、人在房間畫面、沒有暫離。`MPParameterScreen::setPresent()` 統一計算，`preparationValid()` 檢查整備是否仍有效（房規版本、預算、陣營、隊伍都沒變）。
+  - 打開 System 選單（含從選單進入的選項、百科全書）、Player Prefs、Add AI 時，顯示未準備。回到房間（`begin()`）時，整備仍有效就自動恢復準備。
+  - 以前從 Player Prefs 或選單回來，`begin()` 會清掉整備，玩家得重新整備。現在這三種返回都保留整備。
+- 暫離：房間上方、Player Prefs 左邊新增 **AWAY** 按鈕（沿用 Player Prefs 的按鈕圖）。按下後 `MC2Player::away = true`，同步給所有人；其他人在準備欄看到 AWAY；`allPlayersReady()` 遇到暫離的玩家回傳 false，所以房主不能開始遊戲。按鈕變成 **I'M BACK**，再按一次取消暫離。
+- `MC2Player` 新增 `away`（放在 `ready` 後面的對齊空位，結構大小不變），房主會接收客端送來的 `away`。協定 stamp 升為 `MC2NET-4`。新字串 60099–60100。
+- 修正 `run_net_test.py`：拿掉 Zone.com 列之後，Local network 移到 y=150，測試原本還點 243（變成點到 TCP/IP），所有聯機測試都會失敗。
+- 新增聯機測試情境 `--scenario away`（也加進 CI）：客端整備完 → 暫離（房主此時按開始，必須無效）→ 我回來了 → 打開 System 選單 → 關閉。房主看到的狀態依序是 準備、暫離、準備、未準備、準備，且遊戲只在最後才開始。
+- 測試結果：`away`、`battle`、`version` 三個情境通過；23 項單元測試通過。`logistics` 情境失敗（客端 8200 幀結束時還沒進入任務載入）。改動前的版本跑這個情境也一樣失敗，是測試的時間設定問題，和這次修改無關。這個情境不在 CI 裡，尚未修。
+
 ## 右上角 System 選單（2026-11-27）
 
 - 所有整備與聯機畫面右上角原本的 Main Menu 按鈕，改名為 **SYSTEM**（系統），提示文字改為「選項、百科全書，或回到主選單」。按下後，畫面調暗（不再全黑），中間跳出小選單：Options、Encyclopedia、Back to main menu、Close。程式在 `code/logisticsmenu.{h,cpp}`，由 `MissionBegin` 開關。

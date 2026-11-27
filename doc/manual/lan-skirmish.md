@@ -17,6 +17,8 @@
    - If no room shows up (different subnet, broadcasts blocked), choose **Internet (Direct TCP/IP)** instead, enter the host's IP → **Join Game**.
 4. The host picks the map and rules. Everyone picks a team and faction, then selects **Prepare**. Read the briefing, assemble a lance and assign pilots, then select **Finish prep** to return to the room.
 5. The host can select **Start game** once everyone is ready, within budget and meets the room rules. Rule changes require players to prepare again.
+   - Ready only shows while you have finished preparing and are on the room screen. Opening the System menu (top right, or Options and the Encyclopedia from it) or Player Prefs makes you not ready until you are back in the room.
+   - To step away, select **Away** at the top: the others see AWAY in your Ready box and the host cannot start. The button turns into **I'm back**; select it again to return.
 
 **System** (top right) opens a menu with Options, the Encyclopedia and Back to main menu; going back to the main menu asks first, then leaves the room and disconnects.
 
