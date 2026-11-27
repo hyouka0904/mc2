@@ -185,6 +185,7 @@ private:
 
     aAnimButton prepareButton;
     aFont lobbyActionFont;
+    aFont hoverLabelFont;
     bool hasPreparation = false;
     uint32_t preparationRevision = 0;
     int preparationBudget = 0;
@@ -195,6 +196,7 @@ public:
     void cancelPreparation();
 private:
     void renderLobbyAction(aButton& button, int labelId, int xOffset, int yOffset);
+    void renderHoverLabel();
     bool prepareLoadout();
     bool canStartGame();
 

@@ -4446,6 +4446,9 @@
 #define IDS_LANGUAGE_RESTART_NOW         60086
 #define IDS_LANGUAGE_RESTART_LATER       60087
 #define IDS_MP_CHAT_RECIPIENT_MISSING    60088
+#define IDS_MP_LOCK_GAME_LABEL           60089
+#define IDS_MP_UNLOCK_GAME_LABEL         60090
+#define IDS_MP_REMOVE_PLAYER_LABEL       60091
 */
 
 #include "strings.res.h"

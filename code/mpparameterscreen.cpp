@@ -186,6 +186,7 @@ void MPParameterScreen::init(FitIniFile* file)
         break;
     }
     lobbyActionFont.init(IDS_MP_PARAM_QUICKSTART_FONT);
+    hoverLabelFont.init(IDS_CHAT_FONT);
 
 	int curY = 0;
 	playerParameters[0].init( file, "PlayerParams" );
@@ -357,6 +358,7 @@ void MPParameterScreen::render(int xOffset, int yOffset )
 			pFocus->render();
 
 		ChatWindow::instance()->render(xOffset, yOffset);
+		renderHoverLabel();
 	}
 
 	if ( bHostLeftDlg )
@@ -370,6 +372,41 @@ void MPParameterScreen::render(int xOffset, int yOffset )
 void MPParameterScreen::render()
 {
 	render(0, 0);
+}
+
+// The lock and remove buttons are icons only: name them while hovered.
+void MPParameterScreen::renderHoverLabel()
+{
+    const long x = userInput->getMouseX();
+    const long y = userInput->getMouseY();
+    aButton* button = nullptr;
+    int label = 0;
+    if (auto* lock = getButton(MP_LOCKGAME); lock && lock->isShowing() && lock->pointInside(x, y))
+    {
+        button = lock;
+        label = lock->isPressed() ? IDS_MP_UNLOCK_GAME_LABEL : IDS_MP_LOCK_GAME_LABEL;
+    }
+    else if (auto* boot = getButton(MP_BOOTPLAYER); boot && boot->isShowing() && boot->pointInside(x, y))
+    {
+        button = boot;
+        label = IDS_MP_REMOVE_PLAYER_LABEL;
+    }
+    if (!button)
+        return;
+
+    char text[128];
+    cLoadString(label, text, sizeof(text) - 1);
+    const long padding = 4;
+    const long width = hoverLabelFont.width(text) + 2 * padding;
+    const long height = hoverLabelFont.height() + 2 * padding;
+    const long left = button->globalLeft() + (button->width() - width) / 2;
+    const long top = button->globalTop() - height - 2;
+    const GUI_RECT bounds = {left, top, left + width, top + height};
+    drawRect(bounds, 0xe0000000);
+    drawEmptyRect(bounds, 0xff1e94ff, 0xff1e94ff); // BGR orange
+    // A region exactly as wide as the measured text wraps the last word.
+    hoverLabelFont.render(text, left + padding, top + padding, width + 16, height - 2 * padding,
+                          0xffffffff, false, 0);
 }
 
 void MPParameterScreen::renderLobbyAction(aButton& button, int labelId, int xOffset, int yOffset)
