@@ -1,7 +1,7 @@
 # 交接資訊（HANDOFF）
 
 > 每完成一個重要階段就更新這份文件，不等到任務結束。
-> 最後更新：2026-11-27（遊戲內語言切換）
+> 最後更新：2026-11-27（遊戲內語言切換測試版發佈）
 
 ## 任務目標
 
@@ -33,10 +33,11 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
 
 - 目標：在設定的遊戲玩法切換英文和繁中，套用後重新啟動生效。
 - 實作：語言獨立儲存在使用者資料目錄的 `language.cfg`，載入時同時選擇譯文和字型。尚未儲存選擇時支援 `MC2_LANGUAGE`。只有具備繁中資源的版本會顯示此選項。
-- README：兩份 README 都直達目前已發布的 `v0.1.1-test.33`。之後每次發佈 `dev` 測試版時一起更新版本號與連結。
+- README：兩份 README 都直達目前已發布的 `v0.1.1-test.36`。之後每次發佈 `dev` 測試版時一起更新版本號與連結。
 - 本機驗證：Release 建置後 `ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 通過 23 項。Xvfb 的 OpenGL 及 SDL3 GPU 遊戲流程驗證取消不儲存、英文切到繁中、重啟載入繁中、再切回英文及重啟，並比對主選單截圖。資源函式庫逐條比對 2,108 條譯文，驗證明確選擇英文及既有環境變數。
 - 整合驗證：功能提交 `2f138ae` 的 CI 45949062193 全數通過，包含 Windows、Linux、macOS 和畫面、流程、區網測試。Release 45949062200 的三平台安裝包驗證及 Windows、Linux 區塊更新檢查通過。
-- 下一步：下次發佈 `dev` 測試版時更新兩份 README 的版本與下載連結。現有 `v0.1.1-test.33` 仍透過環境變數啟用繁中。Windows 實機與 M1、U1–U3 驗收仍待回報。
+- 已發佈：`dev` 的 `9a29982` 已上架為 [v0.1.1-test.36](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.36)。CI 45951131773 和 Release 45951945884 全數通過。確認五個安裝包已上傳。以 `gh release download` 下載並核對繁中區塊、Windows 與 Linux 更新清單的 SHA-256，確認有 2,108 條譯文與 12 套字型。
+- 下一步：Windows 實機驗收語言切換，M1、U1–U3 驗收仍待使用者回報。
 
 ### 測試版整合
 

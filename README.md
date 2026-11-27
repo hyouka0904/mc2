@@ -4,7 +4,7 @@
 
 ## [⬇ Download the latest version](https://github.com/hyouka0904/mc2/releases/latest)
 
-**[⬇ Download the test version (v0.1.1-test.33)](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.33)**
+**[⬇ Download the test version (v0.1.1-test.36)](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.36)**
 
 See [all releases](https://github.com/hyouka0904/mc2/releases) for earlier builds. The Assets list shows which platforms are available. The current stable version (v0.1.0) predates the in-game updater.
 

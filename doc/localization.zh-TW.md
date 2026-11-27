@@ -23,7 +23,7 @@ python3 scripts/build_zh_tw_patch.py game /usr/share/fonts/opentype/noto/NotoSan
 
 ## 切換語言
 
-在有語言選項的版本中，開啟主選單的「Options → Gameplay」，勾選「Traditional Chinese」後按「Accept」，再關閉並重新啟動遊戲。切回英文時，在「選項 → 遊戲玩法」取消勾選「繁體中文」，套用並重新啟動。設定會存在存檔目錄的 `language.cfg`。
+自 `v0.1.1-test.36` 起，開啟主選單的「Options → Gameplay」，勾選「Traditional Chinese」後按「Accept」，再關閉並重新啟動遊戲。切回英文時，在「選項 → 遊戲玩法」取消勾選「繁體中文」，套用並重新啟動。設定會存在存檔目錄的 `language.cfg`。
 
 尚無語言選項的 v0.1.1-test.33 仍可用環境變數啟動。新版在尚未儲存語言選擇時也支援這種方式。
 
