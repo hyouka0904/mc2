@@ -907,7 +907,9 @@ void MPParameterScreen::setMission( const char* fileName, bool resetData )
 		
 		gosASSERT( strlen( missionName ) < MAXLEN_MAP_NAME );
 
-		strcpy( MPlayer->missionSettings.map, fileName );
+		// begin() passes missionSettings.map itself: copying onto itself is undefined
+		if ( fileName != MPlayer->missionSettings.map )
+			snprintf( MPlayer->missionSettings.map, sizeof(MPlayer->missionSettings.map), "%s", fileName );
 		strcpy( MPlayer->missionSettings.name, missionName );
 
 			
