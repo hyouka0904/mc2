@@ -7,6 +7,7 @@ MPParameterScreen.cpp			: Implementation of the MPParameterScreen component.
 //===========================================================================//
 \*************************************************************************************************/
 
+#include <string>
 #include"mpparameterscreen.h"
 #include"prefs.h"
 #include"inifile.h"
@@ -62,6 +63,8 @@ extern bool quitGame;
 #define MP_RP_FORMMECHS		220
 #define MP_PREPARE_LOADOUT 221
 #define MP_AWAY 222
+
+static void forgetCheckedMap();
 #define MP_PLAYER_PREFS_BUTTON 120
 
 #define MP_INCREMENT_PLAYER_CBILLS 250
@@ -254,6 +257,7 @@ void MPParameterScreen::begin()
 	fadeOutTime = 0.f;
 	fadeTime = 0.f;
 	MPlayer->setMode(MULTIPLAYER_MODE_PARAMETERS);
+	forgetCheckedMap();
 	playerCount = 0;
 	bLoading = 0;
 	bMapInfoDlg = 0;
@@ -466,12 +470,30 @@ void MPParameterScreen::renderLobbyAction(aButton& button, int labelId, int xOff
     lobbyActionFont.render(label, left, top, bounds.right - left, bounds.bottom - top, foreground, false, 0);
 }
 
+// The room asks every frame; opening the map's .pak for its GUID took about
+// 1.8 ms. The files do not change while the room is open, so remember the
+// answer per map (begin() forgets it, in case a map was added meanwhile).
+static std::string checkedMap;
+static bool checkedMapExists = false;
+static GUID checkedMapGuid;
+
+static void forgetCheckedMap()
+{
+    checkedMap.clear();
+}
+
 static bool canReadyForMap()
 {
-    FullPathFileName path;
-    path.init(missionPath, MPlayer->missionSettings.map, ".fit");
-    return fileExists(path) &&
-        MPParameterScreen::getGUIDFromFile(MPlayer->missionSettings.map) == MPlayer->missionSettings.mapGuid;
+    const char* map = MPlayer->missionSettings.map;
+    if (checkedMap.empty() || checkedMap != map)
+    {
+        FullPathFileName path;
+        path.init(missionPath, map, ".fit");
+        checkedMapExists = fileExists(path);
+        checkedMapGuid = checkedMapExists ? MPParameterScreen::getGUIDFromFile(map) : GUID();
+        checkedMap = map;
+    }
+    return checkedMapExists && checkedMapGuid == MPlayer->missionSettings.mapGuid;
 }
 
 bool MPParameterScreen::prepareLoadout()
@@ -552,6 +574,8 @@ void MPParameterScreen::setPresent(bool present)
 void MPParameterScreen::toggleAway()
 {
     auto* player = MPlayer->getPlayerInfo(MPlayer->commanderID);
+    if (!player)
+        return;
     player->away = !player->away;
     setPresent(true);
     MPlayer->sendPlayerUpdate(0, 5, MPlayer->commanderID);
