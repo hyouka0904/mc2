@@ -98,7 +98,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake git libglew-dev libgl-dev zlib1g-dev \
-            libfreetype-dev fontconfig fonts-dejavu-core \
+            libfreetype-dev fontconfig fonts-dejavu-core fonts-noto-cjk \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
             libxss-dev libxtst-dev libxfixes-dev libxkbcommon-dev \
             libpulse-dev libasound2-dev glslang-tools spirv-tools spirv-cross python3 \
@@ -118,6 +118,12 @@ jobs:
         # deliver the real ones
         run: scripts/prepare_game_dir.sh build mc2srcdata game
 
+      - name: Build Traditional Chinese assets
+        run: |
+          python3 scripts/build_zh_tw_patch.py game \
+            /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3
+          cp /usr/share/doc/fonts-noto-cjk/copyright game/localization/zh-TW/Noto-CJK-license.txt
+
       - name: Package
         run: |
           curl -fsSL -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
@@ -134,9 +140,14 @@ jobs:
           mkdir parttest && tar -xzf dist/*.tar.gz -C parttest
           root=$(ls -d "$PWD"/parttest/*)
           echo damaged > "$root/README.txt"
-          python3 scripts/part_plan.py dist/parts "$root" linux-x86_64 plan.txt README.txt usr/bin/mc2
+          locale="usr/share/mechcommander2/localization/zh-TW"
+          test -s "$root/$locale/strings.tsv"
+          rm "$root/$locale/strings.tsv"
+          python3 scripts/part_plan.py dist/parts "$root" linux-x86_64 plan.txt \
+            README.txt usr/bin/mc2 "$locale/strings.tsv"
           "$root/usr/bin/mc2" -apply-update plan.txt
           cmp "$root/README.txt" packaging/README.txt
+          cmp "$root/$locale/strings.tsv" "game/localization/zh-TW/strings.tsv"
           "$root/usr/bin/mc2" -version | grep -qF "${VERSION#v}"
           test -x "$root/usr/bin/mc2"
           rm -rf parttest plan.txt*
@@ -245,6 +256,7 @@ jobs:
           path: |
             game/data/
             game/assets/
+            game/localization/
             game/*.fst
             game/*.cfg
             game/testtxm.tga
@@ -300,6 +312,8 @@ jobs:
           set -e
           check() { # <game folder>
             test -f "$1/mission.fst"
+            test -s "$1/localization/zh-TW/strings.tsv"
+            compgen -G "$1/localization/zh-TW/fonts/*.glyph" >/dev/null
             test -f "$1/shaders/compiled/shaders.txt"
             test -f "$1/licenses/EULA.txt"
             test -f "$1/vcruntime140.dll"
@@ -328,10 +342,13 @@ jobs:
           root='/c/Program Files/MC2 Part Test'
           test -f "$root/unins000.exe"
           echo damaged > "$root/README.txt"
+          locale="localization/zh-TW"
+          rm "$root/$locale/strings.tsv"
           python scripts/part_plan.py dist/parts 'C:\Program Files\MC2 Part Test' windows-x64 plan.txt \
-            README.txt mc2.exe --version 9.9.9-ci
+            README.txt mc2.exe "$locale/strings.tsv" --version 9.9.9-ci
           "$root/mc2.exe" -apply-update plan.txt || { cat plan.txt.err; exit 1; }
           unzip -p dist/parts/*-windows-x64-program.zip README.txt | cmp - "$root/README.txt"
+          cmp "$root/$locale/strings.tsv" "shared/game/$locale/strings.tsv"
           cat plan.txt.old
           grep -q "mc2.exe.mc2old" plan.txt.old
           reg query 'HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6F0E8C52-3B7A-4E2B-9C1D-5A7F2E4B8D31}_is1' //v DisplayVersion | tee reg.txt
@@ -434,6 +451,7 @@ jobs:
           app="$mnt/MechCommander 2.app"
           codesign --verify --deep --strict "$app"
           test -d "$app/Contents/Resources/data"
+          test -s "$app/Contents/Resources/localization/zh-TW/strings.tsv"
           test -f "$app/Contents/Resources/shaders/compiled/shaders.txt"
           test -f "$app/Contents/Resources/AppIcon.icns"
           test -f "$app/Contents/Resources/libmc2res.dylib"

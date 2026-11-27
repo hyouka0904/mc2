@@ -4,7 +4,9 @@
 
 ## 準備
 
-1. 從繁中工作分支建置遊戲並準備獨立的遊戲目錄，步驟見[開發說明](DEVELOPMENT.zh-TW.md)。使用既有 Windows 測試版當作資料來源時，請在測試版的獨立副本中換上這個分支編譯的 `mc2.exe` 與 `mc2res_64.dll`。
+從 `dev` 建置的測試版已附譯文與字型，可直接依下方指令啟用。從原始碼本機建置時，依下列步驟產生補丁。
+
+1. 建置遊戲並準備獨立的遊戲目錄，步驟見[開發說明](DEVELOPMENT.zh-TW.md)。使用既有 Windows 測試版當作資料來源時，請在測試版的獨立副本中換上本機編譯的 `mc2.exe` 與 `mc2res_64.dll`。
 2. 安裝 Python 的 Pillow，並準備 Noto Sans TC 的 OTF 或 TTF 字型。Noto Sans TC 採 SIL Open Font License 1.1。預覽由使用者提供字型檔。
 3. 在原始碼目錄執行下列指令。工具讀取遊戲目錄內的原版點陣字型，在 `localization/zh-TW/` 產生翻譯及字型。
 

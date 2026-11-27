@@ -18,6 +18,15 @@ Linux     AppImage: chmod +x MechCommander2-*.AppImage and run it
           (needs FUSE 2: package libfuse2 / libfuse2t64).
           Tarball: run ./mc2 in the extracted folder.
 
+Traditional Chinese preview
+---------------------------
+Set MC2_LANGUAGE=zh-TW when starting the game. The preview packages already
+include the translations and fonts. For PowerShell in the game folder:
+  $env:MC2_LANGUAGE = 'zh-TW'
+  .\mc2.exe
+On Linux, use MC2_LANGUAGE=zh-TW ./mc2 (or the AppImage filename).
+On macOS, run the app's Contents/MacOS/mc2 from Terminal with the same prefix.
+
 Saved games and settings
 ------------------------
 Windows   %APPDATA%\MechCommander2\
@@ -66,6 +75,14 @@ macOS     把「MechCommander 2」拖到「應用程式」後開啟。程式未�
           會被擋下：到「系統設定」>「隱私權與安全性」按「強制打開」。
 Linux     AppImage：chmod +x MechCommander2-*.AppImage 後執行（需要 FUSE 2，
           套件 libfuse2 或 libfuse2t64）。壓縮檔：解壓後執行資料夾中的 ./mc2。
+
+繁體中文預覽
+------------
+測試版已內附譯文和字型。Windows 請在遊戲資料夾開啟 PowerShell 並執行：
+  $env:MC2_LANGUAGE = 'zh-TW'
+  .\mc2.exe
+Linux 請執行 MC2_LANGUAGE=zh-TW ./mc2（AppImage 請改用其檔名）。
+macOS 請在終端機以同樣的環境變數執行 app 裡的 Contents/MacOS/mc2。
 
 存檔與設定
 ----------

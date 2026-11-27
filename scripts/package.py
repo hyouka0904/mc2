@@ -80,6 +80,9 @@ def copy_payload(game_dir, shaders_out, dest):
         if not os.path.isdir(src):
             sys.exit("%s is missing: build the game data first" % src)
         shutil.copytree(src, os.path.join(dest, d), dirs_exist_ok=True)
+    localization = os.path.join(game_dir, "localization")
+    if os.path.isdir(localization):
+        shutil.copytree(localization, os.path.join(dest, "localization"), dirs_exist_ok=True)
     for pattern in DATA_GLOBS:
         for f in glob.glob(os.path.join(game_dir, pattern)):
             if os.path.basename(f).lower() in NOT_DATA:
@@ -153,6 +156,8 @@ def data_part_of(rel):
         return "sound"
     if rel.startswith("data/movies/"):
         return "movies"
+    if top == "localization":
+        return "localization"
     if top in DATA_DIRS:
         return "misc"
     if "/" not in rel and (rel.endswith(".cfg") or rel == "testtxm.tga"):
