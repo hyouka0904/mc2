@@ -1309,10 +1309,17 @@ void GVAppearance::resetPaintScheme (DWORD red, DWORD green, DWORD blue)
 				/* In this case, the texture returned should already have the paint scheme
 				applied. */
 	
-				//Still need to store psRed/psGreen/psBlue!!!!
+				// Store them the way setPaintScheme() does: getPaintScheme() converts
+				// back, and a LOD change repaints with what it returns.
+#if defined(BGR)
+				psRed = bgrTorgb(red);
+				psGreen = bgrTorgb(green);
+				psBlue = bgrTorgb(blue);
+#else /*BGR*/
 				psRed = red;
 				psGreen = green;
 				psBlue = blue;
+#endif /*BGR*/
 				return;
 			}
 		}
@@ -1331,10 +1338,17 @@ void GVAppearance::resetPaintScheme (DWORD red, DWORD green, DWORD blue)
 				/* In this case, the texture returned should already have the paint scheme
 				applied. */
 	
-				//Still need to store psRed/psGreen/psBlue!!!!
+				// Store them the way setPaintScheme() does: getPaintScheme() converts
+				// back, and a LOD change repaints with what it returns.
+#if defined(BGR)
+				psRed = bgrTorgb(red);
+				psGreen = bgrTorgb(green);
+				psBlue = bgrTorgb(blue);
+#else /*BGR*/
 				psRed = red;
 				psGreen = green;
 				psBlue = blue;
+#endif /*BGR*/
 				return;
 			}
 		}
