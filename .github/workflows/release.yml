@@ -262,6 +262,7 @@ jobs:
             game/testtxm.tga
             build/shaders_out/
             data-parts.json
+            dist/parts/*-data-localization.zip
 
   windows:
     needs: linux
@@ -344,11 +345,13 @@ jobs:
           echo damaged > "$root/README.txt"
           locale="localization/zh-TW"
           rm "$root/$locale/strings.tsv"
+          cp shared/dist/parts/*-data-localization.zip dist/parts/
           python scripts/part_plan.py dist/parts 'C:\Program Files\MC2 Part Test' windows-x64 plan.txt \
             README.txt mc2.exe "$locale/strings.tsv" --version 9.9.9-ci
           "$root/mc2.exe" -apply-update plan.txt || { cat plan.txt.err; exit 1; }
           unzip -p dist/parts/*-windows-x64-program.zip README.txt | cmp - "$root/README.txt"
           cmp "$root/$locale/strings.tsv" "shared/game/$locale/strings.tsv"
+          rm dist/parts/*-data-localization.zip
           cat plan.txt.old
           grep -q "mc2.exe.mc2old" plan.txt.old
           reg query 'HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6F0E8C52-3B7A-4E2B-9C1D-5A7F2E4B8D31}_is1' //v DisplayVersion | tee reg.txt

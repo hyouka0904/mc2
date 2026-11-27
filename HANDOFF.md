@@ -32,7 +32,7 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
 ### 測試版整合
 
 - 目標：讓 `dev` 測試版隨附繁中字型和譯文。Release 在 Linux 產生資源並提供給其他平台，Windows 和 Linux 的區塊更新將繁中資源放在獨立區塊。
-- 驗證：文字補譯送合併前，CI 45922319707 的 Windows、Linux、macOS、兩種渲染後端的畫面與流程、區網聯機均通過。Release 流程新增安裝內容及區塊更新驗證。
+- 驗證：文字補譯送合併前，CI 45922319707 的 Windows、Linux、macOS、兩種渲染後端的畫面與流程、區網聯機均通過。Release 流程新增安裝內容及區塊更新驗證。首次發佈（45925115516）Linux、macOS 及 Windows 安裝測試通過，Windows 更新驗證缺少由 Linux 產出的繁中區塊 ZIP。共用產物現在會傳遞該 ZIP，Windows 測試結束後移除副本，發佈時仍以 Linux 產出的區塊為準。
 - 下一步：從 `dev` 發布與下載測試版。預設仍使用英文，測試繁中介面時設定 `MC2_LANGUAGE=zh-TW`。Windows 實機和 M1、U1–U3 驗收仍待使用者回報。
 
 ### 文字補譯：百科、戰場與多人地圖
