@@ -80,6 +80,8 @@ int ChatWindow::initInstance()
 
     auto* helpButton = getButton(MP_CHAT_HELPTOGGLE);
     auto* expandButton = getButton(MP_CHAT_EXPAND);
+    // The panel opens upwards: show the up arrow while it is closed.
+    expandButton->swapNormalAndPressedArt();
     const long chatRight = expandButton->globalRight();
     const long toolbarTop = edits[0].globalBottom() - AudienceHeight;
     constexpr long toolbarGap = 1;

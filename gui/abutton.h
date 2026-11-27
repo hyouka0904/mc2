@@ -30,6 +30,8 @@ public:
 
 	virtual void move( float offsetX, float offsetY );
 	void resizeIcon(long w, long h);
+	// Every state that shows the normal art shows the pressed art, and back.
+	void swapNormalAndPressedArt();
 
 	void	setHoldTime( float newTime ) { holdTime = newTime; }
 

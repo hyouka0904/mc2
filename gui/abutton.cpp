@@ -260,6 +260,20 @@ int aButton::getID()
 	return data.ID;
 }
 
+void aButton::swapNormalAndPressedArt()
+{
+    const long normal[2] = {data.stateCoords[ENABLED][0], data.stateCoords[ENABLED][1]};
+    const long pressed[2] = {data.stateCoords[PRESSED][0], data.stateCoords[PRESSED][1]};
+    for (auto& coords : data.stateCoords)
+    {
+        if (coords[0] == normal[0] && coords[1] == normal[1])
+            coords[0] = pressed[0], coords[1] = pressed[1];
+        else if (coords[0] == pressed[0] && coords[1] == pressed[1])
+            coords[0] = normal[0], coords[1] = normal[1];
+    }
+    makeUVs(location, state, data);
+}
+
 void aButton::setID( int newID )
 {
 	data.ID = newID;
