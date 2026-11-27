@@ -53,6 +53,7 @@ std::string gos_NetLocalAddress();
 struct gosNetInterface {
     std::string address;   // dotted IPv4
     std::string broadcast; // subnet broadcast (e.g. 192.168.1.255)
+    std::string name;      // adapter name (eth0, Wi-Fi, tailscale0), UTF-8
 };
 
 // Every active, non-loopback IPv4 interface. The one carrying the default

@@ -14,6 +14,7 @@ MPConnectionType.cpp			: Implementation of the MPConnectionType component.
 #include"userinput.h"
 
 #include "../resource.h"
+#include "lanaddresses.h"
 #include"multplyr.h"
 #include"mechbayscreen.h"
 
@@ -205,6 +206,8 @@ void MPConnectionType::render(int xOffset, int yOffset )
 		if (pPanel)
 		{
 			pPanel->render(xOffset, yOffset);
+			if ( pPanel == &lanPanel )
+				lanPanel.renderAddressList();
 		}
 	}
 	else // if scrolling, make sure we don't fade
@@ -469,12 +472,17 @@ void aLanPanel::update()
 		char fmt[256];
 		cLoadString( IDS_MP_LOCAL_IP, fmt, 255 );
 		char str[512];
-		sprintf( str, fmt, gos_NetLocalAddressList().c_str() );
+		snprintf( str, sizeof(str), fmt, LanAddressSummary().c_str() );
 		ipText.setText( str );
 		ipRefresh = 180;
 	}
 
 
+}
+
+void aLanPanel::renderAddressList()
+{
+	RenderLanAddressList( ipText );
 }
 
 void aLanPanel::init(FitIniFile* pFile)

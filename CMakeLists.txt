@@ -171,6 +171,7 @@ set(SOURCES
     "code/mechicon.cpp"
     "code/missiongui.cpp"
     "code/mpconnectiontype.cpp"
+    "code/lanaddresses.cpp"
     "code/mpgamebrowser.cpp"
     "code/mphostgame.cpp"
     "code/mploadmap.cpp"

@@ -33,7 +33,7 @@ The chat recipient menu offers everyone, your team or one player. Select the rec
 
 - The **Local Network** panel (below the help box) and the LAN room list (right of the Host Game button) show `YOUR IP ADDRESS`.
 - Once you host, the bottom left of the room screen shows `HOST IP ADDRESS`; this is what others type for a direct IP join.
-- With several network adapters (VPN, VirtualBox, Hyper-V, Tailscale) several addresses are listed, the one with the default route first; on a typical home network it is the one starting with `192.168.` or `10.`.
+- With several network adapters (VPN, VirtualBox, Hyper-V, Tailscale) the line shows the address of the default route followed by the number of others, e.g. `192.168.1.23 (+2)`. Hover the line to list every address with its adapter name; on a typical home network the one to use starts with `192.168.` or `10.`.
 - On Windows you can also run `ipconfig` in a command prompt and look for "IPv4 Address".
 
 ## Firewall

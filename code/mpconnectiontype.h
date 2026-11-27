@@ -60,6 +60,7 @@ public:
 	void init(FitIniFile* pFile);
 	virtual int			handleMessage( unsigned long, unsigned long );
 	virtual void update();
+	void renderAddressList();
 private:
 	LogisticsScreen *pParentScreen;
 	aAnimButton button0;

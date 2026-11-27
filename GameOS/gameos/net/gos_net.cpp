@@ -103,13 +103,14 @@ std::string Dotted(uint32_t a)
     return buf;
 }
 
-void AddInterface(std::vector<gosNetInterface>& out, uint32_t addr, uint32_t mask)
+void AddInterface(std::vector<gosNetInterface>& out, uint32_t addr, uint32_t mask, std::string name)
 {
     if (addr == 0 || (addr >> 24) == 127)
         return;
     gosNetInterface itf;
     itf.address = Dotted(addr);
     itf.broadcast = Dotted(addr | ~mask);
+    itf.name = std::move(name);
     for (const gosNetInterface& e : out)
         if (e.address == itf.address)
             return;
@@ -142,7 +143,15 @@ static std::vector<gosNetInterface> QueryInterfaces()
                 const sockaddr_in* sin = reinterpret_cast<const sockaddr_in*>(u->Address.lpSockaddr);
                 unsigned prefix = u->OnLinkPrefixLength;
                 uint32_t mask = prefix == 0 ? 0 : prefix >= 32 ? 0xffffffffu : ~(0xffffffffu >> prefix);
-                AddInterface(out, ntohl(sin->sin_addr.s_addr), mask);
+                std::string name;
+                if (a->FriendlyName) {
+                    const int n = WideCharToMultiByte(CP_UTF8, 0, a->FriendlyName, -1, nullptr, 0, nullptr, nullptr);
+                    if (n > 1) {
+                        name.resize(n - 1);
+                        WideCharToMultiByte(CP_UTF8, 0, a->FriendlyName, -1, &name[0], n, nullptr, nullptr);
+                    }
+                }
+                AddInterface(out, ntohl(sin->sin_addr.s_addr), mask, name);
             }
         }
     }
@@ -158,7 +167,7 @@ static std::vector<gosNetInterface> QueryInterfaces()
             uint32_t mask = i->ifa_netmask
                 ? ntohl(reinterpret_cast<sockaddr_in*>(i->ifa_netmask)->sin_addr.s_addr)
                 : 0xffffff00u;
-            AddInterface(out, addr, mask);
+            AddInterface(out, addr, mask, i->ifa_name ? i->ifa_name : "");
         }
         freeifaddrs(list);
     }

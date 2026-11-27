@@ -12,6 +12,7 @@ MPParameterScreen.cpp			: Implementation of the MPParameterScreen component.
 #include"inifile.h"
 #include"userinput.h"
 #include "../resource.h"
+#include "lanaddresses.h"
 #include"assert.h"
 #include"multplyr.h"
 #include "net/gos_net.h"
@@ -359,6 +360,8 @@ void MPParameterScreen::render(int xOffset, int yOffset )
 
 		ChatWindow::instance()->render(xOffset, yOffset);
 		renderHoverLabel();
+		if ( MPlayer->isHost() )
+			RenderLanAddressList( textObjects[11] );
 	}
 
 	if ( bHostLeftDlg )
@@ -986,7 +989,7 @@ void MPParameterScreen::update()
 	// The host lists every LAN address it has (one may be a VPN or a
 	// virtual adapter); clients show the address they joined.
 	if ( MPlayer->isHost() )
-		snprintf( IPAddressStr, sizeof(IPAddressStr), str, gos_NetLocalAddressList().c_str() );
+		snprintf( IPAddressStr, sizeof(IPAddressStr), str, LanAddressSummary().c_str() );
 	else
 		snprintf( IPAddressStr, sizeof(IPAddressStr), str, MPlayer->sessionIPAddress );
 	textObjects[11].setText( IPAddressStr );

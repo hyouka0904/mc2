@@ -11,6 +11,7 @@ MPGameBrowser.cpp			: Implementation of the MPGameBrowser component.
 #include"inifile.h"
 #include"userinput.h"
 #include "../resource.h"
+#include "lanaddresses.h"
 #include"multplyr.h"
 #include"mechbayscreen.h"
 #include "net/gos_net.h"
@@ -192,8 +193,8 @@ void MPGameBrowser::render(int xOffset, int yOffset )
 		LogisticsOKDialog::instance()->render();
 		return;
 	}
-
-	
+	if ( !bHosting && !xOffset && !yOffset )
+		RenderLanAddressList( ipText );
 }
 
 void MPGameBrowser::render()
@@ -405,7 +406,7 @@ void MPGameBrowser::update()
 		char fmt[256];
 		cLoadString( IDS_MP_LOCAL_IP, fmt, 255 );
 		char str[512];
-		sprintf( str, fmt, gos_NetLocalAddressList().c_str() );
+		snprintf( str, sizeof(str), fmt, LanAddressSummary().c_str() );
 		ipText.setText( str );
 		ipRefresh = 180;
 	}

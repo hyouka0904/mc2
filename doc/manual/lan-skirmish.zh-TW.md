@@ -33,7 +33,7 @@
 
 - **Local Network** 面板（說明框下方）和 LAN 房間列表（Host Game 按鈕右邊）會顯示 `YOUR IP ADDRESS`。
 - 開房後，房間畫面左下會顯示 `HOST IP ADDRESS`，別人用直接輸入 IP 時填的就是這個。
-- 有多張網卡（VPN、VirtualBox、Hyper-V、Tailscale）時會列出多個位址，走預設路由的那張排第一；一般家用區網是 `192.168.x.x` 或 `10.x.x.x` 開頭的那個。
+- 有多張網卡（VPN、VirtualBox、Hyper-V、Tailscale）時，這一行只顯示走預設路由的位址，後面標出還有幾個，例如 `192.168.1.23 (+2)`。滑鼠移到這一行會列出所有位址和網卡名稱。一般家用區網要用的是 `192.168.x.x` 或 `10.x.x.x` 開頭的那個。
 - 也可以在 Windows 的命令提示字元執行 `ipconfig`，看「IPv4 位址」。
 
 ## 防火牆
