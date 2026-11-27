@@ -268,7 +268,7 @@ def main():
             host, host_dir = start("host", script, 12000, game_dir, out, args.renderer, display,
                                    {"MC2_NET_LOG": "2"}, captures="5500,8000")
         elif logistics:
-            host, host_dir = start("host", host_preparation, 9800, game_dir, out, args.renderer, display,
+            host, host_dir = start("host", host_preparation, 11500, game_dir, out, args.renderer, display,
                                    {"MC2_NET_LOG": "2"}, captures="1480,1770,2470,2770,2870,8500")
         elif version_test:
             # The host keeps its room open until the client is done (stopped below)
@@ -296,7 +296,9 @@ def main():
                       click(3850, *PREPARE) + click(4200, *BACK) +
                       click(4700, *PREPARE) + click(5000, *NEXT) +
                       click(5300, *NEXT) + click(5600, *NEXT))
-            client, client_dir = start("client", script, 8200, game_dir, out, args.renderer, display, {},
+            # The host starts at its frame 7900, about 6800 here; loading takes
+            # another ~2500 frames
+            client, client_dir = start("client", script, 10500, game_dir, out, args.renderer, display, {},
                                        captures="2180,3650,4490,5500,5900,7700")
         else:
             client, client_dir = start("client", join_room_script() + prepare_mech(2200), CLIENT_FRAMES, game_dir, out,

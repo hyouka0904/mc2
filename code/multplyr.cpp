@@ -771,7 +771,8 @@ bool MultiPlayer::hostSession (char* sessionName, char* playerName, long mxPlaye
 	inSession = true;
 	hostLeft = false;
 	hostDroppedOut = false;
-	CopyString(this->sessionName, sessionName, sizeof(this->sessionName));
+	// same limit as the room broadcast, so host and clients show the same name
+	CopyString(this->sessionName, sessionName, MAXLEN_SESSION_NAME);
 	CopyString(this->playerName, playerName, sizeof(this->playerName));
 	CopyString(sessionIPAddress, gos_NetLocalAddress().c_str(), sizeof(sessionIPAddress));
 	myPlayer = HOST_NETPLAYER;

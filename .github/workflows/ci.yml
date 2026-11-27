@@ -147,6 +147,9 @@ jobs:
       - name: LAN multiplayer, host on another version
         run: python3 scripts/run_net_test.py game --scenario version --out net_version --timeout 300
 
+      - name: LAN multiplayer, preparation ready / cancel / ready
+        run: python3 scripts/run_net_test.py game --scenario logistics --out net_logistics --timeout 900
+
       - name: LAN multiplayer, away and System menu clear Ready
         run: python3 scripts/run_net_test.py game --scenario away --out net_away --timeout 900
 
@@ -165,6 +168,7 @@ jobs:
             net/
             net_version/
             net_away/
+            net_logistics/
 
   build-macos:
     # Apple Silicon, Metal through SDL3 GPU. No GPU on the runner for the

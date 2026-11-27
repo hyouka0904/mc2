@@ -85,7 +85,8 @@ void MPHostGame::init()
 		}
 	}
 
-	edits[0].limitEntry( 24 );
+	// 24 characters: the widest name still fits the room screen title and the room list column
+	edits[0].limitEntry( MAXLEN_SESSION_NAME - 1 );
 
 	edits[0].allowIME( false );
 
