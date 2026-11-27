@@ -65,6 +65,18 @@ LogisticsMechIcon::~LogisticsMechIcon()
 
 
 
+// A name too long for the Mecha font falls back to the pilot's font.
+void LogisticsMechIcon::fitChassisName()
+{
+	const long room = outline.globalRight() - chassisName.globalX() - 2;
+	const bool small = chassisName.font.width( chassisName.text ) > static_cast<unsigned long>( room );
+	if ( small != smallChassisFont )
+	{
+		chassisName.font.init( small ? "arialnarrow6.d3f" : "agencyfb14.d3f" );
+		smallChassisFont = small;
+	}
+}
+
 int LogisticsMechIcon::init( FitIniFile& file )
 {
 	if ( !s_pTemplateIcon )
@@ -74,6 +86,17 @@ int LogisticsMechIcon::init( FitIniFile& file )
 		assignAnimation( file, s_pTemplateIcon->pilotID );
 
 		s_pTemplateIcon->chassisName.init( &file, "MechNameText" );
+		// The data's stand-in for Arial Narrow 8 is too wide for the icon:
+		// a ten letter name ran past it. Use the Mecha font for the 'mech
+		// and the 6 pixel font for the pilot, which stays the smaller one.
+		s_pTemplateIcon->chassisName.font.init( "agencyfb14.d3f" );
+		s_pTemplateIcon->pilotName.font.init( "arialnarrow6.d3f" );
+		// The Mecha font is taller: keep the pilot line below the name.
+		aText& mechText = s_pTemplateIcon->chassisName;
+		aText& pilotText = s_pTemplateIcon->pilotName;
+		const float pilotTop = mechText.globalY() + mechText.font.height() + 2;
+		if ( pilotTop > pilotText.globalY() )
+			pilotText.move( 0, pilotTop - pilotText.globalY() );
 		assignAnimation( file, s_pTemplateIcon->chassisNameID );
 
 		s_pTemplateIcon->iconConnector.init( &file, "IconConnector" );
@@ -149,6 +172,7 @@ void LogisticsMechIcon::setMech( LogisticsMech* pNewMech )
 		icon.setUVs( u, v, u2, v2 );
 
 		chassisName.setText( pMech->getChassisName() );
+		fitChassisName();
 
 		iconConnector.showGUIWindow( true );
 

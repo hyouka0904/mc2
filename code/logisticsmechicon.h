@@ -63,6 +63,9 @@ private:
 
 	aText		pilotName;
 	aText		chassisName;
+	bool		smallChassisFont = false;
+
+	void fitChassisName();
 	aObject		iconConnector;
 	aObject		icon;
 	aObject		pilotIcon;
