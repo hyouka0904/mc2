@@ -77,8 +77,31 @@ int ChatWindow::initInstance()
 
 	LogisticsScreen::init( file, "Static", "Text", "Rect", "Button", "Edit" );		
 
-	listBox.init( rects[1].left(), rects[1].top(), rects[1].width(), rects[1].height() );
-	listBox.setSpaceBetweenItems( 0 );
+    auto* helpButton = getButton(MP_CHAT_HELPTOGGLE);
+    auto* expandButton = getButton(MP_CHAT_EXPAND);
+    const long chatRight = expandButton->globalRight();
+    const long toolbarTop = edits[0].globalBottom() - AudienceHeight;
+    constexpr long toolbarGap = 1;
+    long buttonRight = chatRight;
+    for (auto* button : {expandButton, helpButton})
+    {
+        const long width = button->width() * AudienceHeight / button->height();
+        button->moveTo(buttonRight - width, toolbarTop);
+        button->resizeIcon(width, AudienceHeight);
+        buttonRight = button->globalLeft() - toolbarGap;
+    }
+
+    auto& messageArea = rects[1];
+    messageArea.resize(chatRight - messageArea.globalLeft(), messageArea.height());
+    rects[2].resize(messageArea.width() - 4, rects[2].height());
+    rects[3].moveTo(helpButton->globalLeft(), toolbarTop);
+    rects[3].resize(helpButton->width(), AudienceHeight);
+    rects[4].moveTo(expandButton->globalLeft(), toolbarTop);
+    rects[4].resize(expandButton->width(), AudienceHeight);
+    rects[5].setHelpID(0);
+    textObjects[0].resize(chatRight - textObjects[0].globalLeft(), textObjects[0].height());
+    listBox.init(messageArea.left(), messageArea.top(), messageArea.width(), messageArea.height());
+    listBox.setSpaceBetweenItems(0);
 
 	chatWidget.init();
 
@@ -97,7 +120,7 @@ int ChatWindow::initInstance()
 
     getButton(MP_CHAT_TEAMONLY)->showGUIWindow(false);
     audienceFont.init(IDS_CHAT_FONT);
-    edits[0].resize(edits[0].width() - AudienceWidth, edits[0].height());
+    edits[0].resize(audienceRect().left - edits[0].globalLeft() - 6, edits[0].height());
     edits[0].limitEntry(128);
 	edits[0].setSelectedColor( 0xffffffff );
 
@@ -106,7 +129,7 @@ int ChatWindow::initInstance()
 
 GUI_RECT ChatWindow::audienceRect(int row)
 {
-    const long right = listBox.globalRight();
+    const long right = getButton(MP_CHAT_HELPTOGGLE)->globalLeft() - 2;
     const long bottom = edits[0].globalBottom() - row * AudienceHeight;
     return {right - AudienceWidth, bottom - AudienceHeight, right, bottom};
 }
@@ -148,7 +171,8 @@ bool ChatWindow::pointInside( long xPos, long yPos )
     if (audienceOpen || (!getButton(MP_CHAT_HELPTOGGLE)->isPressed() && contains(audienceRect(), xPos, yPos)))
         return true;
 	if ( getButton( MP_CHAT_EXPAND )->isPressed() )
-		return chatWidget.inside( xPos, yPos );
+		return chatWidget.inside(xPos, yPos) || rects[3].pointInside(xPos, yPos) ||
+            rects[4].pointInside(xPos, yPos);
 
 	return LogisticsScreen::inside( xPos, yPos );
 }
@@ -200,23 +224,27 @@ void ChatWindow::render( int xOffset, int yOffset )
 	LogisticsScreen::render( xOffset, yOffset );
 
 	
-	if ( getButton( MP_CHAT_EXPAND )->isPressed() )
-	{
-		GUI_RECT rect = { edits[0].globalX(), edits[0].globalY(), listBox.globalRight(), edits[0].globalBottom() };
-		drawRect( rect, 0xff000000 );
-		chatWidget.render( xOffset, yOffset );
-		edits[0].move(xOffset, yOffset );
-		edits[0].render();
-		edits[0].move(-xOffset, -yOffset );
-	}
-	else if ( !getButton( MP_CHAT_HELPTOGGLE )->isPressed() )
-	{
-		GUI_RECT rect = { edits[0].globalX(), edits[0].globalY(), listBox.globalRight(), edits[0].globalBottom() };
-		drawRect( rect, 0xff000000 );
-		edits[0].move(xOffset, yOffset );
-		edits[0].render();
-		edits[0].move(-xOffset, -yOffset );
-	}
+    if (!getButton(MP_CHAT_HELPTOGGLE)->isPressed())
+    {
+        const auto audienceBounds = audienceRect();
+        const GUI_RECT input = {edits[0].globalLeft() + xOffset, edits[0].globalTop() + yOffset,
+                                audienceBounds.right + xOffset, edits[0].globalBottom() + yOffset};
+        drawRect(input, 0xff000000);
+        if (getButton(MP_CHAT_EXPAND)->isPressed())
+        {
+            chatWidget.render(xOffset, yOffset);
+            // The expanded panel's art covers the lower-right toolbar.
+            for (auto* button : {getButton(MP_CHAT_HELPTOGGLE), getButton(MP_CHAT_EXPAND)})
+            {
+                button->move(xOffset, yOffset);
+                button->render();
+                button->move(-xOffset, -yOffset);
+            }
+        }
+        edits[0].move(xOffset, yOffset);
+        edits[0].render();
+        edits[0].move(-xOffset, -yOffset);
+    }
 
     textObjects[0].render();
     if (getButton(MP_CHAT_HELPTOGGLE)->isPressed())
@@ -379,6 +407,8 @@ void ChatWindow::update()
 
 void ChatWindow::refillListBox( aListBox& listBox, char** chatTexts, long* playerIDs, ChatMessageItem* pItems, long& curItem, long itemCount, long maxCount )
 {
+	// Leave space for the list scrollbar and its margins.
+	const long messageWidth = listBox.width() - 22;
 	long linesToAdd = 0;
 	for ( int i = 0; i < itemCount && i < maxCount; i++ )
 	{
@@ -395,9 +425,9 @@ void ChatWindow::refillListBox( aListBox& listBox, char** chatTexts, long* playe
 		}
 		pItems[item].setPlayerColor( MPlayer->colors[ player->baseColor[0] ]); 
 		if ( (playerIDs[i] & 0x01000000) )
-			pItems[item].setPlayerName( "" );
+			pItems[item].setPlayerName( "", messageWidth );
 		else
-			pItems[item].setPlayerName( player->name );
+			pItems[item].setPlayerName( player->name, messageWidth );
 		int lineCount = pItems[item].setText( chatTexts[i] );
 		linesToAdd += lineCount;
 		pItems[item].setTextColor( (playerIDs[i] & 0x10000000)  ? 0xff41c700 : 0xffffffff );
@@ -493,7 +523,7 @@ ChatMessageItem::ChatMessageItem()
 	lineCount = 1;
 }
 
-void ChatMessageItem::setPlayerName( const char* pName )
+void ChatMessageItem::setPlayerName( const char* pName, long messageWidth )
 {
 	name.setText( pName );
 	name.moveTo( globalX()+1, globalY()+1 );
@@ -501,7 +531,7 @@ void ChatMessageItem::setPlayerName( const char* pName )
 	playerText.moveTo( globalX() + tmpWidth+3, globalY() +1 );
 
 	playerRect.resize( tmpWidth+2, playerText.font.height() - 2 );
-	playerText.resize( 437 - playerRect.width() - 2, playerText.font.height()  );
+	playerText.resize( messageWidth - playerRect.width() - 2, playerText.font.height()  );
 	lineCount = 1;
 
 

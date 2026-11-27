@@ -134,6 +134,26 @@ bool		aButton::pointInside(long xPos, long yPos) const
 }
 
 /////////////////////////////////////////////////
+void aButton::drawAdditiveArtwork(const GUI_RECT& bounds, DWORD tint) const
+{
+    gos_VERTEX vertices[4] = {location[0], location[1], location[2], location[3]};
+    vertices[0].x = vertices[1].x = bounds.left;
+    vertices[2].x = vertices[3].x = bounds.right;
+    vertices[0].y = vertices[3].y = bounds.top;
+    vertices[1].y = vertices[2].y = bounds.bottom;
+    for (auto& vertex : vertices)
+        vertex.argb = tint;
+
+    gos_SetRenderState(gos_State_Texture, mcTextureManager->get_gosTextureHandle(textureHandle));
+    gos_SetRenderState(gos_State_AlphaMode, gos_Alpha_AlphaOne);
+    gos_SetRenderState(gos_State_Filter, gos_FilterNone);
+    gos_SetRenderState(gos_State_AlphaTest, true);
+    gos_SetRenderState(gos_State_TextureAddress, gos_TextureClamp);
+    gos_SetRenderState(gos_State_TextureMapBlend, gos_BlendModulateAlpha);
+    gos_DrawQuads(vertices, 4);
+    gos_SetRenderState(gos_State_AlphaMode, gos_Alpha_AlphaInvAlpha);
+}
+
 void aButton::render()
 {
 	if ( state != HIDDEN )
@@ -161,9 +181,11 @@ void aButton::render()
 			cLoadString( data.textID, buffer, 256 );
 			DWORD width, height;
 			gos_TextSetAttributes(data.textFont, data.textColors[state], data.textSize, true, true, false, false, data.textAlign);			
-			gos_TextSetRegion( data.textRect.left, data.textRect.top, data.textRect.right, data.textRect.bottom );
+			const long textLeft = data.textRect.left + data.textOffsetX;
+			gos_TextSetRegion(textLeft, data.textRect.top, data.textRect.right + data.textOffsetX, data.textRect.bottom);
 			gos_TextStringLength( &width, &height, buffer );
-			gos_TextSetPosition( data.textRect.left, (data.textRect.top + data.textRect.bottom)/2 - height/2 + 1 );
+			const long textTop = (data.textRect.top + data.textRect.bottom) / 2 - height / 2 + 1 + data.textOffsetY;
+			gos_TextSetPosition(textLeft, textTop);
 			gos_TextDraw( buffer );
 
 			if ( data.outlineText )
@@ -749,6 +771,18 @@ void aAnimButton::update( const aAnimation& animData )
 
 
 
+}
+
+void aButton::resizeIcon(long w, long h)
+{
+    // Keep the default text and hit rectangle aligned with the artwork.
+    if (data.textRect.left == globalLeft() && data.textRect.top == globalTop() &&
+        data.textRect.right == globalRight() && data.textRect.bottom == globalBottom())
+    {
+        data.textRect.right = data.textRect.left + w;
+        data.textRect.bottom = data.textRect.top + h;
+    }
+    aObject::resize(w, h);
 }
 
 void aButton::move( float offsetX, float offsetY )

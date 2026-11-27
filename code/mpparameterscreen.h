@@ -184,6 +184,7 @@ private:
 	bool			bWaitingToStart;
 
     aAnimButton prepareButton;
+    aFont lobbyActionFont;
     bool hasPreparation = false;
     uint32_t preparationRevision = 0;
     int preparationBudget = 0;
@@ -193,6 +194,7 @@ public:
     void completePreparation();
     void cancelPreparation();
 private:
+    void renderLobbyAction(aButton& button, int labelId, int xOffset, int yOffset);
     bool prepareLoadout();
     bool canStartGame();
 

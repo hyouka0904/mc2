@@ -21,6 +21,7 @@ public:
 	void	destroy();
 	virtual void	update();
 	virtual void	render();
+	void drawAdditiveArtwork(const GUI_RECT& bounds, DWORD tint) const;
 
 	void	init( FitIniFile& file, const char* headerName, HGOSFONT3D font = 0 );
 	
@@ -28,6 +29,7 @@ public:
 	aButton( const aButton& src);
 
 	virtual void move( float offsetX, float offsetY );
+	void resizeIcon(long w, long h);
 
 	void	setHoldTime( float newTime ) { holdTime = newTime; }
 
@@ -50,6 +52,8 @@ public:
 	int getID();
 	void setID( int ID );
 	void setText( int newID ) { data.textID = newID; }
+	void setTextOutline(bool enabled) { data.outlineText = enabled; }
+	void setTextOffset(int x, int y) { data.textOffsetX = x; data.textOffsetY = y; }
 
 	void setPressFX( int newFX ){ clickSFX = newFX; }
 	void setHighlightFX( int newFX ){ highlightSFX = newFX; }
@@ -89,6 +93,8 @@ protected:
 		bool			outlineText; // draw empty square around text rect
 		bool			outline;		// draw empty square around button
 		long			textAlign;
+		int				textOffsetX;
+		int				textOffsetY;
 	};
 
 	aButtonData		data;

@@ -31,6 +31,7 @@ extern bool quitGame;
 #define MAP_INFO		121
 
 
+#define MP_LOAD_MAP 101
 #define CHECK_BUTTON 200
 #define MP_INCREMENT_DROPWEIGHT 198
 #define MP_DECREMENT_DROPWEIGHT 199
@@ -160,19 +161,31 @@ void MPParameterScreen::init(FitIniFile* file)
     prepareButton = *start;
     prepareButton.setID(MP_PREPARE_LOADOUT);
     prepareButton.setText(IDS_MP_PREPARE_LOADOUT);
+    prepareButton.setTextOutline(false);
+    // The original label made room for a right-side arrow.
+    prepareButton.setTextOffset(8, -2);
     prepareButton.setMessageOnRelease();
     addChild(&prepareButton);
 
-    // Use the original Quick Start slot for the host's start button.
+    // The original art defines the Quick Start row and its outline separately.
     if (auto* legacyQuickStart = getButton(MP_LEGACY_QUICKSTART))
-    {
-        start->move(legacyQuickStart->globalLeft() - start->globalLeft(),
-                    legacyQuickStart->globalTop() - start->globalTop() +
-                        (legacyQuickStart->height() - start->height()) / 2);
         legacyQuickStart->showGUIWindow(false);
+
+    start->move(-79, -77);
+    start->resize(260, 35);
+    for (int i = 0; i < rectCount; ++i)
+    {
+        auto& row = rects[i];
+        if (row.getHelpID() != IDS_MP_PARAMETERS_QUICKSTART_HELP)
+            continue;
+
+        start->move(row.globalLeft() - start->globalLeft(), row.globalTop() - start->globalTop());
+        start->resize(row.width(), row.height());
+        row.setHelpID(0);
+        row.showGUIWindow(false);
+        break;
     }
-    else
-        start->move(-148, -77);
+    lobbyActionFont.init(IDS_MP_PARAM_QUICKSTART_FONT);
 
 	int curY = 0;
 	playerParameters[0].init( file, "PlayerParams" );
@@ -297,14 +310,15 @@ void MPParameterScreen::render(int xOffset, int yOffset )
 		}
 		return;
 	}
-	LogisticsScreen::render(xOffset, yOffset);
     auto* start = getButton(MB_MSG_NEXT);
-    if (start->isShowing() && !start->isEnabled())
-    {
-        const GUI_RECT bounds = {start->globalLeft() + xOffset, start->globalTop() + yOffset,
-                                 start->globalRight() + xOffset, start->globalBottom() + yOffset};
-        drawRect(bounds, 0x80000000);
-    }
+    const bool showStart = start->isShowing();
+    // Keep the original input handling and draw the start action without the button art.
+    start->showGUIWindow(false);
+    LogisticsScreen::render(xOffset, yOffset);
+    start->showGUIWindow(showStart);
+
+    if (showStart)
+        renderLobbyAction(*start, IDS_MP_START_GAME, xOffset, yOffset);
     prepareButton.move(xOffset, yOffset);
     prepareButton.render();
     prepareButton.move(-xOffset, -yOffset);
@@ -356,6 +370,33 @@ void MPParameterScreen::render(int xOffset, int yOffset )
 void MPParameterScreen::render()
 {
 	render(0, 0);
+}
+
+void MPParameterScreen::renderLobbyAction(aButton& button, int labelId, int xOffset, int yOffset)
+{
+    const GUI_RECT bounds = {button.globalLeft() + xOffset, button.globalTop() + yOffset,
+                             button.globalRight() + xOffset, button.globalBottom() + yOffset};
+    const bool enabled = button.isEnabled();
+    const bool hovered = enabled && xOffset == 0 && yOffset == 0 &&
+                         button.pointInside(userInput->getMouseX(), userInput->getMouseY());
+    const DWORD foreground = hovered ? 0xffffb14a : enabled ? 0xffff941e : 0xff858585;
+    // The Load Map texture has a black center. Additive blending keeps it transparent.
+    if (auto* loadMap = getButton(MP_LOAD_MAP))
+        loadMap->drawAdditiveArtwork(bounds, foreground);
+    else
+    {
+        // Untextured geometry uses BGR vertex colors.
+        const DWORD border = hovered ? 0xff4ab1ff : enabled ? 0xff1e94ff : foreground;
+        drawEmptyRect(bounds, border, border);
+    }
+
+    char label[64];
+    cLoadString(labelId, label, sizeof(label));
+    DWORD width, height;
+    lobbyActionFont.getSize(width, height, label);
+    const int left = bounds.left + (bounds.right - bounds.left - static_cast<int>(width)) / 2;
+    const int top = bounds.top + (bounds.bottom - bounds.top - static_cast<int>(height)) / 2;
+    lobbyActionFont.render(label, left, top, bounds.right - left, bounds.bottom - top, foreground, false, 0);
 }
 
 static bool canReadyForMap()
@@ -480,7 +521,7 @@ int	MPParameterScreen::handleMessage( unsigned long message, unsigned long who)
                 status = PREPAREMULTIPLAYER;
             break;
 
-		case 101/*load map button*/:
+		case MP_LOAD_MAP:
 			{
 				//load map
 				getButton( 101/*load map button*/ )->press( 0 );
