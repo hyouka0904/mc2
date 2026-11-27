@@ -13,6 +13,7 @@ MPLoadMap.cpp			: Implementation of the MPLoadMap component.
 #include "../resource.h"
 #include"platform_windows.h"
 #include"missionbriefingscreen.h"
+#include <cstring>
 
 #ifndef GAMESOUND_H
 #include"gamesound.h"
@@ -25,6 +26,18 @@ static int connectionType = 0;
 static const int FIRST_BUTTON_ID = 1000010;
 static const int OK_BUTTON_ID = 1000001;
 static const int CANCEL_BUTTON_ID = 1000002;
+
+static void localizeStockMapName(const char* fileName, char* name, long length)
+{
+	// The stock 2of3 map opts out of its resource ID. Keep the literal name
+	// unless a language patch has supplied an alternate display name.
+	if (std::strcmp(fileName, "mc2_m10") != 0 || std::strcmp(name, "2of3") != 0)
+		return;
+
+	const char* translated = gos_GetResourceString(gosResourceHandle, IDS_MP_NAME_16);
+	if (std::strcmp(translated, "2 of 3") != 0)
+		cLoadString(IDS_MP_NAME_16, name, length);
+}
 
 MPLoadMap::MPLoadMap()
 {
@@ -553,6 +566,7 @@ void MPLoadMap::updateMapInfo()
 			else
 			{
 				file.readIdString( "MissionName", missionName, 255 );
+				localizeStockMapName(selMapName, missionName, 255);
 			}
 
 			long textureHandle = MissionBriefingScreen::getMissionTGA( selMapName );
@@ -658,6 +672,7 @@ void MPLoadMap::getMapNameFromFile( const char* pFileName, char* missionName, lo
 	{
 		result = file.readIdString( "MissionName", missionName, bufferLength );
 		Assert( result == NO_ERR, 0, "couldn't find the missionName" );
+		localizeStockMapName(pFileName, missionName, bufferLength);
 	}
 }
 

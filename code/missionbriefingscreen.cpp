@@ -606,7 +606,7 @@ int MissionBriefingScreen::addLBItem( const char* text, unsigned long color, int
 {
 	aTextListItem* pEntry = new aTextListItem( IDS_MN_LB_FONT );
 	pEntry->setID( ID );
-	pEntry->resize( missionListBox.width() - missionListBox.getScrollBarWidth() - 10,
+	pEntry->resize( missionListBox.width() - missionListBox.getScrollBarWidth() - pEntry->globalX() - 10,
 		pEntry->height() );
 	pEntry->setText( text );
 	pEntry->setColor( color );
@@ -621,7 +621,7 @@ int  MissionBriefingScreen::addItem( int ID, unsigned long color, int LBid)
 	
 	aTextListItem* pEntry = new aTextListItem( IDS_MN_LB_FONT );
 	pEntry->setID( LBid );
-	pEntry->resize( missionListBox.width() - missionListBox.getScrollBarWidth() - 10,
+	pEntry->resize( missionListBox.width() - missionListBox.getScrollBarWidth() - pEntry->globalX() - 10,
 		pEntry->height() );
 	pEntry->setText( ID );
 	pEntry->setColor( color );

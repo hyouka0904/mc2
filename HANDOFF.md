@@ -29,6 +29,13 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
 
 ## 繁中補丁預覽
 
+### 文字補譯：百科、戰場與多人地圖
+
+- 已完成：百科人物、機甲、載具、建築、歷史及裝備描述，並補譯戰場物件、裝備名稱與縮寫、操作提示、勳章、技能、多人圖名及原版「2of3」顯示文字。核對原版任務 FIT 內的簡報及目標資源 ID，補上第 21 關的工業園區次要目標。
+- 版面：戰役簡報與百科正文預留文字縮排和捲軸的空間。保留機甲與載具型號、駕駛員呼號、存檔與地圖檔名、連線預設名稱。原版圖片維持原樣。
+- 驗證：`python3 scripts/build_zh_tw_patch.py /workspace/scratch/mc2-zh-hud-game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 2,104 條譯文、1,604 個擴充字形及 12 套字型。直接呼叫資源函式庫逐條比對 2,104 項，並驗證重載後的原版語言。`ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 23 項通過。Linux OpenGL 的 `run_flow_tests.py --only options,campaign,encyclopedia,load_game,solo_mission,pause_menu` 六條流程通過。預設英文的主選單、戰役選擇、第一關三張基準比對均通過。截圖已確認第二關簡報換行與多人地圖清單顯示「三取二」。
+- 尚待：Windows 實機及更多解析度校對。M1、U1–U3 的實機待測狀態與 M2 排程沿用原規劃。
+
 ### 文字補譯：關卡與百科首批
 
 - 目標：補齊可由文字資源或資料檔翻譯的遊戲內容。原版圖片維持原樣。

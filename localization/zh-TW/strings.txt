@@ -77,8 +77,8 @@ IDS_CM_STOP_DESC	停止任務概要影片。
 IDS_CM_TITLE	選擇任務
 IDS_CM_VIDCOM_TITLE	視訊通訊
 IDS_CM_VIDEO	視訊通訊
-IDS_COMP101	中型自動砲
-IDS_COMP114	機槍陣列
+IDS_COMP101	中型機砲
+IDS_COMP114	機槍組
 IDS_COMP120	長程飛彈架
 IDS_COMP25	裝甲
 IDS_COMP_ABBR120	長程飛彈架
@@ -684,7 +684,7 @@ IDS_PROMOTION_SKILL13	偵察專家\n可發現一般視距外的敵人。
 IDS_PROMOTION_SKILL14	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
 IDS_PROMOTION_SKILL15	重型機甲專家\n駕駛重型機甲時可閃避部分敵方火力。
 IDS_PROMOTION_SKILL16	粒子砲專家\n提高所有粒子投射砲的命中率。
-IDS_PROMOTION_SKILL17	重型自動砲專家\n提高所有重型自動砲的命中率。
+IDS_PROMOTION_SKILL17	重型機砲專家\n提高所有重型機砲的命中率。
 IDS_PROMOTION_SKILL18	短程射擊專家\n提高對 60 公尺內目標的命中率。
 IDS_PROMOTION_SKILL19	中程射擊專家\n提高對 30 至 120 公尺內目標的命中率。
 IDS_PROMOTION_SKILL2	雷射專家\n提高雷射、大型雷射、重型雷射及重型大型雷射的命中率。
@@ -698,9 +698,9 @@ IDS_PROMOTION_SKILL26	跳躍噴射器專家\n提高使用跳躍噴射器時的�
 IDS_PROMOTION_SKILL27	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
 IDS_PROMOTION_SKILL28	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
 IDS_PROMOTION_SKILL29	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
-IDS_PROMOTION_SKILL3	輕型自動砲專家\n提高所有輕型自動砲的命中率。
+IDS_PROMOTION_SKILL3	輕型機砲專家\n提高所有輕型機砲的命中率。
 IDS_PROMOTION_SKILL30	跳躍噴射器專家\n提高使用跳躍噴射器時的跳躍距離。
-IDS_PROMOTION_SKILL4	中型自動砲專家\n提高所有中型自動砲的命中率。
+IDS_PROMOTION_SKILL4	中型機砲專家\n提高所有中型機砲的命中率。
 IDS_PROMOTION_SKILL5	短程飛彈專家\n提高所有短程飛彈的命中率。
 IDS_PROMOTION_SKILL6	輕武器專家\n提高機槍和火焰噴射器的命中率。
 IDS_PROMOTION_SKILL7	感測專家\n可從感測資料得知更多資訊。駕駛員等級越高，資訊越詳細。
@@ -869,7 +869,7 @@ IDS_UPDATE_READY_PROMPT	已下載並驗證版本 %s。\n\n要立即安裝並重�
 IDS_UPDATE_READY_PROMPT_MAC	已下載並驗證版本 %s。\n\n要開啟磁碟映像嗎？請將 MechCommander 2 拖到「應用程式」以取代舊版本。
 IDS_UPDATE_TEST_CHANNEL	接收測試版本
 IDS_VEHICLE_CLASS	載具
-IDS_VEHICLE_DESCRIPTION_0	裝甲車可搭載指揮人員或情報人員。由於裝甲薄、僅搭載機槍陣列，容易被火力強於步兵的單位摧毀。
+IDS_VEHICLE_DESCRIPTION_0	裝甲車可搭載指揮人員或情報人員。由於裝甲薄、僅搭載機槍組，容易被火力強於步兵的單位摧毀。
 IDS_VEHICLE_GUARD_TOWER_HELP2	在部隊視野內按右鍵以部署固定火砲。完成部署後無法移動。
 IDS_VEHICLE_MINELAYER_HELP2	在部隊視野內按右鍵以部署布雷車。
 IDS_VEHICLE_RECOVERY_HELP2	在失去行動能力的機甲上按右鍵，部署回收載具。
@@ -1101,7 +1101,7 @@ IDS_HISTORY_DESCRIPTION_2	3050 年，一支神祕部隊從銀河核心方向攻�
 IDS_HISTORY_DESCRIPTION_3	氏族威脅減弱後，內天體各大家族埋藏已久的衝突再度浮現，脆弱的同盟隨之瓦解。\n\n至 3063 年，卡佩拉邦聯征服了脫離自己的聖艾夫斯協約國，並與兩個最大的邊陲政權卡諾普斯女執政國和金牛協約國結盟，實力達到數百年來的高峰。\n\n3060 年，維克多正忙於應付氏族威脅。他的妹妹凱瑟琳・史坦納－戴維恩改稱卡翠娜・史坦納，接掌聯邦共同體的武裝部隊。她的地位並不穩固，人們也開始質疑她對兄長的忠誠。\n\n到了 3063 年，這些爭權與侵略行動已使一度強盛無比的聯邦共同體分裂。天琴聯盟和聯邦太陽爆發全面內戰，波及八百多顆星球，戰線長達千餘光年！
 IDS_HISTORY_DESCRIPTION_4	從前的薩爾納邊區如今被稱為混亂邊區。戴維恩、史坦納、廖氏、馬里克及其他效忠各家的勢力，為爭奪主導權再次開戰。卡弗五號星上的戰事只是席捲內天體的混戰之一。\n\n周總督在廖氏與戴維恩的戰事中喪生，遺孀接掌了卡弗五號星上的廖氏部隊。她的復仇心顯然比僅僅打過敗仗的指揮官更強烈。\n\n戴維恩和史坦納的部隊仍維持同盟。雖然有多次勝利的歷史，雙方的關係卻談不上穩固，戰火更在兩國領地內迅速蔓延。兩家都在卡弗五號星駐軍，若能通力合作，將成為一股難以抵擋的勢力。\n\n馬里克、栗田等 31 世紀的軍事勢力尚未在卡弗五號星表態。當地居民發起的運動和行蹤隱密的武裝匪徒已顯露蹤跡，其身分與影響力仍有待釐清。\n\n3062 年戰火持續延燒，卡弗五號星的未來仍未可知。
 IDS_VEHICLE_DESCRIPTION_1	Hunter 能在戰場提供長程飛彈支援。它採用履帶，因此在崎嶇地形比一般長程飛彈車靈活。它的裝甲較厚，飛彈發射架卻較少，最適合防衛基地或執行巡邏。\n\n對付 Hunter 最有效的方法是衝進它的飛彈最小射程。一旦逼近，它便無力自衛。
-IDS_VEHICLE_DESCRIPTION_2	對付 Hetzer 輪式突擊砲，最好趁它的重型機砲還打不到人時，從遠處將它擊毀。這種靈活載具能以重型機砲打出密集火力，機甲駕駛員在感測器上發現它時，就該立刻警戒。\n\nHetzer 機動性相當好，一兩發直接命中也未必能擊毀。放著不管太久，它就可能打癱機甲。
+IDS_VEHICLE_DESCRIPTION_2	對付 Hetzer 輪式突擊砲，最好趁它的重型機砲還打不到人時，從遠處將它擊毀。這種靈活載具能以重型機砲打出密集火力，機甲駕駛員在感測器上發現它時，就該立刻警戒。\n\nHetzer 機動性相當好，一兩發直接命中也未必能擊毀。若放任它太久，它就可能打癱機甲。
 IDS_VEHICLE_DESCRIPTION_3	長程飛彈車配備多組長程飛彈架，在同重量級的車輛中火力數一數二。機甲駕駛員通常會在它開火前優先攻擊它。\n\n長程飛彈車常用於支援中、短程單位，在接戰前就削弱敵軍。若建造防禦砲塔耗時過久或行不通，也可派它擔任機動基地防禦。\n\n指揮官也常把長程飛彈車部署在基地城牆內強化防守。不少機甲駕駛員打掉基地的砲塔發電機後，卻驚見成排飛彈越過城牆朝自己飛來。\n\n它所帶武器多而裝甲較薄，應趁它造成重大損害前迅速擊毀。
 IDS_VEHICLE_DESCRIPTION_4	Vedette 適合編入守備或巡邏隊。若讓它用機砲連續擊中敵方機甲腿部，便有機會打癱對手。\n\n以 50 噸戰車來說，Vedette 的裝甲很厚。單車仍難以對付機甲，但把它們編成裝甲支援排、搭配機甲部隊，就能發動壓倒性的伏擊，尤其在掌握高地時。\n\n聖艾夫斯協約國曾雇用傭兵，在哈洛克對付麥卡倫裝甲騎兵團。克里斯托巴爾團讓 Vedette 沿山口布陣，自身機甲則邊撤邊射，把傭兵引上山。機甲上了高原後掉頭向下進攻，把傭兵夾在兩側的 Vedette 之間。\n\n傭兵三面受火力壓制，剩下一面是懸崖。他們只能轉而攻擊戰車，勉強與 Vedette 互換一輪火力後就被擊敗。克里斯托巴爾團損失七輛 Vedette，卻摧毀了七架重量達其兩倍的機甲。
 IDS_VEHICLE_DESCRIPTION_5	Storm 是少數能真正威脅機甲的戰車之一。它擁有兩門粒子投射砲，裝甲足以承受多數機甲的火力。速度慢使它主要用於防禦和守備，也容易受到快速或長程機甲攻擊。
@@ -1130,3 +1130,975 @@ IDS_VEHICLE_DESCRIPTION_27	各種裝甲運兵車在已知星域幾乎每一場�
 IDS_VEHICLE_DESCRIPTION_28	燃料車常編入車隊或停放在基地。可以把它當成移動的燃燒武器，等它靠近目標，或等目標接近它，再將它摧毀。
 IDS_VEHICLE_DESCRIPTION_29	吉普車可能載有指揮或情報人員，主要用於輔助勤務。
 IDS_VEHICLE_DESCRIPTION_30	奪取資源運輸車可以獲得資源點，兌換戰術支援。資源點只能在當前任務使用，無法保留到之後的任務。
+IDS_PERSONALITY_0	卡翠娜・史坦納執政官
+IDS_PERSONALITY_1	曼德麗莎安妮塔・周
+IDS_PERSONALITY_2	傑森・周上尉
+IDS_PERSONALITY_3	蘇珊・凱利少校
+IDS_PERSONALITY_4	迪亞茲中尉
+IDS_PERSONALITY_5	巴克斯特
+IDS_PERSONALITY_6	易大使
+IDS_PERSONALITY_7	卡許砲術中士
+IDS_PERSONALITY_8	維克多・戴維恩王子
+IDS_PERSONALITY_9	廖孫子首相
+IDS_PERSONALITY_10	大衛・雷納德上校
+IDS_PERONSALITY_DESCRIPTION0	天琴聯盟執政官兼聯邦共同體公主本名凱瑟琳・摩根・史坦納－戴維恩，是內天體最強大統治家族的繼承人。她的兄長維克多自幼學習作戰，凱瑟琳接受的則是治國訓練。她深知何時該說什麼，也最懂得如何吸引媒體關注她的主張。\n\n她的領導才能惠及自己的領地與整個內天體。近期她主持了惠廷會議，並推動重建星際聯盟。\n\n批評者卻另有一套說法。他們私下說她與母親的死有關，還曾密結已覆滅的煙豹氏族及其他勢力，企圖瓜分內天體。\n\n自從維克多王子欺騙自由世界聯盟總司令湯瑪斯・馬里克，兄妹的關係便岌岌可危。這次欺騙也促使凱瑟琳改名為卡翠娜。\n\n可以確定的是，卡翠娜決心不惜一切代價成為新星際聯盟的第一領主。她會透過談判還是動用武力達成目的，仍有待觀察。
+IDS_PERONSALITY_DESCRIPTION1	曼德麗莎安妮塔・周在動盪中領導卡弗五號星的廖氏部隊。丈夫在與戴維恩的戰鬥中陣亡後，星外的廖氏高層將指揮權交給她。然而當地已交火多年，高層也沒派多少援軍，她的地位相當不穩。\n\n卡弗五號星是周家保住廖氏指揮官地位的最後希望。她最大的心願是帶領廖氏贏得內戰，並在離世前讓兒子傑森接任總督。\n\n憑著手上的軍力和為丈夫報仇、讓兒子統治卡弗五號星的決心，周夫人和廖氏絕非好惹的對手。她沒有從軍經歷，麾下將領也承認，這讓她命令機甲小隊直闖缺口時，勇猛得令人不安。
+IDS_PERONSALITY_DESCRIPTION2	在廖氏於其他星球舉辦的軍演中，傑森・周上尉以軍校菁英與戰術奇才之姿嶄露頭角。不過這位年輕上尉抵達卡弗五號星之前，從沒在敵方實彈射擊下指揮過部隊。\n\n課堂與荒野軍演得來的勳章，並不能證明他是怎樣的戰士。他或許無所畏懼，也可能只是魯莽。就像許多戰績亮眼的年輕畢業生，他相信每一仗都有辦法打贏，也深信麾下軍官和機甲駕駛員會對他忠心。\n\n傑森從小在卡弗五號星長大，是當時統治此地的父親的繼承人。他視這顆星球為故鄉，必定會竭盡所能取得統治權。擋在他面前的機甲小隊，要麼付出慘重代價，要麼除掉他。
+IDS_PERONSALITY_DESCRIPTION3	大衛・雷納德上校短期赴戴維恩軍事學院任教時，首次注意到蘇珊・凱利。她的成績優秀，對氏族戰術有敏銳的直覺，幾乎還沒開始服役便已踏上高階指揮官的道路。\n\n3050 年，在氏族攻入內天體的交戰空檔，凱利回到母校擔任兼任教授。她從前線帶回的情報成了進階訓練的核心教材，也培育出如今在卡弗五號星服役的戴維恩軍校畢業生。\n\n凱利少校在教學時堅守榮譽與原則，並以倫理與道德為基礎講授戰爭哲學。她既有分寸，又能揣摩對方指揮官的思路，成為戴維恩家族最幹練的年輕軍官之一。
+IDS_PERONSALITY_DESCRIPTION4	戰術官迪亞茲中尉與卡許砲術中士是卡弗五號星上傭兵行動的支柱。她四年前加入小隊，至今很少談及早年經歷或所受的訓練。她參與過混亂邊區的戰鬥和泰拉防禦行動，表現出色。\n\n迪亞茲中尉極少擅離職守。她專注而無私，幾乎無論和誰共事都能把事做好。簽訂合約後，由她在交戰期間與雇主負責戰略和財務的要員聯繫。指揮官、駕駛員和技師都樂於與她共事，也看重她的見解。
+IDS_PERONSALITY_DESCRIPTION5	據說巴克斯特是卡弗五號星地方部隊的游擊領袖，正試圖領導本地人奪取政權。
+IDS_PERONSALITY_DESCRIPTION6	易大使是史坦納家族在卡弗五號星上的主要代表。自各家族重新開戰以來，史坦納很少有人能像她這樣迅速掌權。她從軍校畢業才幾年，就已主導史坦納在這顆星球上的政治與情報活動。\n\n她替大衛・雷納德上校整理史坦納部隊蒐集的情報，並向他傳達家族的目標。她也以史坦納政治代表的身分出席在卡弗五號星上的公開活動。她如今已肩負整顆星球的重任，若能妥善應對未來幾個月的考驗，政治前途一片光明。
+IDS_PERONSALITY_DESCRIPTION7	卡許砲術中士是駕駛員和士兵最喜愛的武器軍官。身為卡弗五號星上傭兵部隊的資深士官，他善於運用豐富的機甲實務經驗。從為機甲裝填彈藥與維修累積的第一手知識，尤其難能可貴。\n\n他在梅爾道長大，傭兵小隊在當地為了看似根本不存在的資源互相廝殺。他唯一一次正式服役是在羅西軍團擔任擲彈兵，對戰場也再熟悉不過。
+IDS_PERONSALITY_DESCRIPTION8	維克多・戴維恩的戰功輝煌，政治生涯卻坎坷。母親猝逝，讓他過早登上王位，他的外交手腕也不足以應付局勢。他屢次處理危機失當，喪失了臣民與其他領袖的信任。\n\n在戰場上，他卻是出了名的戰略奇才。年歲漸長後，他的性情溫和了一些，也開始像下棋一樣治理國家，成效逐步改善。\n\n卡弗五號星上戴維恩指揮官的急切作風，往往也看得出維克多的影響。他習慣像在戰場上那樣迅速呼應袍澤，因此即使有證據顯示應該與人切割，也常忍不住維持忠誠。許多戴維恩指揮官曾和他並肩作戰，後來才在卡弗五號星為他效力。
+IDS_PERONSALITY_DESCRIPTION9	廖孫子一向被視為各家族領袖中最精明的政治人物之一。現任廖氏領導層以不同尋常的方式繼承他的事業。\n\n父母遇刺身亡後，廖孫子即位，憑幕後斡旋迅速鞏固權力，遠比訴諸武力來得快。他向來沒有突出的指揮戰績，政治手腕卻為他開闢了戰場無法給予的仕途。\n\n不過，周家在卡弗五號星崛起後，廖氏在當地仍未留下明確的政治遺產。周夫人是當地首位非廖姓統治者的遺孀，晚年仍可能成為舉足輕重的人物。
+IDS_PERONSALITY_DESCRIPTION10	多年傑出的軍旅生涯塑造了大衛・雷納德上校。無論指揮部隊還是短期在軍校任教，他總能靠敏銳的見解和快速分析的能力脫穎而出。\n\n他在 3038 年入伍，後來在西奧多・栗田與戴維恩聯手攻打氏族時首次實戰。3050 年首次擊敗氏族時，雷納德以戰士與指揮官的身分立下功勞。\n\n在路西恩，他與凱爾獵犬並肩作戰，麾下有足智多謀的蘇珊・凱利少校。他們在兵力遠少於對方的情況下，阻擋了新星貓氏族的攻勢。\n\n他曾與維克多・史坦納－戴維恩在氏族母星斯特拉納梅克蒂作戰。他與凱利對氏族戰術瞭若指掌，既促成內天體在當地獲勝，也為他在戴維恩軍中奠定了前途。
+IDS_BUILDING_ENCYCLO0	彈藥庫以薄裝甲保護，裡面存放各類彈藥。\n\n無論由哪方控制，任何彈藥庫都可被鎖定並摧毀，爆炸會對周圍造成重大損害。
+IDS_BUILDING_ENCYCLO1	大型燃料槽散布在多個戰區。卡弗五號星各交戰方都建有大量備用儲槽，因此幾乎任何戰場上的燃料槽都值得攻擊，你和雇主也無須承擔後果。\n\n燃料槽還能權充戰場上的炸藥。引敵人進入波及範圍後將它引爆，就成了一枚簡易的燃燒武器。
+IDS_BUILDING_ENCYCLO2	大門控制站連接一道或多道門，可讓友軍通過，並阻擋敵軍。進攻基地時，砲塔控制站是首要目標，大門控制站其次。佔領控制站後，所有相連的大門都會改為同一陣營；摧毀控制站則會停用它們。\n\n若摧毀大門控制站的發電機，相連的大門會保持當時的狀態：原本關著的繼續關閉，原本開著的仍會敞開。\n\n配備跳躍噴射器的機甲能跳進基地，佔領大門控制站，為其他單位開門。
+IDS_BUILDING_ENCYCLO3	輕型大門（原版暫無說明）
+IDS_BUILDING_ENCYCLO4	基地的防禦失效後，大門就成了下一個目標。如果能派可跳躍的機甲進入基地，最好佔領大門控制站，讓其他機甲進入。中型大門關閉時會干擾目標鎖定，但持續的火力能摧毀任何大門。
+IDS_BUILDING_ENCYCLO5	重型大門（原版暫無說明）
+IDS_BUILDING_ENCYCLO6	指揮部是偏遠基地的指揮與通訊中心，經常是突擊任務的目標，目的是控制基地以供日後使用。
+IDS_BUILDING_ENCYCLO7	夜間交戰常在探照燈系統的強光下進行。探照燈控制站只操控燈光，夜間也不會強化感測功能。
+IDS_BUILDING_ENCYCLO8	瞭望塔可提升砲塔控制站的戰備能力。摧毀瞭望塔可能讓相連砲塔難以鎖定遠處目標。情報顯示，沒有瞭望塔時，砲塔可能只能鎖定視線內的目標。
+IDS_BUILDING_ENCYCLO9	機甲駕駛員營房（原版暫無說明）
+IDS_BUILDING_ENCYCLO10	周界警報器能偵測任何敵方單位，刺耳的警報可能招來隱蔽的守軍，最好在它響起前將它停用。好在它沒有裝甲，很容易摧毀。
+IDS_BUILDING_ENCYCLO11	不少戰區裡都有交錯的短管線。失去燃料運輸對各方都有影響，但管線網與替代路線錯綜複雜，任何一方似乎都承受得起損失幾段管線。\n\n短管線也能權充戰場上的炸藥。把對手引進爆炸波及範圍再打爆管線，就能當成簡易的燃燒武器。
+IDS_BUILDING_ENCYCLO12	發電機連接大門、橋梁、探照燈等非關鍵設施。只要發電機完好，相連的建築便正常運作。發電機一旦被摧毀，相連的建築就會停止運作，但砲塔有專用的控制站及發電機，因而不受影響。
+IDS_BUILDING_ENCYCLO13	佔領維修站後可修補機甲的裝甲、內部結構與受損的腿，也可補充彈藥。被炸斷的手臂、已摧毀的武器與零件無法更換。\n\n維修站的狀態條顯示剩餘修理量。狀態條見底後，維修資源也會耗盡。
+IDS_BUILDING_ENCYCLO14	佔領資源建築可取得資源點，用來換取戰術支援。資源點只能用於目前的任務，無法帶到之後的任務。
+IDS_BUILDING_ENCYCLO15	感測器控制站管理感測塔網路。感測塔會將取得的敵軍資料回傳總部，或直接傳給戰場上的機甲。\n\n奪取敵方感測器控制站，就能接管相連的感測塔，切斷敵方的情報來源，並提升我方偵察能力。
+IDS_BUILDING_ENCYCLO16	感測塔用類似機甲搭載的感測裝置監視四周。要接管相關設備，必須佔領當地的感測器控制站。
+IDS_BUILDING_ENCYCLO17	夜間交戰常在探照燈系統的強光下進行。探照燈控制站只操控這套照明系統。
+IDS_BUILDING_ENCYCLO18	砲塔控制站與一座或多座砲塔相連。佔領後，所有相連的砲塔都會為我方所用。摧毀控制站則會停用這些砲塔。
+IDS_BUILDING_ENCYCLO19	砲塔發電機為所有相連的防禦砲塔供電。只要發電機完好，砲塔就能正常開火。發電機遭摧毀後，相連的砲塔便停止運作。
+IDS_BUILDING_ENCYCLO20	輕型城牆阻擋車輛及機甲直接進入基地，但反覆用能量或實彈武器射擊便可摧毀。牆高不足以擋住重型與突擊型機甲的視線。
+IDS_BUILDING_ENCYCLO21	中型城牆比輕型城牆牢固，但抵擋火力的能力仍不及重型城牆。它足以遮擋較小機甲的視線，妨礙鎖定目標。
+IDS_BUILDING_ENCYCLO22	重型城牆比中型城牆更耐砲火，甚至能擋住突擊型機甲的視線，必須持續轟擊才能摧毀。但長程飛彈能輕鬆越過城牆，摧毀後方目標。
+IDS_BUILDING_ENCYCLO23	佔領武器設施後，即可獲取當地正在研究的科技，並製造配套的武器和零件。解鎖的科技會永久保留，在後續任何任務的後勤階段都可使用。
+IDS_BUILDING_ENCYCLO24	短程飛彈砲塔是火力最弱的砲塔，但若在要地成群部署，仍能迅速重創一整隊機甲，值得優先奪取或摧毀。\n\n這組砲塔仰賴砲塔發電機與控制站運作。摧毀發電機可使砲塔停擺，佔領控制站則能把砲塔收歸我方。
+IDS_BUILDING_ENCYCLO25	長程飛彈砲塔能為基地與其他固定設施提供強大的長程火力。無需駕駛員操作，就能自動鎖定並攻擊接近的機甲，有時甚至能打癱輕型機甲。\n\n這組砲塔仰賴砲塔發電機與控制站運作。摧毀發電機可使砲塔停擺，佔領控制站則能把砲塔收歸我方。
+IDS_BUILDING_ENCYCLO26	機砲砲塔能傷害車輛與機甲，更能重創甚至打癱輕型機甲。機砲在中距離內有效，即使對方只有少量砲塔，最好也先搶下控制站，至少要盡快摧毀所有砲塔。\n\n這組砲塔仰賴砲塔發電機與控制站運作。摧毀發電機可使砲塔停擺，佔領控制站則能把砲塔收歸我方。
+IDS_BUILDING_ENCYCLO27	高斯砲塔能從遠處鎖定目標。有直接視線時，一發便能摧毀輕型機甲，也能打掉較大型機甲的大量裝甲。這類砲塔只在戴維恩領地出現。\n\n高斯砲塔射得遠，命中後威力強大。機甲駕駛員往往還沒看到砲塔，就已經中彈。除非小隊能呼叫空襲，或以自己的高斯步槍還擊，否則從近處對付它最容易。能奪取高斯砲塔的指揮官，在控制大片領地時會占有極大的戰略優勢。\n\n這組砲塔仰賴砲塔發電機與控制站運作。摧毀發電機可使砲塔停擺，佔領控制站則能把砲塔收歸我方。
+IDS_BUILDING_ENCYCLO28	砲塔搭載的 Long Tom 火砲能越過障礙，從遠處重創裝甲最厚的目標。\n\n這組砲塔仰賴砲塔發電機與控制站運作。摧毀發電機可使砲塔停擺，佔領控制站則能把砲塔收歸我方。
+IDS_BUILDING_ENCYCLO30	大型脈衝雷射砲塔單發威力不大，但射速驚人，只要放著不管，很快便能打垮厚重裝甲。這類砲塔只在廖氏領地出現，有效射程為中距離。\n\n這組砲塔仰賴砲塔發電機與控制站運作。摧毀發電機可使砲塔停擺，佔領控制站則能把砲塔收歸我方。
+IDS_BUILDING_ENCYCLO31	監獄關押戰俘，多數為被俘的機甲駕駛員。佔領監獄有時能釋放這些駕駛員，他們為了報答你，會在後續任務中加入你的部隊。
+IDS_BUILDING_ENCYCLO32	彈藥箱內裝有彈藥，可鎖定並摧毀，以波及周邊目標。
+IDS_BUILDING_ENCYCLO33	小型燃料槽散布在多個戰區。卡弗五號星各交戰方都建有大量備用儲槽，因此幾乎任何戰場上的燃料槽都值得攻擊，你和雇主也無須承擔後果。\n\n燃料槽還能權充戰場上的炸藥。引敵人進入波及範圍後將它引爆，就成了一枚簡易的燃燒武器。
+IDS_BUILDING_ENCYCLO34	原版暫無說明。
+IDS_BUILDING_ENCYCLO35	原版暫無說明。
+IDS_COUGAR	Cougar 由氏族的 Puma 級機甲改造而成。加速度不及前身，火力卻大幅提升。有人誤以為它還是原來的 Puma，但很少有機會活著認清這個錯誤。\n\nCougar 通常配備大型脈衝雷射與長程飛彈，擅長提供火力支援。儘管每架只有 35 噸，只要得到適當的掩護，多架 Cougar 就能造成重大傷害。
+IDS_FIREANT2	Fire Ant 又輕又快。成群出動時，能以火焰噴射器組迎擊來犯的機甲小隊。它常用於哨戒，作戰鍥而不捨，卻很少有重武裝機甲支援。\n\n基廷軍工拿下生產合約後，提出別具一格的設計。節省空間和材料後，基廷能以低成本大量生產這款機甲，也無須耗盡客戶的武器庫。成群負責基地防衛的 Fire Ant，使用的火焰噴射器組和機槍組也非常便宜。
+IDS_MECH_ANUBIS2	廖氏部署現役最快的機甲之一 Anubis 執行偵察。跳躍噴射器與長程飛彈讓它擅長打游擊，能保持安全距離削弱敵軍。\n\nAnubis 不適合持久戰，但要是有指揮官輕忽它，也會付出慘重代價。
+IDS_MECH_ATLAS2	Atlas 依克倫斯基將軍親定的規格打造。早在各家族領主崛起前，它就是星際聯盟的強力武器。它參戰數百年，深刻影響了內天體的歷史。\n\nAtlas 重達 100 噸，與少數其他型號並列史上最大的戰鬥機甲。裝甲強度無與倫比，加上威力強大的武器，讓對手十分頭痛。為彌補速度慢的缺點，它同時配備強大的長程與短程武器，能應付各種交戰。
+IDS_MECH_BLOODASP2	Blood Asp 由星蝰氏族近期推出，內天體對它幾乎一無所知。已知只有寥寥數架由戴維恩持有，是進攻氏族母星時繳獲的。\n\nBlood Asp 是最早配備革命性重型雷射的機甲之一，攻擊力相當強。它在各種距離都能造成驚人傷害，能迅速擊破大小敵人。這樣的火力是以平庸的裝甲換來的，用慣其他耐打突擊型機甲的指揮官務必留意。
+IDS_MECH_BUSHWACKER2	Bushwacker 的設計講求彈性，常被稱為「全能手」。大多數指揮官都為它配備各種射程的武器。它快速又靈活，很適合偵察任務。\n\n各種射程的實彈與能量武器，也讓 Bushwacker 在不同戰況都能有所發揮，可勝任多種任務。
+IDS_MECH_CATAPULT2	Catapult 是典型的支援機甲，長程火力強大，最適合由其他機甲扛住前線。它的短程武器較弱，裝甲以重型機甲而言也偏薄，因此容易受到攻擊。\n\n經典的 Catapult 配置包括長程飛彈發射架，能在敵方射程外重創對手。\n\n跳躍噴射器與一組實用的雷射讓它行動靈活，但速度仍慢。它能跳出短程武器射程，也能以雷射還擊近處的敵軍。很少有機甲比它更擅長追獵。\n\n若讓它單獨作戰太久，即使對上小得多的機甲，防禦不足也會暴露無遺。
+IDS_MECH_CYCLOPS2	廖氏工程師為久經戰陣的 Cyclops 換上最先進的通訊及感測裝置。交戰中也能連上廖氏精密的衛星陣列，成為戰場的情報中樞與移動指揮中心。\n\n戰鬥時，Cyclops 會從遠處攻擊戰略要點。搭載的武器雖不及其他突擊型機甲，但足以應付大多數情況。
+IDS_MECH_ENFEILD2	Enfield 擅長提供中程火力支援，與其他機甲協同作戰時能打出沉重一擊。部署它占用的空降限重不多，就能得到一架靈活、火力相對於重量十分出色的機甲。\n\n在特威克羅斯執行中距離任務時，不少小隊稱讚 Enfield 能跟上隊伍的步調，兼具強勁的實彈與能量火力。
+IDS_MECH_HIGHLANDER2	Highlander 是較老式的突擊機甲，卻少見地配備跳躍噴射器。內天體各家族數十年來都用它作為機動突擊的主力。行走雖慢，噴射器卻能讓它越過幾乎任何障礙。\n\n從城市到荒地，跳躍能力與各式武器在多種地形都能發揮優勢。跳躍噴射器讓它可以快速調整戰術，而厚重裝甲下兼具雷射和短程飛彈的火力，足以打亂敵軍部署。\n\n正式接戰前，高斯步槍就能有效削弱敵方哨兵或偵察部隊。機槍組也能應付近距離騷擾的單位。很少有機甲能在這麼多種戰場上都表現出色。
+IDS_MECH_HOLLANDER2	登陸艦恰好還剩一點載重的指揮官，可以善用 Hollander 的獨特設計。這架號稱「裝了砲才有機甲」的輕型單位只有 35 噸，右肩卻安裝了精準且威力驚人的 Dragon Fire 長程高斯步槍。\n\n限重使它能裝的裝甲及輔助武器都不多，因此最適合填補部隊的長程狙擊火力。只需投入少許重量和資源，幾輪齊射就能打癱敵方機甲小隊。連突擊型機甲挨打後也會露出破綻，讓友軍有機可乘。
+IDS_MECH_HUNCHBACK2	Hunchback 在狹窄地形的巷戰戰績出色，重型機砲在短距離尤其致命。裝甲與同重量級相稱，但不足以和重型或突擊型機甲長時間正面對抗。\n\n3012 年帕拉默斯市之戰，Hunchback 在主力部隊進城前率先逐區掃蕩。它們殲滅了輕型守備機甲、建立突破口，讓速度較慢但火力更強的機甲順利靠近戰區。\n\nHunchback 特別適合打響第一輪攻勢，尤其當建築後的掩護位置可讓它躲過長程火力時。
+IDS_MECH_JAGERMECH2	JagerMech 出身顯赫，設計雖老卻相當穩定。它擔任長程火力支援，通常不會靠近敵人，而是留在遠處發射超級輕型機砲。\n\n指揮官常以 JagerMech 的猛烈砲火替輕型機甲開路，也能在重機甲混戰中集中火力撕開缺口。它鮮少在火力上落於下風，主要怕敵軍出其不意地貼身突擊。防守時，它還能精準打擊來襲直升機。速射武器可輕鬆切換目標，也很適合清除成群輕型車輛。\n\n若缺乏短程火力支援，JagerMech 在戰場上可能無所作為。單獨部署時，最好把它留在戰線後方。
+IDS_MECH_LAOHU2	Lao Hu 是維多利亞武器與科技學院設計的較新型機甲，於 3062 年聖艾夫斯戰事中首次服役。優秀的表現讓它成為廖氏的強力新武器。\n\n優秀的機動性、跳躍能力及先進的散熱技術使 Lao Hu 成為強悍又致命的鬥士。指揮官常把它派往前線，而那正是廖氏許多其他機甲不擅長的位置。
+IDS_MECH_MADCAT2	這款機甲首次在歐伯隆邦聯現身時，ComStar 見其駝背外形有如舊式 Marauder 和 Catapult，便取名 Mad Cat。它不久便以驚人的破壞力惡名遠播。\n\n長程火力與速度兼備，讓 Mad Cat 常在敵軍尚未正式接戰前就打癱對手。對其他長程機甲有效的衝鋒戰術，碰到這款有優秀裝甲及機槍、雷射火力的機甲，幾乎等於送死。\n\nMad Cat 最常讓人聯想到狼氏族，長年是氏族武力優勢的象徵。雖然氏族母星陷落後已無迫切的威脅，戰場上的 Mad Cat 仍會讓身經百戰的駕駛員膽寒。
+IDS_MECH_MENSHEN2	數百年前，門神是中國神話中守護門戶、驅逐邪祟的神祇。今日的 Men Shen 也擅長哨戒，同時具備出色的作戰能力。\n\n有些駕駛員說它是「加強版 Raven」。它擁有 Raven 的電子反制和感測能力，但火力更強、裝甲更厚。先進感測器可在敵方察覺之前找到甚至辨識敵軍，電子反制也能干擾敵方感測器，使它避過偵測。跟多數廖氏設計一樣，它比同重量級的其他機甲快。\n\n和不少偵察機甲不同，Men Shen 能在正面交戰中撐上一段時間。它可遠距追蹤敵軍、干擾敵方感測，再悄無聲息地靠近，利用脈衝雷射和長程飛彈迅速殲敵。\n\n許多指揮官讓 Men Shen 獨自偵察，或讓它在小隊前方帶路接敵。
+IDS_MECH_RAVEN2	Raven 是機動感測與電子戰專家。它能從極遠處偵測敵軍，並運用電子反制裝置干擾敵方感測頻率。它的攻防能力有限，幾乎總有其他機甲同行。\n\n西安星的赫勒斯龐特工業為 Raven 換上 Hermes 210 XL 引擎，使設計臻於成熟。較小的引擎留出空間，容納能替小隊扭轉戰局的目標鎖定與電子干擾設備。\n\nRaven 只能提供輕火力，但其輔助能力讓它和任何突擊型機甲一樣珍貴。
+IDS_MECH_SHADOWCAT2	很少有中型機甲像 Shadow Cat 一樣接近完美。以這個重量來說，它配備高斯步槍令人意外，還有出色的輔助武器。足夠的裝甲和罕見的高加速度，使它很適合偵察。\n\n在路西恩，前哨站回報以 Shadow Cat 為前鋒的敵軍正在接近，卻還沒傳完訊息就被摧毀。很少有其他機甲跟得上它的最高速度。\n\n長程武器、跳躍噴射器和驚人速度，讓 Shadow Cat 能有效偵察敵陣，也能摧毀建築及小股執行哨戒任務的輕型機甲。\n\n許多指揮官打勝仗後誇耀，Shadow Cat 會讓自己的情報失去價值，因為它順手滅掉了正要回報給總部的敵方單位。
+IDS_MECH_SHAYU2	Sha Yu 的最高時速達 119 公里，是同級中最快的機甲之一。加上跳躍能力，它有無可比擬的機動性，戰力也沒有打折。憑藉火力和速度，它經常出動攔截敵軍或緊急增援。\n\nSha Yu 剛加入廖氏部隊，在戰場上仍鮮為人知。許多駕駛員不清楚它的性能，無從判斷要怎麼對付。有人認為廖氏故意限制產量，好充分利用出其不意的優勢。
+IDS_MECH_STARSLAYER2	Starslayer 的老式設計可追溯到 2765 年。裝備更新後，至今仍在服役。可靠又耐打的它是能勝任多種勤務的主力。\n\n它以能量武器為主，裝甲優良，足以在長時間交火中勝出。跳躍噴射器也提升了機動性，使它在多數情況下都表現良好。
+IDS_MECH_ULLER2	Cougar 由氏族的 Puma 級機甲改造而成。加速度不及前身，火力卻大幅提升。有人會誤以為它是原版的 Puma，但很少有機會活著認清這個錯誤。\n\n優秀的散熱系統讓 Cougar 能搭載大量雷射和飛彈，成為火力強大的輕型支援機甲。
+IDS_MECH_ULLER3	Uller 以北歐神話中掌管弓箭的神祇命名，是少數能抗衡中型機甲的輕型機甲。它配備各種射程的武器，速度驚人，是用途最廣的機甲之一。\n\n它的武器常重得出人意料，有些指揮官就靠它迅速擊倒其他輕型機甲。\n\n不論對手多重，一旦遭到多架機甲圍攻，Uller 的裝甲與彈藥就會迅速耗損。但在偵察、臨時長程支援或其他協同勤務中，它十分稱職。
+IDS_MECH_VULTURE2	Vulture 能用長程飛彈莢艙從遠處轟擊敵軍，若還有敵人存活，也能用充足的雷射火力補上最後一擊。善於掌握時機的駕駛員能充分發揮它肩上巨大飛彈架的威力。\n\n激戰中要是敵軍無暇鎖定它，Vulture 可留在小型武器打不到的高地猛轟敵軍。如果能在不被發現的情況下打出幾輪齊射，飛彈就能重創行軍中的機甲部隊。\n\n在長程飛彈架之外再裝上氏族大型脈衝雷射和機槍組，就可執行掃蕩任務。不過，若沒有重型短程武器，只要敵人撐過飛彈與雷射火力衝到近處，Vulture 就會陷入險境。
+IDS_MECH_WEREWOLF28913	史坦納部隊在內天體各地使用 Razorback 偵察。它速度快又能跳躍，兼具機動性和足以抗衡其他輕型機甲的火力。\n\nRazorback 通常走在主力前方，以感測器追蹤敵人，再引導火力更強的部隊接戰。它也能潛入基地，跳過城牆佔領防護薄弱的控制站，削弱基地防禦以迎接主攻。
+IDS_MECH_WOLFHOUND2	Wolfhound 是偏重作戰的輕型機甲。它搭載多種能量武器，裝甲在同級機甲中也格外出色。\n\n堅固、快速且能跳躍的 Wolfhound，擅長攻打基地和在崎嶇地形交戰。多組雷射能迅速擊毀戰車與其他戰鬥載具，大型雷射則可對付機甲。\n\n許多專家把它視為高性能機甲。內天體一些最知名的傭兵部隊也採用它，包括聲名在外的狼龍騎兵。
+IDS_MECH_ZEUS2	Zeus 儘管縮短了原型測試並提前投入實戰，從最早的任務開始就證明自己是用途最廣的突擊型機甲之一。史坦納家族想要一款能打了就跑的 80 噸機甲。三年後，Zeus 下了生產線，最先防守的正是製造第一批 Zeus 的工廠。\n\nZeus 能持續發射飛彈與能量武器，配備數一數二的散熱系統。原始設計非常成功，歷經多年也沒什麼大改。現行型號仍保有早期的粒子投射砲和長程飛彈。\n\nZeus 長年與天琴聯邦關係密切，現在仍廣泛服役於史坦納部隊。
+IDS_RYOKEN	增程雷射讓 Ryoken 成為強大的火力平台。若能搶先在安全地點部署，從那裡射擊暴露的目標，Ryoken 就能支援友軍並控制戰場。\n\nRyoken 曾在煙豹氏族和其他氏族擔任各種任務，現在也讓指揮官有多種部署選擇。它的活動範圍廣，出其不意的攻擊威力尤其驚人。\n\n沉著的駕駛員若能頂住它的第一輪猛烈砲火，再仔細瞄準還擊，也能反敗為勝。
+IDS_SHOOTIST2	Shootist 的名字容易讓人忽略它除了大量火力，還有出色的裝甲。它的設計讓它能頂著砲火拉近距離，用強力短程武器摧毀敵人。機體各處防護都很好，但集中齊射仍有可能攻破後側軀幹。\n\nShootist 給指揮官最大的優勢或許是低廉的成本。講求經濟的設計使它比同重量級的其他機甲便宜許多。
+IDS_THOR	翡翠獵鷹氏族常配備 Thor。它備受作風強悍的駕駛員喜愛，適合迅速逼近並了結敵人。強大的引擎與跳躍能力，加上超級重型機砲和 Streak 短程飛彈，使它能輕鬆完成任務。\n\n指揮官會用 Thor 擔任各種角色，從火力支援到突擊皆可。在任何配置下，它都以出色的機動性和持續的火力著稱。
+IDS_URBANMECH2	UrbanMech 矮小又沒有手臂，目標鎖定系統很難抓住它。正如其名，它在擁擠的都市地形尤其有效，可在建築間跳躍，再用強力的 Imperator-B 機砲突襲毫無戒心的機甲。\n\nUrbanMech 通常成群分散部署，迅速尋找掩體、連續狙擊敵軍，然後在下一道接戰線重整。成本低，指揮官可輕鬆大量部署。
+IDS_WOLFHOUND	Wolfhound 是偏重作戰的輕型機甲。它搭載多種能量武器，裝甲在同級機甲中也格外出色。\n\n堅固、快速且能跳躍的 Wolfhound，擅長攻打基地和在崎嶇地形交戰。多組雷射能迅速擊毀戰車與其他戰鬥載具，大型雷射則可對付機甲。\n\n許多專家把它視為高性能機甲。內天體一些最知名的傭兵部隊也採用它，包括聲名在外的狼龍騎兵。
+IDS_COMP1	核融合引擎
+IDS_COMP4	手臂致動器
+IDS_COMP5	腿部致動器
+IDS_COMP6	駕駛艙
+IDS_COMP7	散熱器
+IDS_COMP10	跳躍噴射器
+IDS_COMP13	基礎感測器
+IDS_COMP14	中級感測器
+IDS_COMP15	進階感測器
+IDS_COMP16	氏族基礎感測器
+IDS_COMP17	氏族進階感測器
+IDS_COMP18	車用感測器
+IDS_COMP19	進階車用感測器
+IDS_COMP22	第二代陀螺儀
+IDS_COMP33	肩部
+IDS_COMP34	髖部
+IDS_COMP35	維生系統
+IDS_COMP37	Beagle 探測器
+IDS_COMP38	第一型電子反制裝置
+IDS_COMP43	主動探測器
+IDS_COMP99	輕型高斯步槍
+IDS_COMP100	輕型機砲
+IDS_COMP102	重型機砲
+IDS_COMP103	超級輕型機砲
+IDS_COMP104	高斯步槍
+IDS_COMP108	超級中型機砲
+IDS_COMP109	氏族超級重型機砲
+IDS_COMP110	氏族超級輕型機砲
+IDS_COMP111	氏族超級中型機砲
+IDS_COMP112	超級重型機砲
+IDS_COMP113	氏族高斯步槍
+IDS_COMP123	蜂群長程飛彈架
+IDS_COMP124	短程飛彈組
+IDS_COMP125	Streak 短程飛彈組
+IDS_COMP130	氏族長程飛彈架
+IDS_COMP135	氏族 Streak 短程飛彈組
+IDS_COMP139	氏族重型雷射
+IDS_COMP140	大型雷射
+IDS_COMP141	增程大型雷射
+IDS_COMP142	大型脈衝雷射
+IDS_COMP143	增程雷射
+IDS_COMP144	脈衝雷射
+IDS_COMP145	粒子投射砲
+IDS_COMP146	增程粒子投射砲
+IDS_COMP147	氏族重型大型雷射
+IDS_COMP150	氏族增程大型雷射
+IDS_COMP151	氏族大型脈衝雷射
+IDS_COMP152	氏族增程雷射
+IDS_COMP153	氏族脈衝雷射
+IDS_COMP154	氏族增程粒子投射砲
+IDS_COMP155	火焰噴射器組
+IDS_COMP156	雷射
+IDS_COMP160	Long Tom 火砲
+IDS_COMP161	Thunderbolt 飛彈
+IDS_COMP199	輕型高斯彈藥
+IDS_COMP200	輕型機砲彈藥
+IDS_COMP201	機砲彈藥
+IDS_COMP202	重型機砲彈藥
+IDS_COMP203	超級輕型機砲彈藥
+IDS_COMP204	高斯步槍彈藥
+IDS_COMP205	機槍組彈藥
+IDS_COMP208	超級機砲彈藥
+IDS_COMP209	超級重型機砲彈藥
+IDS_COMP210	氏族超級輕型機砲彈藥
+IDS_COMP211	氏族超級機砲彈藥
+IDS_COMP212	氏族超級重型機砲彈藥
+IDS_COMP213	氏族高斯步槍彈藥
+IDS_COMP220	長程飛彈彈藥
+IDS_COMP223	短程飛彈彈藥
+IDS_COMP225	Streak 短程飛彈彈藥
+IDS_COMP227	Long Tom 火砲彈藥
+IDS_COMP228	Thunderbolt 飛彈彈藥
+IDS_COMP230	氏族長程飛彈彈藥
+IDS_COMP231	蜂群長程飛彈彈藥
+IDS_COMP235	氏族 Streak 短程飛彈彈藥
+IDS_COMPENCYCLO7	Adams OA-34 散熱器對配備能量武器或重型實彈武器的機甲很重要。這兩類武器都會產生熱量，可能干擾引擎、感測器及駕駛艙空調，因此需要在後勤階段處理。\n\n配置一個甚至數個散熱器可以緩解熱量問題。多輪射擊後，砲管過熱，雷射加速器外殼也接近熔點，輔助系統不堪負荷。散熱器會提高機甲的熱容量，讓熱量累積得更慢。
+IDS_COMPENCYCLO11	出任務前，別忽略跳躍噴射器帶來的優勢。\n\n偵察機甲可以從背風面跳上高地，居高臨下觀察敵軍設施與部隊動向。\n\n不論重量級別，跳躍機甲在開闊地的短兵相接、基地突擊和圍攻中都能派上用場。支援機甲能搶先登高，逐一摧毀敵方機甲。例如谷底的機甲如果忙著應付它的隊友，還擊火力便可能減弱。此時只要在高處轉動軀幹，就能形成以二打一的局面。\n\n攻打基地時，可跳過城牆佔領砲塔及大門控制站等內部設施。小隊裡沒有可跳躍的機甲，就得持續轟擊才能打開大門。
+IDS_COMPENCYCLO26	額外裝甲板可強化機甲的基礎裝甲。每個裝甲零件增加 32 點裝甲，分配到手臂、腿、頭、軀幹和背部等部位。\n\n前線突擊機甲常加裝裝甲，吸引敵方火力，掩護裝甲較薄的支援機甲。\n\n有些指揮官發現厚裝甲很適合搭配短程武器。機甲能頂住敵方第一輪齊射，拉近距離後逐一擊破無法在近距離開火的對手。\n\n機甲可安裝裝甲的表面積有限，最大裝甲容量取決於機體大小。
+IDS_COMPENCYCLO100	輕型高斯步槍的機械結構與標準高斯步槍相同，主要好處是更輕巧。它發射的彈體較小，造成的傷害也較低。
+IDS_COMPENCYCLO101	輕型機砲發射 30 公釐以上的砲彈，遠距離仍然有效。主要用於車輛和戰車，有時也裝在專門對付小型高速目標的機甲上。\n\n穿甲能力較弱，限制了它對付機甲的效果。
+IDS_COMPENCYCLO102	中型機砲又稱 AC/10，早在 20 世紀便以某些形式投入使用。現代型號可自動供彈，發射口徑 40 公釐以上的砲彈。用途廣、價格低，幾乎各種常見的武器平台都裝過它，包括機甲、戰車和砲塔。
+IDS_COMPENCYCLO103	內天體的重型機砲又稱 AC/20，是發射 80 至 120 公釐大口徑砲彈的短程武器。它又大又貴，也難以安裝，但威力強大，尤其擅長摧毀厚重裝甲。\n\n這種武器主要裝在大型機甲上，最適合用來對付機甲，用於其他場合往往火力過剩。
+IDS_COMPENCYCLO104	經改良的供彈機構與先進材料，讓超級機砲能以比普通機砲更高的射速持續開火。雖然使用同口徑彈藥，傷害潛力和成本都顯著提升。\n\n輕型機砲發射 30 公釐以上的砲彈，遠距離仍然有效。主要用於車輛和戰車，有時也裝在專門對付小型高速目標的機甲上。\n\n穿甲能力較弱，限制了它對付機甲的效果。
+IDS_COMPENCYCLO105	高斯步槍以電磁力高速發射實心彈。導電彈體沿電磁軌道加速，因此在遠距離仍具有強大的動能。射擊不需要燃燒推進劑，熱量低於機砲和飛彈。
+IDS_COMPENCYCLO109	經改良的供彈機構與先進材料，讓超級機砲能以比普通機砲更高的射速持續開火。雖然使用同口徑彈藥，傷害潛力和成本都顯著提升。\n\n中型機砲又稱 AC/10，早在 20 世紀便以某些形式投入使用。現代型號可自動供彈，發射口徑 40 公釐以上的砲彈。用途廣、價格低，幾乎各種常見的武器平台都裝過它，包括機甲、戰車和砲塔。
+IDS_COMPENCYCLO110	氏族超級機砲的機械原理與一般超級機砲相似，但氏族工藝和材料更先進，能維持更高的射速。\n\n重型機砲又稱 AC/20，是發射 80 至 120 公釐大口徑砲彈的短程武器。它又大又貴，也難以安裝，但威力強大，尤其擅長摧毀厚重裝甲。\n\n這種武器主要裝在大型機甲上，最適合用來對付機甲，用於其他場合往往火力過剩。
+IDS_COMPENCYCLO111	氏族超級機砲的機械原理與一般超級機砲相似，但氏族工藝和材料更先進，能維持更高的射速。\n\n輕型機砲發射 30 公釐以上的砲彈，遠距離仍然有效。主要用於車輛和戰車，有時也裝在專門對付小型高速目標的機甲上。\n\n穿甲能力較弱，限制了它對付機甲的效果。
+IDS_COMPENCYCLO112	氏族超級機砲的機械原理與一般超級機砲相似，但氏族工藝和材料更先進，能維持更高的射速。\n\n中型機砲又稱 AC/10，早在 20 世紀便以某些形式投入使用。現代型號可自動供彈，發射口徑 40 公釐以上的砲彈。用途廣、價格低，幾乎各種常見的武器平台都裝過它，包括機甲、戰車和砲塔。
+IDS_COMPENCYCLO113	經改良的供彈機構與先進材料，讓超級機砲能以比普通機砲更高的射速持續開火。雖然使用同口徑彈藥，傷害潛力和成本都顯著提升。\n\n重型機砲又稱 AC/20，是發射 80 至 120 公釐大口徑砲彈的短程武器。它又大又貴，也難以安裝，但威力強大，尤其擅長摧毀厚重裝甲。\n\n這種武器主要裝在大型機甲上，最適合用來對付機甲，用於其他場合往往火力過剩。
+IDS_COMPENCYCLO114	氏族高斯步槍與標準高斯步槍原理相同，沿電磁軌道加速實心彈，使其高速射出。氏族改良了功率感應系統與裝填機構，射速也更快。
+IDS_COMPENCYCLO115	機槍組將數挺機槍連成同時開火的一組武器。它通常裝在戰車、其他車輛和直升機上，但由於便宜且幾乎不產生熱量，有些機甲也會採用。
+IDS_COMPENCYCLO121	內天體長程飛彈架發射可越過障礙物的飛彈。機甲或車輛若只帶長程飛彈，敵軍衝入最小射程後就難以招架。但若城牆或地形遮住視線，很少有其他武器能這樣有效地打中目標。
+IDS_COMPENCYCLO124	蜂群長程飛彈架是裝填特殊蜂群彈藥的標準發射架。蜂群飛彈的彈頭會在抵達目標前分離散開，對作用範圍內的所有單位造成傷害。\n\n蜂群飛彈對密集隊形特別有效。不過彈頭在命中前便會分散，高速機甲能駛出波及範圍，散開的彈頭也打不到直升機等空中目標。
+IDS_COMPENCYCLO125	短程飛彈的推進劑比長程飛彈少，體積也小得多，因此能比長程飛彈架多發射幾輪。\n\n此武器在內天體十分常見，機甲、戰車甚至砲塔都有配備。
+IDS_COMPENCYCLO126	短程飛彈的推進劑比長程飛彈少，體積也小得多，因此能比長程飛彈架多發射幾輪。\n\n此武器在內天體十分常見，機甲、戰車甚至砲塔都有配備。
+IDS_COMPENCYCLO131	氏族長程飛彈架占用空間與標準飛彈架相同，卻能多發一倍的飛彈齊射。這款武器展現了氏族武器常見的先進結構與輕質材料。\n\n許多氏族機甲都採用這款武器，足見其效能。
+IDS_COMPENCYCLO136	氏族 Streak 短程飛彈組與標準型號相同，但採用氏族的高品質工藝與材料，因此射速較快。
+IDS_COMPENCYCLO140	重型雷射代表雷射武器研發的最新成果。設計目的是在保持體積小巧的同時提高傷害，因而擁有所有武器中最高的傷害體積比。缺點是產生大量熱能，限制了單架機甲可搭載的數量。
+IDS_COMPENCYCLO141	大型雷射是標準雷射的加大強化版。雷射束更集中，射程和威力都更好。\n\n這是戰車和機甲的常用武器，在內天體隨處可見。
+IDS_COMPENCYCLO142	增程大型雷射是大型雷射的變種，能從遠處造成傷害，射程足以媲美氏族雷射。佔用空間與傷害跟標準大型雷射相同，但產生的熱量和採購價格都顯著提高。
+IDS_COMPENCYCLO143	脈衝雷射和大型脈衝雷射以高頻率發射短促的雷射脈衝。整體傷害比連續發射的雷射高，但產生的熱量也更多。
+IDS_COMPENCYCLO144	增程雷射在標準科技基礎上延長了射程，傷害與一般雷射相同，但會加重機甲的散熱負擔。
+IDS_COMPENCYCLO145	脈衝雷射和大型脈衝雷射以高頻率發射短促的雷射脈衝。整體傷害比連續發射的雷射高，但產生的熱量也更多。
+IDS_COMPENCYCLO146	粒子投射砲又稱 PPC，發射主要由高能質子或離子組成的粒子束。它同時以動能和熱能攻擊，對裝甲有很強的穿透力。\n\n它比雷射武器大，也會產生大量熱量，但仍深受內天體各地的駕駛員喜愛。
+IDS_COMPENCYCLO147	粒子投射砲又稱 PPC，發射主要由高能質子或離子組成的粒子束。它同時以動能和熱能攻擊，對裝甲有很強的穿透力。\n\n增程型射出的粒子束更集中，可以從遠距離造成傷害，但產生的熱量大幅增加。
+IDS_COMPENCYCLO148	重型雷射代表雷射武器研發的最新成果。設計目的是在保持體積小巧的同時提高傷害，因而擁有所有武器中最高的傷害體積比。缺點是產生大量熱能，限制了單架機甲可搭載的數量。
+IDS_COMPENCYCLO151	氏族增程大型雷射將氏族大型雷射的有效射程延長至遠距。佔用空間相同，射速也快於內天體型號。
+IDS_COMPENCYCLO152	氏族大型脈衝雷射能維持比標準型號更高的射速。跟許多氏族武器一樣，這種性能提升的代價是高昂的成本。
+IDS_COMPENCYCLO153	這款氏族增程雷射體積小、威力不俗，既可單獨安裝也可成組配置。造價過高，對資源有限的指揮官而言是奢侈品。
+IDS_COMPENCYCLO154	氏族脈衝雷射的射速高於標準脈衝雷射。跟許多氏族武器一樣，性能提升伴隨高昂的成本。
+IDS_COMPENCYCLO155	粒子投射砲又稱 PPC，發射主要由高能質子或離子組成的粒子束。它同時以動能和熱能攻擊，對裝甲有很強的穿透力。\n\n氏族增程粒子投射砲展現了氏族先進的工程技術，能從遠距離有效攻擊，射速也比標準型號快。雖然昂貴，仍深受氏族精銳駕駛員青睞。
+IDS_COMPENCYCLO156	火焰噴射器組將數具噴射器連成一套射擊平台，常裝在車輛或小型機甲上。一起開火能造成個別噴射器無法達到的傷害。
+IDS_COMPENCYCLO157	雷射可靠、便宜，各種軍事單位都能配備，是現代戰爭的常備武器。它體積小、傷害不俗，先進機甲也會採用它輔助其他武器。
+IDS_COMPENCYCLO161	Long Tom 機載火砲是重型火砲的縮小版。這一型號能裝在機甲上，但只有最大的機甲有足夠空間容納。\n\nLong Tom 以間接射擊把高爆彈送過障礙物，砲彈會在廣大範圍內造成重創。\n\n這款武器威力強大，但也曾造成多起誤傷友軍的事故。使用時請審慎選擇目標。
+IDS_COMPENCYCLO162	Thunderbolt 是仍在試驗階段的大型巡弋飛彈，十分罕見，連突擊型機甲也能重創。飛彈尺寸大，會占用大量配置空間並限制射程。只有最大的機甲能裝載這套系統，飛彈也只能打到中距離。
+IDS_HELP_COMP7	散熱器\n優點：提高機甲熱容量，能搭載產熱較高的武器。\n缺點：占用通常用來放武器的空間。
+IDS_HELP_COMP10	跳躍噴射器\n優點：讓機甲短時間飛越障礙，能越過大部分建築與樹木。\n缺點：會產生大量熱量，只有特定機甲能安裝。
+IDS_HELP_COMP25	裝甲\n優點：增加裝甲防護，延長需要維修前的作戰時間。\n缺點：占用通常用來放武器的空間。
+IDS_HELP_COMP99	輕型高斯步槍     傷害：6.0    射速：1.5    發熱：1.0\n優點：長程傷害不俗，產熱低。\n缺點：體積大，射速慢。
+IDS_HELP_COMP100	輕型機砲     傷害：2.0    射速：3.3    發熱：1.0\n優點：射速快、射程遠，適合清除小型車輛，且價格低、產熱少。\n缺點：穿甲能力低，對大型機甲效果不佳。
+IDS_HELP_COMP101	中型機砲     傷害：6.0    射速：1.8    發熱：2.0\n優點：價格低、傷害不俗、產熱少。\n缺點：需要大量配置空間。
+IDS_HELP_COMP102	重型機砲     傷害：12.0    射速：1.7    發熱：7.0\n優點：可造成極重傷害。\n缺點：射程短，需要大量配置空間。
+IDS_HELP_COMP103	超級輕型機砲     傷害：2.0    射速：4.5    發熱：1.0\n優點：比輕型機砲快，傷害和產熱相同。\n缺點：比輕型機砲貴。
+IDS_HELP_COMP104	高斯步槍     傷害：10.0    射速：1.4    發熱：1.0\n優點：長程傷害高，產熱低。\n缺點：射速慢，需要大量配置空間。
+IDS_HELP_COMP108	超級中型機砲     傷害：6.0    射速：2.5    發熱：4.0\n優點：比中型機砲快，傷害相同。\n缺點：比中型機砲貴、產熱高。
+IDS_HELP_COMP109	氏族超級重型機砲     傷害：12.0    射速：2.7    發熱：8.0\n優點：射速比重型機砲及超級重型機砲快。\n缺點：價格極高。
+IDS_HELP_COMP110	氏族超級輕型機砲     傷害：2.0    射速：5.6    發熱：1.0\n優點：射速比輕型機砲及超級輕型機砲快。\n缺點：比輕型機砲及超級輕型機砲貴。
+IDS_HELP_COMP111	氏族超級中型機砲     傷害：6.0    射速：2.8    發熱：3.0\n優點：比超級中型機砲快，產熱也更低。\n缺點：價格很高。
+IDS_HELP_COMP112	超級重型機砲     傷害：12.0    射速：2.4    發熱：8.0\n優點：傷害高，射速比重型機砲快。\n缺點：比重型機砲貴、產熱高。
+IDS_HELP_COMP113	氏族高斯步槍     傷害：10.0    射速：1.6    發熱：1.0\n優點：比高斯步槍射速快。\n缺點：價格高。
+IDS_HELP_COMP114	機槍組     傷害：1.0    射速：4.0    發熱：0.0\n優點：不產熱，是最便宜的武器。\n缺點：傷害低，較適合對付步兵與極輕型車輛。
+IDS_HELP_COMP120	長程飛彈架     傷害：3.0    射速：1.1    發熱：2.0\n優點：射程遠，可越過遮蔽物攻擊。\n缺點：射速極慢。
+IDS_HELP_COMP123	蜂群長程飛彈架     傷害：3.0    射速：1.1    發熱：2.0\n優點：發射特殊蜂群彈藥，彈頭分裂後會傷害小範圍內的所有目標。\n缺點：比標準長程飛彈架貴很多。
+IDS_HELP_COMP124	短程飛彈組     傷害：1.0    射速：2.8    發熱：2.0\n優點：飛彈能繞過障礙物。
+IDS_HELP_COMP125	Streak 短程飛彈組     傷害：2.0    射速：3.0    發熱：2.0\n優點：體積小，傷害不俗。\n缺點：射程短。
+IDS_HELP_COMP130	氏族長程飛彈架     傷害：3.0    射速：2.1    發熱：4.0\n優點：齊射頻率是標準長程飛彈架的兩倍。\n缺點：產熱量是標準長程飛彈架的兩倍，價格也高得多。
+IDS_HELP_COMP135	氏族 Streak 短程飛彈組     傷害：2.0    射速：3.2    發熱：2.0\n優點：比標準 Streak 短程飛彈組射速稍快。\n缺點：比標準 Streak 短程飛彈組貴。
+IDS_HELP_COMP139	氏族重型雷射     傷害：5.0    射速：2.0    發熱：7.0\n優點：傷害高，體積極小。\n缺點：產熱極高，射程短。
+IDS_HELP_COMP140	大型雷射     傷害：4.0    射速：2.0    發熱：8.0\n優點：傷害不俗、中距射程、體積適中。\n缺點：散熱需求高於平均。
+IDS_HELP_COMP141	增程大型雷射     傷害：4.0    射速：2.0    發熱：12.0\n優點：射程增至遠距。\n缺點：比大型雷射產熱高得多。
+IDS_HELP_COMP142	大型脈衝雷射     傷害：2.0    射速：5.6    發熱：10.0\n優點：射速快，累積傷害高於大型雷射。\n缺點：比大型雷射產熱高，穿甲能力低於平均。
+IDS_HELP_COMP143	增程雷射     傷害：2.5    射速：2.4    發熱：5.0\n優點：射程增至中距。\n缺點：比雷射產熱高。
+IDS_HELP_COMP144	脈衝雷射     傷害：2.0    射速：3.5    發熱：4.0\n優點：射速快，累積傷害高於雷射。\n缺點：比雷射產熱高。
+IDS_HELP_COMP145	粒子投射砲     傷害：7.0    射速：1.5    發熱：10.0\n優點：傷害出色，適合攻擊重裝甲目標。\n缺點：比其他能量武器更占空間。
+IDS_HELP_COMP146	增程粒子投射砲     傷害：7.0    射速：1.5    發熱：15.0\n優點：射程增至遠距。\n缺點：比粒子投射砲產熱高。
+IDS_HELP_COMP147	氏族重型大型雷射     傷害：9.0    射速：1.8    發熱：18.0\n優點：可在中距離造成極重傷害。\n缺點：產熱高。
+IDS_HELP_COMP150	氏族增程大型雷射     傷害：4.0    射速：2.5    發熱：12.0\n優點：比增程大型雷射射速快。\n缺點：比增程大型雷射貴。
+IDS_HELP_COMP151	氏族大型脈衝雷射     傷害：2.0    射速：6.2    發熱：10\n優點：比大型脈衝雷射射速快。\n缺點：比大型脈衝雷射貴。
+IDS_HELP_COMP152	氏族增程雷射     傷害：2.5    射速：3.0    發熱：5.0\n優點：比增程雷射射速快。\n缺點：比增程雷射貴。
+IDS_HELP_COMP153	氏族脈衝雷射     傷害：2.0    射速：4.0    發熱：4.0\n優點：比脈衝雷射射速快。\n缺點：比脈衝雷射貴。
+IDS_HELP_COMP154	氏族增程粒子投射砲     傷害：7.0    射速：2.2    發熱：15.0\n優點：比增程粒子投射砲射速快。\n缺點：比增程粒子投射砲貴。
+IDS_HELP_COMP155	火焰噴射器組     傷害：3.5    射速：1.7    發熱：7.0\n優點：體積小，傷害不俗。\n缺點：以這種體積來說產熱量相當高。
+IDS_HELP_COMP156	雷射     傷害：2.5    射速：2.4    發熱：3.0\n優點：體積小、產熱適中、價格低。\n缺點：射程短。
+IDS_HELP_COMP160	Long Tom 火砲     傷害：15.0    射速：1.4    發熱：20.0\n優點：可越過遮蔽物攻擊，高爆砲彈會波及大範圍內的所有目標。\n缺點：體積極大，產熱高，價格也很貴。
+IDS_HELP_COMP161	Thunderbolt 飛彈     傷害：13.0    射速：1.7    發熱：8.0\n優點：傷害極高，擅長對付重裝甲目標。\n缺點：體積大，價格很貴。
+IDS_OBJECT_200	彈藥庫
+IDS_OBJECT_201_LIAO	基地發電機
+IDS_OBJECT_202	圓頂建築
+IDS_OBJECT_203_LIAO	燃料槽
+IDS_OBJECT_204	大門控制站
+IDS_OBJECT_205	重型升降砲塔
+IDS_OBJECT_206	重型砲塔
+IDS_OBJECT_207	步兵營房
+IDS_OBJECT_208_LIAO	瞭望塔
+IDS_OBJECT_209	機甲機庫
+IDS_OBJECT_210	機甲駕駛員營房
+IDS_OBJECT_211	周界警報器
+IDS_OBJECT_212	發電機
+IDS_OBJECT_214	廖氏伸縮橋
+IDS_OBJECT_215_LIAO	回收品儲存區
+IDS_OBJECT_216	感測器控制站
+IDS_OBJECT_217	感測塔
+IDS_OBJECT_218_LIAO	回收品倉庫
+IDS_OBJECT_219	探照燈
+IDS_OBJECT_220	探照燈控制站
+IDS_OBJECT_221	砲塔控制站
+IDS_OBJECT_222	砲塔發電機
+IDS_OBJECT_223	廖氏車組人員營房
+IDS_OBJECT_224	堡壘
+IDS_OBJECT_225	步兵營房
+IDS_OBJECT_226	機甲機庫
+IDS_OBJECT_228	機甲駕駛員營房
+IDS_OBJECT_229	發電機
+IDS_OBJECT_230_DAVION	感測塔
+IDS_OBJECT_231_DAVION	探照燈
+IDS_OBJECT_232	砲塔發電機
+IDS_OBJECT_233_STEINER	回收品儲存區
+IDS_OBJECT_234	彈藥庫
+IDS_OBJECT_235	發電機
+IDS_OBJECT_236	機甲機庫
+IDS_OBJECT_237_LOOKOUT	瞭望塔
+IDS_OBJECT_239	啟動標記
+IDS_OBJECT_240	民宅
+IDS_OBJECT_241	民宅
+IDS_OBJECT_242	民宅
+IDS_OBJECT_243	民宅
+IDS_OBJECT_244	民宅
+IDS_OBJECT_245	民宅
+IDS_OBJECT_246	小型柳樹
+IDS_OBJECT_247	草地柳樹
+IDS_OBJECT_248	枯柳
+IDS_OBJECT_249	外星棕櫚樹
+IDS_OBJECT_250	外星棕櫚樹 2
+IDS_OBJECT_251	香蒲
+IDS_OBJECT_252	枯柳 2
+IDS_OBJECT_253	中型柳樹
+IDS_OBJECT_254	大型柳樹
+IDS_OBJECT_255	香蒲 2
+IDS_OBJECT_256	岩石
+IDS_OBJECT_257	岩石 2
+IDS_OBJECT_258	彈藥庫
+IDS_OBJECT_259	戴維恩橋梁控制站
+IDS_OBJECT_260	大門控制站
+IDS_OBJECT_261_DAVION	瞭望塔
+IDS_OBJECT_263	戴維恩伸縮橋
+IDS_OBJECT_264_DAVION	回收品儲存區
+IDS_OBJECT_265	感測器控制站
+IDS_OBJECT_266_DAVION	回收品倉庫
+IDS_OBJECT_267	探照燈控制站
+IDS_OBJECT_268	車庫
+IDS_OBJECT_269	路障
+IDS_OBJECT_270	大門
+IDS_OBJECT_271	路燈
+IDS_OBJECT_272	路燈 2
+IDS_OBJECT_273	路燈 3
+IDS_OBJECT_274	裝甲運兵車
+IDS_OBJECT_276	大型火砲
+IDS_OBJECT_277	布雷車
+IDS_OBJECT_279	小型火砲
+IDS_OBJECT_281	廖氏橋梁控制站
+IDS_OBJECT_282	輕型城牆
+IDS_OBJECT_283_DAVION	輕型大門
+IDS_OBJECT_284	戴維恩斜向輕型城牆
+IDS_OBJECT_285	叢林灌木 2
+IDS_OBJECT_286	叢林樹叢 1
+IDS_OBJECT_287	小型叢林樹木
+IDS_OBJECT_288	大型叢林樹木
+IDS_OBJECT_289	岩石 1
+IDS_OBJECT_290	多傑岩石 2
+IDS_OBJECT_291	岩石 3
+IDS_OBJECT_292	棕櫚樹
+IDS_OBJECT_293	棕櫚樹叢
+IDS_OBJECT_294	營房廢墟
+IDS_OBJECT_295	機庫廢墟
+IDS_OBJECT_296	廢棄儲槽
+IDS_OBJECT_297	塔樓廢墟
+IDS_OBJECT_298	火山口
+IDS_OBJECT_299	叢林樹叢 2
+IDS_OBJECT_302	裝甲車
+IDS_OBJECT_304	移動指揮車
+IDS_OBJECT_305	燃料車
+IDS_OBJECT_306	空載卡車
+IDS_OBJECT_307	貨車
+IDS_OBJECT_308	資源運輸車
+IDS_OBJECT_309	輕型城牆
+IDS_OBJECT_310_LIAO	輕型大門
+IDS_OBJECT_311_LIAO	中型城牆
+IDS_OBJECT_312_LIAO	中型大門
+IDS_OBJECT_313	重型城牆
+IDS_OBJECT_314_LIAO	重型大門
+IDS_OBJECT_315	中型城牆
+IDS_OBJECT_316_DAVION	中型大門
+IDS_OBJECT_317	重型城牆
+IDS_OBJECT_318_DAVION	重型大門
+IDS_OBJECT_319_STEINER	周界警報器
+IDS_OBJECT_320	步兵營房
+IDS_OBJECT_321	車庫
+IDS_OBJECT_322	戴維恩斜向中型城牆
+IDS_OBJECT_323	高斯砲塔
+IDS_OBJECT_324	升降式機砲砲塔
+IDS_OBJECT_325	長程飛彈砲塔
+IDS_OBJECT_326	大型脈衝雷射砲塔
+IDS_OBJECT_327	Long Tom 火砲砲塔
+IDS_OBJECT_328	戴維恩斜向重型城牆
+IDS_OBJECT_329	中型機砲砲塔
+IDS_OBJECT_330	短程飛彈砲塔
+IDS_OBJECT_331	升降式短程飛彈砲塔
+IDS_OBJECT_332	垂直起降運輸機
+IDS_OBJECT_333	升降式長程飛彈砲塔
+IDS_OBJECT_334_STEINER	回收品倉庫
+IDS_OBJECT_335	砲塔發電機
+IDS_OBJECT_336	吉普車
+IDS_OBJECT_337	維修車
+IDS_OBJECT_338	燃料管
+IDS_OBJECT_339	大型燃料槽
+IDS_OBJECT_340	小型燃料槽
+IDS_OBJECT_342	長程飛彈車
+IDS_OBJECT_343	史坦納伸縮橋
+IDS_OBJECT_344	重型城牆
+IDS_OBJECT_345_STEINER	重型大門
+IDS_OBJECT_346	中型城牆
+IDS_OBJECT_347_STEINER	中型大門
+IDS_OBJECT_348	輕型城牆
+IDS_OBJECT_349_STEINER	輕型大門
+IDS_OBJECT_350	砲塔控制站
+IDS_OBJECT_351	小型松樹
+IDS_OBJECT_352	橋梁控制站
+IDS_OBJECT_353	探照燈控制站
+IDS_OBJECT_354	大門控制站
+IDS_OBJECT_355	砲塔控制站
+IDS_OBJECT_356_STEINER	探照燈
+IDS_OBJECT_357_STEINER	感測塔
+IDS_OBJECT_358	機甲駕駛員營房
+IDS_OBJECT_359	感測器控制站
+IDS_OBJECT_360	救護車
+IDS_OBJECT_361	F 型戰車
+IDS_OBJECT_362	偵察兵
+IDS_OBJECT_363	松樹叢
+IDS_OBJECT_364	中型松樹
+IDS_OBJECT_365	大型松樹
+IDS_OBJECT_367	感測探針發射器
+IDS_OBJECT_368	H 型帳篷
+IDS_OBJECT_369	帳篷
+IDS_OBJECT_370	指揮帳篷
+IDS_OBJECT_371	長型帳篷
+IDS_OBJECT_372	攻擊直升機
+IDS_OBJECT_374	機車
+IDS_OBJECT_375	沙灘越野車
+IDS_OBJECT_376	運兵車
+IDS_OBJECT_378	私人噴射機
+IDS_OBJECT_379	廖氏旗幟
+IDS_OBJECT_380	檢查哨
+IDS_OBJECT_381	桶子
+IDS_OBJECT_382	桶子
+IDS_OBJECT_383	大型垃圾箱
+IDS_OBJECT_384	小型路障
+IDS_OBJECT_385	停車再開標誌
+IDS_OBJECT_386	偽裝網
+IDS_OBJECT_387	沙包牆
+IDS_OBJECT_388	帆布覆蓋的箱子
+IDS_OBJECT_389	燃燒的垃圾桶
+IDS_OBJECT_390	木柵欄
+IDS_OBJECT_391	沙包掩體
+IDS_OBJECT_392	彈藥箱
+IDS_OBJECT_393	木箱
+IDS_OBJECT_394	球型危險物料槽
+IDS_OBJECT_395	步兵
+IDS_OBJECT_396	動力裝甲
+IDS_OBJECT_397	堆高機
+IDS_OBJECT_398	重工業設施
+IDS_OBJECT_399	淨化廠
+IDS_OBJECT_400	小型白樺
+IDS_OBJECT_401	小型枯白樺
+IDS_OBJECT_402	中型白樺
+IDS_OBJECT_403	中型枯白樺
+IDS_OBJECT_404	大型白樺
+IDS_OBJECT_405	大型枯白樺
+IDS_OBJECT_406	白樺樹叢 1
+IDS_OBJECT_407	枯白樺樹叢 1
+IDS_OBJECT_408	網格圓頂
+IDS_OBJECT_409	橋梁
+IDS_OBJECT_410	彈藥箱
+IDS_OBJECT_411	桶子
+IDS_OBJECT_412	藍色信標燈
+IDS_OBJECT_413	垃圾桶
+IDS_OBJECT_414	偽裝網
+IDS_OBJECT_415	金屬路障
+IDS_OBJECT_416	箱子
+IDS_OBJECT_417	戴維恩旗幟
+IDS_OBJECT_418	大型垃圾箱
+IDS_OBJECT_419	綠色信標燈
+IDS_OBJECT_420	球型危險物料槽
+IDS_OBJECT_421	廖氏旗幟
+IDS_OBJECT_422	軍事檢查哨
+IDS_OBJECT_423	置物櫃
+IDS_OBJECT_424	紅色信標燈
+IDS_OBJECT_425	跑道燈
+IDS_OBJECT_426	沙包掩體
+IDS_OBJECT_427	沙包牆
+IDS_OBJECT_428	路滑標誌
+IDS_OBJECT_429	停車再開標誌
+IDS_OBJECT_430	強化路障
+IDS_OBJECT_431	木箱
+IDS_OBJECT_432	道路標誌
+IDS_OBJECT_433	燃料管接頭
+IDS_OBJECT_434	撤離標記
+IDS_OBJECT_435	導航標記
+IDS_OBJECT_436	導航點 2
+IDS_OBJECT_437	導航點 3
+IDS_OBJECT_438	導航點 4
+IDS_OBJECT_439	導航點 5
+IDS_OBJECT_440	導航點 6
+IDS_OBJECT_441	導航標記
+IDS_OBJECT_442	未使用
+IDS_OBJECT_443	未使用
+IDS_OBJECT_444	工廠
+IDS_OBJECT_445	鐵皮棚屋
+IDS_OBJECT_446	化工廠
+IDS_OBJECT_447	小型橡樹
+IDS_OBJECT_448	中型橡樹
+IDS_OBJECT_449	大型橡樹
+IDS_OBJECT_450	大型枯橡樹
+IDS_OBJECT_451	中型枯橡樹
+IDS_OBJECT_452	小型枯橡樹
+IDS_OBJECT_453	橡樹叢
+IDS_OBJECT_454	小型楓樹
+IDS_OBJECT_455	中型楓樹
+IDS_OBJECT_456	大型楓樹
+IDS_OBJECT_457	小型枯楓樹
+IDS_OBJECT_458	中型枯楓樹
+IDS_OBJECT_459	大型枯楓樹
+IDS_OBJECT_460	紅杉 1
+IDS_OBJECT_461	紅杉 2
+IDS_OBJECT_462	紅杉 3
+IDS_OBJECT_463	枯紅杉 1
+IDS_OBJECT_464	枯紅杉 2
+IDS_OBJECT_465	枯紅杉 3
+IDS_OBJECT_466	大型工廠
+IDS_OBJECT_467	小型工廠
+IDS_OBJECT_468	中型工廠
+IDS_OBJECT_469	加工廠
+IDS_OBJECT_471	彎管
+IDS_OBJECT_473	末端管
+IDS_OBJECT_474	四通管
+IDS_OBJECT_475	液體儲槽
+IDS_OBJECT_476	管線儲槽
+IDS_OBJECT_477	生鏽的拱形棚屋
+IDS_OBJECT_478	拱形棚屋
+IDS_OBJECT_479	新式拱形棚屋
+IDS_OBJECT_480	小型民宅
+IDS_OBJECT_481	大型民宅
+IDS_OBJECT_482	簡陋民宅
+IDS_OBJECT_483	極小型民宅
+IDS_OBJECT_484_STRAIGHT1	短管線
+IDS_OBJECT_485_STRAIGHT2	中型管線
+IDS_OBJECT_486_STRAIGHT3	長管線
+IDS_OBJECT_487	三通管
+IDS_OBJECT_488	小型枯柳
+IDS_OBJECT_489	中型枯柳
+IDS_OBJECT_490	大型枯柳
+IDS_OBJECT_491	小型枯松樹
+IDS_OBJECT_492	中型枯松樹
+IDS_OBJECT_493	大型枯松樹
+IDS_OBJECT_494	資源建築
+IDS_OBJECT_495	匪徒指揮部
+IDS_OBJECT_496	墜毀太空船的引擎
+IDS_OBJECT_497	墜毀太空船的船尾
+IDS_OBJECT_498	廖氏斜向輕型城牆
+IDS_OBJECT_499	廖氏斜向中型城牆
+IDS_OBJECT_500	廖氏斜向重型城牆
+IDS_OBJECT_501	重型直升機
+IDS_OBJECT_502	偵察直升機
+IDS_OBJECT_503	輕型柱
+IDS_OBJECT_504	廖氏斜向輕型柱
+IDS_OBJECT_505	中型柱
+IDS_OBJECT_506	廖氏斜向中型柱
+IDS_OBJECT_507	重型柱
+IDS_OBJECT_508	廖氏斜向重型柱
+IDS_OBJECT_509	仙人掌
+IDS_OBJECT_510	彎曲仙人掌
+IDS_OBJECT_511	高大仙人掌
+IDS_OBJECT_512	多刺仙人掌
+IDS_OBJECT_513	矮灌木 1
+IDS_OBJECT_514	矮灌木 2
+IDS_OBJECT_515	矮灌木 3
+IDS_OBJECT_516	矮灌木 4
+IDS_OBJECT_517	廢料堆
+IDS_OBJECT_518	大型廢料
+IDS_OBJECT_519	廢料
+IDS_OBJECT_520	小型廢料
+IDS_OBJECT_521	大型殘骸
+IDS_OBJECT_522	殘骸
+IDS_OBJECT_523	小型殘骸
+IDS_OBJECT_524	墜毀的救生艇
+IDS_OBJECT_525	生鏽的逃生艙
+IDS_OBJECT_526	沙漠岩石堆 1
+IDS_OBJECT_527	沙漠岩石堆 2
+IDS_OBJECT_528	沙漠岩石堆 3
+IDS_OBJECT_529	沙漠岩層 1
+IDS_OBJECT_530	沙漠岩層 2
+IDS_OBJECT_531	沙漠岩柱 1
+IDS_OBJECT_532	沙漠岩柱 2
+IDS_OBJECT_533	偵察直升機
+IDS_OBJECT_534	史坦納斜向輕型城牆
+IDS_OBJECT_535	史坦納斜向中型城牆
+IDS_OBJECT_536	史坦納斜向重型城牆
+IDS_OBJECT_537	重型柱
+IDS_OBJECT_538	史坦納斜向重型柱
+IDS_OBJECT_539	中型柱
+IDS_OBJECT_540	史坦納斜向中型柱
+IDS_OBJECT_541	輕型柱
+IDS_OBJECT_542	史坦納斜向輕型柱
+IDS_OBJECT_543	水塔
+IDS_OBJECT_544	公寓
+IDS_OBJECT_545	高層公寓
+IDS_OBJECT_546	棚屋
+IDS_OBJECT_547	斜頂棚屋
+IDS_OBJECT_548	架高棚屋
+IDS_OBJECT_549	會堂
+IDS_OBJECT_550	木柵欄
+IDS_OBJECT_551	測試用樹木
+IDS_OBJECT_552	測試用建築
+IDS_OBJECT_553	測試用可跨越物件
+IDS_OBJECT_554	移動式軌道砲
+IDS_OBJECT_555	ComStar 支援設施
+IDS_OBJECT_556	超長橋梁
+IDS_OBJECT_557	固定火砲
+IDS_OBJECT_558	木柵欄轉角
+IDS_OBJECT_559	武器設施
+IDS_OBJECT_560	穀倉
+IDS_OBJECT_561	溫室
+IDS_OBJECT_562	砲塔
+IDS_OBJECT_563	工業園區
+IDS_OBJECT_564	中繼站
+IDS_OBJECT_565	變電站
+IDS_OBJECT_566	閥門站
+IDS_OBJECT_567	廢棄物處理設施
+IDS_OBJECT_568	超脈衝發射站
+IDS_OBJECT_569	指揮部
+IDS_OBJECT_570	指揮部
+IDS_OBJECT_571	指揮部
+IDS_OBJECT_572	鐵絲網圍籬
+IDS_OBJECT_573	鐵絲網圍籬轉角
+IDS_OBJECT_574	刀片刺網
+IDS_OBJECT_575	刀片刺網轉角
+IDS_OBJECT_576	危險物料
+IDS_OBJECT_577	沙漠岩石區 1
+IDS_OBJECT_578	沙漠岩石區 2
+IDS_OBJECT_579	沙漠岩石區 3
+IDS_OBJECT_580	草地岩石堆 1
+IDS_OBJECT_581	草地岩石堆 2
+IDS_OBJECT_582	草地岩石堆 3
+IDS_OBJECT_583	草地岩石區 1
+IDS_OBJECT_584	草地岩石區 2
+IDS_OBJECT_585	草地岩石區 3
+IDS_OBJECT_586	草地岩層 1
+IDS_OBJECT_587	草地岩層 2
+IDS_OBJECT_588	草地岩層 3
+IDS_OBJECT_589	叢林岩石堆 1
+IDS_OBJECT_590	叢林岩石堆 2
+IDS_OBJECT_591	叢林岩石堆 3
+IDS_OBJECT_592	叢林岩石區 1
+IDS_OBJECT_593	叢林岩石區 2
+IDS_OBJECT_594	叢林岩石區 3
+IDS_OBJECT_595	叢林岩層 1
+IDS_OBJECT_596	叢林岩層 2
+IDS_OBJECT_597	叢林岩層 3
+IDS_OBJECT_598	凍原岩石堆 1
+IDS_OBJECT_599	凍原岩石堆 2
+IDS_OBJECT_600	凍原岩石堆 3
+IDS_OBJECT_601	凍原岩石區 1
+IDS_OBJECT_602	凍原岩石區 2
+IDS_OBJECT_603	凍原岩石區 3
+IDS_OBJECT_604	凍原岩層 1
+IDS_OBJECT_605	凍原岩層 2
+IDS_OBJECT_606	凍原岩層 3
+IDS_OBJECT_607	火山地岩石堆 1
+IDS_OBJECT_608	火山地岩石堆 2
+IDS_OBJECT_609	火山地岩石堆 3
+IDS_OBJECT_610	火山地岩石區 1
+IDS_OBJECT_611	火山地岩石區 2
+IDS_OBJECT_612	火山地岩石區 3
+IDS_OBJECT_613	火山地岩層 1
+IDS_OBJECT_614	火山地岩層 2
+IDS_OBJECT_615	火山地岩層 3
+IDS_OBJECT_616	監獄
+IDS_OBJECT_617	小棚屋
+IDS_OBJECT_618	空中觀測車
+IDS_OBJECT_619	沙漠迷彩機砲砲塔
+IDS_OBJECT_620	凍原迷彩機砲砲塔
+IDS_OBJECT_DAVION	維修站
+IDS_OBJECT_DAVION_PALARM	周界警報器
+IDS_OBJECT_LIAO	維修站
+IDS_OBJECT_STEINER	維修站
+IDS_HELP_ACCEPT_BUTTON	接受    套用變更。
+IDS_HELP_ADDMECHBAY	加入    從機甲庫選一架機甲，按下此按鈕即可加入部署小隊。
+IDS_HELP_ADDMW	加入    從可用駕駛員中選一名，按下此按鈕即可加入部署小隊。
+IDS_HELP_ALL_TAB	所有零件
+IDS_HELP_AMMO	彈藥說明
+IDS_HELP_AMMO_INDICATOR	彈藥指示說明
+IDS_HELP_ARMOR	裝甲    顯示機甲的相對裝甲值。
+IDS_HELP_ARMOR_INDICATOR	裝甲值 =
+IDS_HELP_AVAILABLEMW	機甲駕駛員    此處列出本次任務可用的駕駛員。選取一名駕駛員並按「加入」，即可編入部署小隊。
+IDS_HELP_AVAILABLE_MECHS	可購買的機甲    可購買這些機甲並存入機甲庫。
+IDS_HELP_BALLISTIC_TAB	實彈武器頁籤
+IDS_HELP_BUYSELLMECH	機甲採購    前往購買更多機甲。
+IDS_HELP_BUY_BUTTON	購買    選取可購買的機甲並按下此按鈕，即可將它存入機甲庫。
+IDS_HELP_CHANGEWEAPONS	機甲工坊    前往更換機甲的武器配置。
+IDS_HELP_CM_PAUSE_BUTTON	暫停    暫停播放任務概覽影片。
+IDS_HELP_CM_PLAY_BUTTON	播放    播放任務概覽影片。
+IDS_HELP_CM_STOP_BUTTON	停止    停止播放任務概覽影片。
+IDS_HELP_COMPONENT_LIST	零件清單說明
+IDS_HELP_COMPONENT_TAB	零件頁籤
+IDS_HELP_DAMAGE	傷害說明
+IDS_HELP_DAMAGE_INDICATOR	傷害指示說明
+IDS_HELP_DEPLOYMENT	部署    可在此檢閱任務目標並下令出擊。
+IDS_HELP_DEPLOYTEAMDEP	部署小隊    這些機甲與駕駛員已就緒，可以出擊。
+IDS_HELP_DROPWEIGHT	部署重量    顯示部署小隊總重。每次任務有不同的重量上限。
+IDS_HELP_ENERGY_TAB	能量武器頁籤
+IDS_HELP_EXPERIENCE	經驗    顯示駕駛員的相對經驗。
+IDS_HELP_EXPERIENCE_INDICATOR	經驗值 =
+IDS_HELP_GEN05	機甲腿部
+IDS_HELP_HEATFACTOR	發熱    顯示發熱資訊。
+IDS_HELP_HELP	說明    此區顯示操作提示。
+IDS_HELP_JUMPING	跳躍    顯示機甲的相對跳躍能力。
+IDS_HELP_JUMPING_INDICATOR	跳躍值 =
+IDS_HELP_KILLS	擊破數    此機甲駕駛員消滅的敵軍數量。
+IDS_HELP_LAUNCH	出擊    開始執行任務。
+IDS_HELP_MC_AVAILABLE_COMPONENTS	可用零件    清單包含可用與不可用的武器及零件。選取頁籤後，再選取可用的武器或零件並按「加入」，即可裝上機甲。也可以拖曳或點兩下來安裝。
+IDS_HELP_MECHLAB	機甲工坊    在此更換機甲的武器配置。
+IDS_HELP_MECHWEIGHT	重量    顯示機甲的重量。
+IDS_HELP_MEDAL2	戰役二綬帶    授予參與第二場戰役的駕駛員。
+IDS_HELP_MEDAL3	戰役三綬帶    授予參與第三場戰役的駕駛員。
+IDS_HELP_MISSILE_TAB	飛彈頁籤
+IDS_HELP_MWASSIGNMENT	駕駛員分配    選擇每架機甲的駕駛員。每架機甲都必須有一名駕駛員。
+IDS_HELP_PAUSE	暫停    暫停播放影片。
+IDS_HELP_PILOTING	駕駛    顯示駕駛員的相對操控能力。
+IDS_HELP_PILOTING_INDICATOR	駕駛值 =
+IDS_HELP_PLAY	播放    播放影片。
+IDS_HELP_RANGE	射程說明
+IDS_HELP_RANGE_INDICATOR	射程指示說明
+IDS_HELP_RANK	軍階    顯示駕駛員的軍階。
+IDS_HELP_RATE	射速說明
+IDS_HELP_RATE_INDICATOR	射速指示說明
+IDS_HELP_REMOVEMECHBAY	移除    選取部署小隊中的機甲，按下此按鈕即可將它移回機甲庫。
+IDS_HELP_REMOVEMW	移除    選取部署小隊中的駕駛員，按下此按鈕即可將其移回可用人員名單。
+IDS_HELP_SELL_BUTTON	出售    選取庫存中的機甲，按下此按鈕即可換取 C-Bills。
+IDS_HELP_SENSOR	感測    顯示駕駛員解讀感測器的相對能力。
+IDS_HELP_SENSOR_INDICATOR	感測值 =
+IDS_HELP_SPEC1	駕駛專長 1    顯示駕駛員的第一項專長說明。
+IDS_HELP_SPEC2	駕駛專長 2    顯示駕駛員的第二項專長說明。
+IDS_HELP_SPEC3	駕駛專長 3    顯示駕駛員的第三項專長說明。
+IDS_HELP_SPEC4	駕駛專長 4    顯示駕駛員的第四項專長說明。
+IDS_HELP_SPEED	速度    顯示機甲的相對速度。
+IDS_HELP_SPEED_INDICATOR	速度值 =
+IDS_HELP_STOP	停止    停止播放影片。
+IDS_HELP_TARGETING	瞄準    顯示駕駛員的相對瞄準能力。
+IDS_HELP_TARGETING_INDICATOR	瞄準值 =
+IDS_HELP_WEAPON_FACILITY	儲存武器補給。佔領即可取得武器，附近有敵軍時無法佔領。
+IDS_HOUSE0	廖氏
+IDS_HOUSE1	史坦納
+IDS_HOUSE2	戴維恩
+IDS_HOUSE3	匪徒
+IDS_HOUSE4	氏族
+IDS_HOUSE5	氏族
+IDS_HOUSE6	氏族
+IDS_SKILL1	跳躍
+IDS_SKILL2	感測
+IDS_SKILL3	射擊
+IDS_VEHICLE_GUARD_TOWER_HELP	點選我方單位視線內的地點以部署固定火砲。部署後無法移動。
+IDS_VEHICLE_MINELAYER_HELP	點選我方單位視線內的地點以部署布雷車。
+IDS_VEHICLE_RECOVERY_HELP	點選失去行動能力的機甲以部署回收飛行器。
+IDS_VEHICLE_REPAIR_TRUCK_HELP	點選我方單位視線內的地點以部署維修車。
+IDS_VEHICLE_SCOUT_HELP	點選我方單位視線內的地點以部署偵察直升機。
+IDS_IDS_OBJECTIVES_21_A	 f. 摧毀工業園區
+IDS_MP_NAME_01	峽谷混戰
+IDS_MP_NAME_02	城市激戰
+IDS_MP_NAME_03	峽谷
+IDS_MP_NAME_04	淺灘作戰
+IDS_MP_NAME_05	殲滅戰
+IDS_MP_NAME_06	冰原
+IDS_MP_NAME_07	最後生還者
+IDS_MP_NAME_08	雷納德山
+IDS_MP_NAME_09	山丘之王
+IDS_MP_NAME_10	北角基地
+IDS_MP_NAME_11	山頂決戰
+IDS_MP_NAME_12	六座基地
+IDS_MP_NAME_13	領土爭奪
+IDS_MP_NAME_14	經典基地爭奪戰
+IDS_MP_NAME_15	基地爭奪戰
+IDS_MP_NAME_16	三取二
+IDS_MP_NAME_17	軌道砲攻防
+IDS_MP_NAME_18	峽谷（基地爭奪戰）
+IDS_SENSOR	感測器
+IDS_SENSORTOWER	蒐集大範圍的感測資訊。可能與感測器控制站相連。
+IDS_SENSOR_ASSAULT_MECH	突擊型機甲
+IDS_SENSOR_CONTROL	佔領以取得感測資訊。附近有敵軍時無法佔領。
+IDS_SENSOR_HEAVY_MECH	重型機甲
+IDS_SENSOR_HEAVY_VEHICLE	重型載具
+IDS_SENSOR_LIGHT_MECH	輕型機甲
+IDS_SENSOR_LIGHT_VEHICLE	輕型載具
+IDS_SENSOR_MECH_UNKNOWN	未知
+IDS_SENSOR_MEDIUM_MECH	中型機甲
+IDS_SENSOR_MEDIUM_VEHICLE	中型載具
+IDS_SENSOR_PROBE_HELP_LOS	點選地點以投放感測探針。
+IDS_SENSOR_VEHICLE_UNKNOWN	未知
+IDS_CAMPAIGN_1_HONOR_RIBBON_HELP	戰役一榮譽綬帶    授予參與第一場戰役所有任務的駕駛員。
+IDS_CAMPAIGN_2_HONOR_RIBBON_HELP	戰役二榮譽綬帶    授予參與第二場戰役所有任務的駕駛員。
+IDS_CAMPAIGN_3_HONOR_RIBBON_HELP	戰役三榮譽綬帶    授予參與第三場戰役所有任務的駕駛員。
+IDS_MEDAL2	戰役二綬帶    表彰參與戰役。
+IDS_MEDAL3	戰役三綬帶    表彰參與戰役。
+IDS_MEDAL4	戰役一榮譽綬帶    表彰參與第一場戰役的所有任務。
+IDS_MEDAL5	戰役二榮譽綬帶    表彰參與第二場戰役的所有任務。
+IDS_MEDAL6	戰役三榮譽綬帶    表彰參與第三場戰役的所有任務。
+IDS_MEDAL7	紫心勳章    表彰在戰鬥中負傷。
+IDS_MEDAL8	英勇勳章    表彰在單一任務擊破至少三架機甲。
+IDS_MEDAL9	卓越英勇勳章    表彰在單一任務擊破至少七架機甲。
+IDS_MEDAL14	廖氏英勇旭日勳章    表彰在砲火下展現的英勇。
+IDS_MEDAL15	戴維恩旭日勳章    表彰傑出的盡責、奉獻與犧牲。
+IDS_MEDAL16	史坦納聯盟之星    表彰非凡的勇氣與榮譽。
+IDS_MFDCMD_ARTILLERY	呼叫%s
+IDS_MFDCMD_CAMERA	攝影無人機
+IDS_MFDCMD_FROM	由此位置攻擊 [C]
+IDS_MFDCMD_GUARD	防守／護送 [G]
+IDS_MFDCMD_JUMP	使用跳躍噴射器 [J]
+IDS_MFDCMD_LARGESTRIKE	大型空襲
+IDS_MFDCMD_LONG	長程攻擊 [L]
+IDS_MFDCMD_MEDIUM	中程攻擊 [M]
+IDS_MFDCMD_MOVE	全速移動 [SPACE]
+IDS_MFDCMD_NAME	指令面板
+IDS_MFDCMD_NOZOOM	已停用縮放
+IDS_MFDCMD_SENSOR	感測探針
+IDS_MFDCMD_SHORT	短程攻擊 [S]
+IDS_MFDCMD_SMALLSTRIKE	小型空襲
+IDS_MFDCMD_ZOOM	縮放
+IDS_MFDOBJ_FAILURE	失敗
+IDS_MFDOBJ_INCOMPLETE	未完成
+IDS_MFDOBJ_INVALID	無效狀態
+IDS_MFDOBJ_INVALID2	無效
+IDS_MFDOBJ_INVISIBLE	隱藏
+IDS_MFDOBJ_OTHER	其他
+IDS_MFDOBJ_PRIMARY	主要
+IDS_MFDOBJ_SECONDARY	次要
+IDS_MFDOBJ_SUCCESS	成功
+IDS_TAB_CAM	目前戰役簡報
+IDS_TAB_CMP	目前零件庫存
+IDS_TAB_MCH	目前機甲庫存
+IDS_TAB_MIS	目前任務簡報
+IDS_TAB_OP	目前行動簡報
+IDS_TAB_PLT	目前駕駛員名單
+IDS_TAB_VCL	目前載具庫存
+IDS_UNCOMMON_VALOR_HELP	卓越英勇勳章    授予在單一任務擊破至少七架機甲的駕駛員。
+IDS_UNCOMMON_VALOR_HELP2	卓越英勇勳章    授予在單一任務擊破至少七架機甲的駕駛員。
+IDS_UNCOMMON_VALOR_HELP3	卓越英勇勳章    授予在單一任務擊破至少七架機甲的駕駛員。
+IDS_UNCOMMON_VALOR_HELP4	卓越英勇勳章    授予在單一任務擊破至少七架機甲的駕駛員。
+IDS_SPECIALTY_HELP2	雷射專家    提高雷射、大型雷射、重型雷射及重型大型雷射的命中率。
+IDS_SPECIALTY_HELP4	輕型機砲專家    提高所有輕型機砲的命中率。
+IDS_SPECIALTY_HELP5	中型機砲專家    提高所有中型機砲的命中率。
+IDS_SPECIALTY_HELP6	短程飛彈專家    提高所有短程飛彈的命中率。
+IDS_SPECIALTY_HELP7	輕武器專家    提高機槍和火焰噴射器的命中率。
+IDS_SPECIALTY_HELP8	感測專家    可從感測資料得知更多資訊。駕駛員等級越高，資訊越詳細。
+IDS_SPECIALTY_HELP9	強韌專家    能在足以讓一般駕駛員喪命的傷勢下存活。
+IDS_SPECIALTY_HELP10	中型機甲專家    駕駛中型機甲時可閃避更多敵方火力。
+IDS_SPECIALTY_HELP11	脈衝雷射專家    提高脈衝雷射及大型脈衝雷射的命中率。
+IDS_SPECIALTY_HELP12	增程雷射專家    提高增程雷射及大型增程雷射的命中率。
+IDS_SPECIALTY_HELP13	長程飛彈專家    提高所有長程飛彈的命中率。
+IDS_SPECIALTY_HELP14	偵察專家    可發現一般視距外的敵人。
+IDS_SPECIALTY_HELP15	跳躍噴射器專家    提高使用跳躍噴射器時的跳躍距離。
+IDS_SPECIALTY_HELP16	重型機甲專家    駕駛重型機甲時可閃避部分敵方火力。
+IDS_SPECIALTY_HELP17	粒子砲專家    提高所有粒子投射砲的命中率。
+IDS_SPECIALTY_HELP18	重型機砲專家    提高所有重型機砲的命中率。
+IDS_SPECIALTY_HELP19	短程射擊專家    提高對 60 公尺內目標的命中率。
+IDS_SPECIALTY_HELP20	中程射擊專家    提高對 30 至 120 公尺內目標的命中率。
+IDS_SPECIALTY_HELP21	長程射擊專家    提高對 60 公尺外目標的命中率。
+IDS_SPECIALTY_HELP22	突擊型機甲專家    駕駛突擊型機甲時可閃避部分敵方火力。
+IDS_SPECIALTY_HELP23	高斯砲專家    提高高斯砲及輕型高斯砲的命中率。
+IDS_SPECIALTY_HELP24	神射手    提高瞄準敵方機甲特定部位時的命中率。
+IDS_SPECIALTY_HELP26	感測專家    可從感測資料得知更多資訊。駕駛員等級越高，資訊越詳細。
+IDS_SPECIALTY_HELP27	感測專家    可從感測資料得知更多資訊。駕駛員等級越高，資訊越詳細。
+IDS_SPECIALTY_HELP28	輕型機甲專家    駕駛輕型機甲時，可閃避更多敵方火力。
+IDS_BLDOBJ_NAME	建築
+IDS_COMPONENT	零件
+IDS_CONTROL	Ctrl
+IDS_FORCEGROUP_BAR	部署小隊
+IDS_FORCEGROUP_BAR_DESC	點選單位以指揮或檢視資訊。按住 Shift 可選取多個單位。\n
+IDS_GAMEPAUSED	遊戲已暫停
+IDS_GAME_ERROR	MechCommander 2 錯誤
+IDS_GAME_HDSPACE_ERROR	硬碟空間不足
+IDS_GAME_HDSPACE_MSG	MechCommander 2 可能沒有足夠的硬碟空間儲存遊戲。按「確定」繼續，或按「取消」離開遊戲並釋出磁碟空間。
+IDS_GAME_VOODOO3	使用 Voodoo 3 顯示卡時，MechCommander 2 無法在高於 1024×768 的桌面解析度下執行。桌面色彩深度也必須設為 16 位元。
+IDS_GUARD_RECIPIENT_LEFT_HELP	點選這個單位以保護它。
+IDS_HOTKEY_CHAT	聊天
+IDS_HOTKEY_CHAT_TEAM	隊伍聊天
+IDS_HOTKEY_ROTATEL	向左旋轉鏡頭
+IDS_HOTKEY_ROTATER	向右旋轉鏡頭
+IDS_HOTKEY_TILTD	向下傾斜鏡頭
+IDS_HOTKEY_TILTU	向上傾斜鏡頭
+IDS_HOTKEY_TRACKD	向下移動鏡頭
+IDS_HOTKEY_TRACKL	向左移動鏡頭
+IDS_HOTKEY_TRACKR	向右移動鏡頭
+IDS_HOTKEY_TRACKU	向上移動鏡頭
+IDS_LONG	長程
+IDS_LOSTPLAYER	玩家已離線
+IDS_MC2_CDMISSING	請放入 MechCommander 2 光碟，再按「確定」繼續。
+IDS_MC2_FILEMISSING	MechCommander 2 無法開啟檔案 %s。\n%s
+IDS_MC2_MISSING_TITLE	尚未放入 MechCommander 2 光碟
+IDS_MC2_movieMISSING	MechCommander 2 無法開啟影片 %s。\n%s
+IDS_MC_COMPONENT_TOO_HOT	發熱量超出上限
+IDS_MC_COMPONENT_TOO_MUCH_ARMOR	裝甲超出上限
+IDS_MEDIUM	中程
+IDS_MFDMCH_PRINTSTRING	%s %.0f 噸機甲
+IDS_MFDVEHICLE_PRINTSTRING	%s %.0f 噸載具
+IDS_MISSION_SHOTSLEFT	剩餘彈藥 %ld
+IDS_NOUNIT	請選取一個單位
+IDS_SHORT	短程
+IDS_SNIFFER_DONE_MSG	MechCommander 2 已完成電腦檢查。日後可透過「開始」功能表中的 MechCommander 2 硬體設定再次執行。請重新啟動遊戲。
+IDS_SNIFFER_INIT_MSG	MechCommander 2 將檢查電腦硬體，並設定初始畫質選項。這會耗費 5 至 30 秒，請稍候。
+IDS_SNIFFER_INIT_TITLE	MechCommander 2 設定
+IDS_SWAPFILE_CAPTION	錯誤：交換檔過小
+IDS_SWAPFILE_TOO_SMALL	交換檔必須至少有 250 MB 才能執行 MechCommander 2。目前的交換檔大小為 %d MB，請調大交換檔。
+IDS_TRTOBJ_NAME	砲塔
+IDS_TUTORIAL	訓練
+IDS_WATSON_CRASH_MSG	MechCommander 2 意外停止。請將資訊提交給 Microsoft。可能已有修正此問題的補丁。感謝你回報問題。
+IDS_LAWYER_BABBLE	(c) 與 (p) 1999–2001 Microsoft Corporation。保留所有權利。\n\nBattleTech、MechCommander、MechWarrior、BattleMech 和 'Mech 是 FASA Corporation 與 Microsoft Corporation 在美國和其他國家的商標或註冊商標。Microsoft、Windows、DirectDraw、DirectPlay、DirectSound、DirectX 和 MSN 是 Microsoft Corporation 在美國或其他國家／地區的商標或註冊商標。\n\n使用 RAD Game Tools, Inc. 的影片技術。版權所有 (C) 1997–2001。\n\n警告：本電腦程式受著作權法與國際條約保護。未經授權重製或散布本程式全部或任何部分，可能招致重大的民事與刑事處罰，並將在法律許可的最大範圍內追訴。\n\n本產品依授權提供。你的產品識別碼是 %s。\n
+IDS_LAWYER_BABBLE2	(c) 與 (p) 1999–2001 Microsoft Corporation。保留所有權利。本程式受美國及國際著作權法保護，詳見資訊畫面。\n
+IDS_MP_PLAYERPREFS_INSIGNIA_HELP	部隊徽章    從下拉清單選擇代表部隊的徽章。將自訂徽章存成 32×32、24 位元的 Targa（.tga）檔並放入 \Multiplayer\Insignia 資料夾，就會出現在清單上。
+IDS_OPTIONS_HELP_SOUND_EFFECTS_VOLUME	音效音量    調整音效的音量。滑桿拉到最低時，將不播放音效。
+IDS_GRASS1	草地點綴 2（林地地表）
+IDS_STRING10006	沙漠點綴 3（沙漠灌叢）
+IDS_STRING10011	沙漠 5
+IDS_STRING10012	草地 5
+IDS_STRING10013	沙漠點綴 2（沙漠灌叢）
+IDS_STRING10014	草地岸邊 1
+IDS_STRING10015	草地岸邊 2
+IDS_COMP_ABBR1	引擎
+IDS_COMP_ABBR4	手臂致動器
+IDS_COMP_ABBR5	腿部致動器
+IDS_COMP_ABBR6	駕駛艙
+IDS_COMP_ABBR7	散熱器
+IDS_COMP_ABBR10	跳躍噴射器
+IDS_COMP_ABBR13	標準光學
+IDS_COMP_ABBR14	中級感測器
+IDS_COMP_ABBR15	進階感測器
+IDS_COMP_ABBR16	氏族基礎感測
+IDS_COMP_ABBR17	氏族進階感測
+IDS_COMP_ABBR18	車用感測器
+IDS_COMP_ABBR19	進階車用感測
+IDS_COMP_ABBR22	陀螺儀 III
+IDS_COMP_ABBR33	肩部致動器
+IDS_COMP_ABBR34	髖部致動器
+IDS_COMP_ABBR35	維生系統
+IDS_COMP_ABBR37	Beagle 探測
+IDS_COMP_ABBR38	地面電抗
+IDS_COMP_ABBR43	感測探針
+IDS_COMP_ABBR99	輕高斯
+IDS_COMP_ABBR100	輕機砲
+IDS_COMP_ABBR101	中機砲
+IDS_COMP_ABBR102	重機砲
+IDS_COMP_ABBR103	超級輕機砲
+IDS_COMP_ABBR104	高斯
+IDS_COMP_ABBR108	超級中機砲
+IDS_COMP_ABBR109	氏族超級重機砲
+IDS_COMP_ABBR110	氏族超級輕機砲
+IDS_COMP_ABBR111	氏族超級中機砲
+IDS_COMP_ABBR112	超級重機砲
+IDS_COMP_ABBR113	氏族高斯
+IDS_COMP_ABBR114	機槍組
+IDS_COMP_ABBR123	蜂群長程飛彈
+IDS_COMP_ABBR124	短程飛彈
+IDS_COMP_ABBR125	Streak 短程飛彈
+IDS_COMP_ABBR130	氏族長程飛彈
+IDS_COMP_ABBR135	氏族 Streak 飛彈
+IDS_COMP_ABBR139	氏族重雷射
+IDS_COMP_ABBR140	大型雷射
+IDS_COMP_ABBR141	增程大型雷射
+IDS_COMP_ABBR142	大型脈衝雷射
+IDS_COMP_ABBR143	增程雷射
+IDS_COMP_ABBR144	脈衝雷射
+IDS_COMP_ABBR145	粒子砲
+IDS_COMP_ABBR146	增程粒子砲
+IDS_COMP_ABBR147	氏族重型大雷射
+IDS_COMP_ABBR150	氏族增程大雷射
+IDS_COMP_ABBR151	氏族大型脈衝
+IDS_COMP_ABBR152	氏族增程雷射
+IDS_COMP_ABBR153	氏族脈衝雷射
+IDS_COMP_ABBR154	氏族增程粒子砲
+IDS_COMP_ABBR155	火焰噴射器
+IDS_COMP_ABBR156	雷射
+IDS_HELP_COMP1	核融合引擎
+IDS_HELP_COMP4	手臂致動器
+IDS_HELP_COMP5	腿部致動器
+IDS_HELP_COMP6	駕駛艙
+IDS_HELP_COMP13	基礎感測器
+IDS_HELP_COMP16	氏族基礎感測器
+IDS_HELP_COMP18	車用感測器
+IDS_HELP_COMP19	進階車用感測器
+IDS_HELP_COMP22	第二代陀螺儀
+IDS_HELP_COMP33	肩部
+IDS_HELP_COMP34	髖部
+IDS_HELP_COMP35	維生系統
+IDS_HELP_COMP37	Beagle 探測器
+IDS_HELP_COMP43	主動探測器
+IDS_BUILD	固定火砲
+IDS_RELEASE_VERSION	蜂群長程飛彈車
+IDS_SHILONE	Shilone 轟炸機
+IDS_VEHICLE_CREW	砲兵
+IDS_VEHICLE_CREW2	維修
+IDS_VEHICLE_CREW3	布雷
+IDS_VEHICLE_CREW4	偵察
+IDS_PILOT32	新兵
+IDS_PILOT33	正規
+IDS_PILOT34	老練
+IDS_PILOT35	精銳
+IDS_OBJECT621	機甲殘骸

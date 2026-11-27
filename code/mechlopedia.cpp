@@ -461,7 +461,7 @@ void Mechlopedia::MechScreen::setVehicle( LogisticsVehicle* pVehicle )
 
 	aTextListItem* pItem = new aTextListItem( IDS_EN_LISTBOX_FONT );
 	pItem->forceToTop( true );
-	pItem->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - 16, pItem->height() );
+	pItem->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - pItem->globalX() - 4, pItem->height() );
  	pItem->setText( descID );
 	pItem->sizeToText( );
 	pItem->setColor( 0xff005392 );
@@ -546,7 +546,7 @@ void Mechlopedia::MechScreen::setMech( LogisticsVariant* pChassis, bool bShowJum
 	descriptionListBox.removeAllItems( true );
 
 	aTextListItem* pItem = new aTextListItem( IDS_EN_LISTBOX_FONT );
-	pItem->resize( descriptionListBox.width()  - descriptionListBox.getScrollBarWidth()- 16, pItem->height() );
+	pItem->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - pItem->globalX() - 4, pItem->height() );
  	pItem->setText( descID );
 	pItem->sizeToText( );
 	pItem->setColor( 0xff005392 );
@@ -754,7 +754,7 @@ void Mechlopedia::WeaponScreen::setWeapon ( LogisticsComponent* pComponent )
 	pEntry->setColor( 0xff005392 );
 
 	pEntry->setText( pComponent->getHelpID() );
-	pEntry->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - 16, pEntry->height() );
+	pEntry->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - pEntry->globalX() - 4, pEntry->height() );
 	pEntry->sizeToText();
 	pEntry->forceToTop( true );
 	descriptionListBox.AddItem( pEntry );
@@ -974,7 +974,7 @@ void Mechlopedia::PersonalityScreen::select( aTextListItem* pEntry )
 
 	aTextListItem* pItem = new aTextListItem( IDS_EN_WEAPON_FONT );
 	pItem->setColor( 0xff005392);
-	pItem->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - 16, pEntry->height() );
+	pItem->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - pItem->globalX() - 4, pEntry->height() );
 	pItem->setText( DescriptionID + ID );
 	pItem->sizeToText();
 	pItem->forceToTop( true );
@@ -1167,7 +1167,7 @@ void Mechlopedia::BuildingScreen::select( aTextListItem* pEntry )
 		descriptionListBox.removeAllItems( true );
 
 		aTextListItem* pItem = new aTextListItem( IDS_EN_LISTBOX_FONT );
-		pItem->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - 16, pItem->height() );
+		pItem->resize( descriptionListBox.width() - descriptionListBox.getScrollBarWidth() - pItem->globalX() - 4, pItem->height() );
  		pItem->setText( pBldg->encycloID );
 		pItem->sizeToText( );
 		pItem->setColor( 0xff005392 );
