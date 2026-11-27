@@ -158,6 +158,7 @@ public:
 	void			setID(int newID) { ID = newID; }
 
 	void			setHelpID( int newID ) { helpID = newID; }
+	void			setHelpHeader( long newID ) { helpHeader = newID; }
 	int				getHelpID() const { return helpID; }
 	
 

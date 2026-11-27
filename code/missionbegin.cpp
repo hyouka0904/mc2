@@ -29,6 +29,8 @@ MissionBegin.cpp			: Implementation of the MissionBegin component.
 #include"mpprefs.h"
 #include"chatwindow.h"
 #include"logisticsmechicon.h"
+#include"logisticsmenu.h"
+#include "../resource.h"
 
 #include"prefs.h"
 extern CPrefs prefs;
@@ -57,6 +59,7 @@ MissionBegin::MissionBegin()
 	mainMenu = NULL;
 
 	bSplash = 0;
+	logisticsMenu = NULL;
 	bMultiplayer = 0;
 	animJustBegun = 0;
 	placeHolderScreen = NULL;
@@ -92,6 +95,8 @@ MissionBegin::~MissionBegin()
 	{
 		delete mainMenu;
 		mainMenu = NULL;
+		delete logisticsMenu;
+		logisticsMenu = NULL;
 	}
 }
 
@@ -236,6 +241,8 @@ void MissionBegin::begin()
 
 	mainMenu->init( file );
 	mainMenu->setDrawBackground( true );
+	logisticsMenu = new LogisticsMenu;
+	logisticsMenu->init();
 	mainMenu->begin();
 	file.close();
 
@@ -386,7 +393,12 @@ void MissionBegin::begin()
 				if ( singlePlayerScreens[i][j]->getButton(MB_MSG_PREV) )
 					singlePlayerScreens[i][j]->getButton(MB_MSG_PREV)->setPressFX( -1 );*/
 				if ( singlePlayerScreens[i][j]->getButton(MB_MSG_MAINMENU) )
-					singlePlayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setPressFX( LOG_MAINMENUBUTTON );
+					{
+						singlePlayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setPressFX( LOG_MAINMENUBUTTON );
+						singlePlayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setText( IDS_LOGISTICS_MENU_BUTTON );
+						singlePlayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setHelpHeader( IDS_LOGISTICS_MENU_BUTTON );
+						singlePlayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setHelpID( IDS_LOGISTICS_MENU_HELP );
+					}
 			}
 			
 		}
@@ -554,6 +566,33 @@ const char* MissionBegin::update()
 				
 		}
 		return NULL;
+	}
+
+	if ( logisticsMenu && logisticsMenu->result() == LogisticsMenu::OPEN )
+	{
+		if ( MPlayer && MPlayer->hostLeft )
+			logisticsMenu->close();		// the screen handles it below
+		else
+		{
+			logisticsMenu->update();
+			switch ( logisticsMenu->result() )
+			{
+			case LogisticsMenu::OPEN:
+				break;
+			case LogisticsMenu::CLOSED:
+				if ( screens[curScreenX][curScreenY] )
+					screens[curScreenX][curScreenY]->begin();
+				break;
+			case LogisticsMenu::SAVE_AND_LEAVE:
+				autoSaveCampaign();
+				leaveToTitle();
+				break;
+			case LogisticsMenu::LEAVE:
+				leaveToTitle();
+				break;
+			}
+			return NULL;
+		}
 	}
 
 	leftAnim.update();
@@ -814,17 +853,7 @@ const char* MissionBegin::update()
 			}
 			else if ( pCurScreen->getStatus() == LogisticsScreen::MAINMENU )
 			{
-				// Main Menu leaves for the title menu without asking: campaign
-				// progress is saved first, a multiplayer session is closed.
-				if ( !MPlayer && !LogisticsData::instance->isSingleMission() )
-					autoSaveCampaign();
-				beginSplash();
-				if ( MPlayer )
-				{
-					MPlayer->closeSession();
-					delete MPlayer;
-					MPlayer = NULL;
-				}
+				logisticsMenu->open( !MPlayer && !LogisticsData::instance->isSingleMission(), MPlayer != NULL );
 				return NULL;
 			}
 			else if ( pCurScreen->getStatus() == LogisticsScreen::SKIPONENEXT )
@@ -881,6 +910,14 @@ void MissionBegin::render()
 
 	long xOtherOffset = 0;
 	long yOtherOffset = 0;
+
+	if ( logisticsMenu && logisticsMenu->result() == LogisticsMenu::OPEN )
+	{
+		if ( pCurScreen && !logisticsMenu->coversScreen() )
+			pCurScreen->render( 0, 0 );	// the screen's own render, not just its art
+		logisticsMenu->render();
+		return;
+	}
 
 	if ( bSplash )
 	{
@@ -970,7 +1007,7 @@ void MissionBegin::render()
 	animJustBegun = false;
 }
 
-// Name of the save written when Main Menu leaves a campaign. Kept in English
+// Name of the save written when the campaign is left for the title menu. Kept in English
 // so the file name stays ASCII in every language.
 static const char* const kMainMenuSaveName = "Autosave";
 
@@ -987,6 +1024,19 @@ void MissionBegin::autoSaveCampaign()
 	}
 	else
 		fprintf( stderr, "autosave: couldn't write %s\n", name );
+}
+
+// Back to the title menu from the logistics or multiplayer screens; a
+// multiplayer session is closed.
+void MissionBegin::leaveToTitle()
+{
+	beginSplash();
+	if ( MPlayer )
+	{
+		MPlayer->closeSession();
+		delete MPlayer;
+		MPlayer = NULL;
+	}
 }
 
 void MissionBegin::beginSplash( const char* playerName)
@@ -1150,7 +1200,12 @@ void MissionBegin::beginMPlayer()
 					if ( multiplayerScreens[i][j]->getButton(MB_MSG_PREV) )
 						multiplayerScreens[i][j]->getButton(MB_MSG_PREV)->setPressFX( -1 );
 					if ( multiplayerScreens[i][j]->getButton(MB_MSG_MAINMENU) )
-						multiplayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setPressFX( LOG_MAINMENUBUTTON );
+						{
+							multiplayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setPressFX( LOG_MAINMENUBUTTON );
+							multiplayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setText( IDS_LOGISTICS_MENU_BUTTON );
+							multiplayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setHelpHeader( IDS_LOGISTICS_MENU_BUTTON );
+							multiplayerScreens[i][j]->getButton(MB_MSG_MAINMENU)->setHelpID( IDS_LOGISTICS_MENU_HELP );
+						}
 				}
 				
 			}

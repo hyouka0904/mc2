@@ -16,8 +16,8 @@ STOP, assertion or crash in the log:
   exit           Exit -> Yes quits
   campaign       new campaign, win the first mission (debug key), results,
                  briefing, 'mech bay, pilots, launch of the second mission
-  main_menu      Main Menu in the 'mech bay saves the campaign (Autosave)
-                 and goes to the title menu
+  main_menu      System -> Back to main menu -> Save in the 'mech bay saves
+                 the campaign (Autosave) and goes to the title menu
   load_game      Load Game lists the campaign save and loads it
   solo_mission   Solo Mission lists the completed mission; briefing, 'mech bay
                  and pilot screens of that mission
@@ -71,6 +71,10 @@ NEXT = (730, 564)            # logistics screens: Next / Launch
 PAUSE = {"quick_save": (728, 156), "quick_load": (728, 182), "options": (728, 208),
          "abort": (728, 234), "exit": (728, 262)}
 OPTIONS_ACCEPT = (570, 544)
+SYSTEM_BUTTON = (702, 28)    # logistics screens: top right System button
+SYSTEM_MENU = {"options": (402, 232), "encyclopedia": (402, 274), "main": (402, 316),
+               "close": (402, 358)}
+LEAVE_DIALOG_YES = (499, 396)
 
 
 def menu(frame, name):
@@ -115,14 +119,15 @@ FLOWS["campaign"] = {
     "frames": 3000,
     "expect_files": ["savegame/After_Mission_mc2_01.fit"],
 }
-# Main Menu in the 'mech bay leaves for the title menu without a dialog
-# and saves the campaign first
+# System menu in the 'mech bay: Back to main menu, Save -> the campaign is
+# saved and the title menu shows
 FLOWS["main_menu"] = {
     "args": [],
     "script": menu(600, "campaign") + click(710, 550, 436) + combo(1300, "W") +
               click(1700, 710, 536) + click(1910, *NEXT) + click(2110, *NEXT) +
-              click(2210, 702, 28),
-    "frames": 2500,
+              click(2210, *SYSTEM_BUTTON) + click(2310, *SYSTEM_MENU["main"]) +
+              click(2420, *LEAVE_DIALOG_YES),
+    "frames": 2700,
     "expect_files": ["savegame/Autosave.fit"],
 }
 # Load game with that save: the list shows it, Load opens the logistics

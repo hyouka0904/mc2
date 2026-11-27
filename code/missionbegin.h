@@ -47,6 +47,7 @@ class MissionBegin
 
 		void beginSplash( const char* playerName = 0 );
 		void autoSaveCampaign();
+		void leaveToTitle();
 
 		void beginMPlayer();
 		void beginSPlayer();
@@ -89,6 +90,7 @@ class MissionBegin
 		long						curScreenY;
 
 		MainMenu*					mainMenu;
+		class LogisticsMenu*		logisticsMenu;
 		bool						bSplash;
 
 		bool						animJustBegun;

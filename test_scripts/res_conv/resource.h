@@ -4449,6 +4449,13 @@
 #define IDS_MP_LOCK_GAME_LABEL           60089
 #define IDS_MP_UNLOCK_GAME_LABEL         60090
 #define IDS_MP_REMOVE_PLAYER_LABEL       60091
+#define IDS_LOGISTICS_MENU_BUTTON        60092
+#define IDS_LOGISTICS_MENU_MAIN          60093
+#define IDS_LOGISTICS_MENU_CLOSE         60094
+#define IDS_PROMPT_SAVE_BEFORE_MAIN      60095
+#define IDS_PROMPT_LEAVE_ROOM            60096
+#define IDS_DIALOG_DONT_SAVE             60097
+#define IDS_LOGISTICS_MENU_HELP          60098
 */
 
 #include "strings.res.h"

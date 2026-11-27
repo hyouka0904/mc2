@@ -172,6 +172,7 @@ set(SOURCES
     "code/missiongui.cpp"
     "code/mpconnectiontype.cpp"
     "code/lanaddresses.cpp"
+    "code/logisticsmenu.cpp"
     "code/mpgamebrowser.cpp"
     "code/mphostgame.cpp"
     "code/mploadmap.cpp"
