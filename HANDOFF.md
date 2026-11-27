@@ -5,6 +5,19 @@
 
 中英文 README 的測試版下載區已補上切回正式版更新頻道、手動安裝及備份存檔的步驟。更新器仍只提供較新的版本，回退後的存檔相容性待驗證。
 
+## 整體除錯、重構、效能（2026-11-27）
+
+- 方法：Debug + AddressSanitizer 建置（`-DCMAKE_BUILD_TYPE=Debug -DMC2_ENABLE_ASAN=ON`），在上面跑單元測試、全部流程測試和聯機測試；用 gdb 取樣分析房間畫面的效能；用 clang-tidy（bugprone、clang-analyzer）檢查今天改過的檔案。
+- 修正：
+  - `EString::Compare` 用對方字串的長度做 memcmp，自己比較短時會讀超出緩衝區（ASan 抓到，在百科全書人物列表）。原版就有的 bug。
+  - `aObject` 釋放貼圖前先查 gos handle，結果是：快取出去的貼圖會先載回來才刪掉；結束遊戲時碰到已清除的貼圖會觸發「Bad texture handle」PAUSE（Debug 版直接中斷，Release 版只寫記錄）；快取出去的 handle 都相同，可能減到別張貼圖的使用數。新增 `MC_TextureManager::releaseTextureNode()`，直接依節點釋放。
+  - Debug 版每次 PAUSE 都會中斷進除錯器，`MC2_NO_DIALOGS` 的無人執行也一樣，所以「快速存檔來自別的版本」的提示會讓測試直接結束。改為設定 `MC2_NO_DIALOGS` 時，PAUSE 不中斷。STOP 和 assert 維持原樣。
+  - Player Prefs 用 strcpy 把名稱複製進 `MC2Player` 的固定長度欄位。徽章現在也會列出散檔（例如 Mod 的檔案），檔名太長就會溢位。改為有長度上限的複製，太長、存不下的徽章不列出，並檢查玩家資料是否存在。
+  - 資料工具 makefst、pak 的記憶體洩漏已修正；text_tool 每次執行都在 tmp/ 為每個字寫一張除錯 BMP，沒有東西會讀，已拿掉。
+- 效能：房間畫面每一幀都會打開地圖的 .pak 比對 GUID，實測每幀約 1.8 ms（以 60 FPS 計約佔一成）。改為依地圖名稱記住結果，每次進房清掉。之後取樣房間畫面，時間都花在繪圖上（llvmpipe 的 shader 套用與文字），沒有剩下遊戲邏輯的熱點。
+- ASan 結果：除了 `unit_stuff` 的記憶體池（原版設計就是整個執行期間都不釋放）之外，單元測試沒有錯誤；12 個流程測試全部通過，沒有 ASan 錯誤。
+- 沒處理：clang-tidy 其餘警告（signed char 當索引、switch 沒有 default 等）都在原版程式碼裡，看過不是實際問題。`unit_stuff` 的洩漏報告也一樣。
+
 ## 房間的準備狀態與暫離（2026-11-27）
 
 - 「準備」改為只在三個條件都成立時顯示：完成整備、人在房間畫面、沒有暫離。`MPParameterScreen::setPresent()` 統一計算，`preparationValid()` 檢查整備是否仍有效（房規版本、預算、陣營、隊伍都沒變）。
