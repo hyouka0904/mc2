@@ -1,7 +1,7 @@
 # 交接資訊（HANDOFF）
 
 > 每完成一個重要階段就更新這份文件，不等到任務結束。
-> 最後更新：2026-11-27（繁中補丁預覽）
+> 最後更新：2026-11-27（繁中補丁文字補譯）
 
 ## 任務目標
 
@@ -28,6 +28,13 @@ MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Li
   - 沒有使用者同意，不做 DXIL（D3D12 shader）。
 
 ## 繁中補丁預覽
+
+### 文字補譯：關卡與百科首批
+
+- 目標：補齊可由文字資源或資料檔翻譯的遊戲內容。原版圖片維持原樣。
+- 已完成：新增 245 條譯文，包含 24 關戰役、5 關訓練及 18 條多人簡報的其餘內文，159 條對應目標，以及百科歷史與 30 條載具介紹。
+- 驗證：`python3 scripts/build_zh_tw_patch.py /workspace/scratch/mc2-zh-hud-game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 1,132 條譯文、1,296 個擴充字形、12 套字型。Linux 的 `MC2_LANGUAGE=zh-TW timeout 340 python3 scripts/run_flow_tests.py /workspace/scratch/mc2-zh-hud-game --out /workspace/scratch/mc2-zh-text-milestone --renderer gl --only campaign,encyclopedia --timeout 155` 通過兩個流程。第二關簡報顯示繁中，右緣有文字裁切需要追查。
+- 下一步：補齊人物、機甲、裝備、建築與剩餘提示；盤點原版資料檔的顯示文字及修正長文裁切。補譯尚在進行，Windows 實機驗收待測。
 
 ### 繁中介面首版
 
