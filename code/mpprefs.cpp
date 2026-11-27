@@ -13,6 +13,12 @@ mpprefs.cpp			: Implementation of the mpprefs component.ef
 #include"multplyr.h"
 #include"gamesound.h"
 #include"chatwindow.h"
+#include"ffile.h"
+
+#include <algorithm>
+#include <cctype>
+#include <string>
+#include <vector>
 
 #define MP_PREFS_BASE	200
 #define MP_PREFS_STRIPE	201
@@ -24,6 +30,56 @@ mpprefs.cpp			: Implementation of the mpprefs component.ef
 MPPrefs* MPPrefs::s_instance = NULL;
 
 static const char* path2insignia = "data" PATH_SEPARATOR "multiplayer" PATH_SEPARATOR "insignia" PATH_SEPARATOR;
+
+// File names (no directory) of the insignia images, sorted, without duplicates.
+static std::vector<std::string> listInsignias()
+{
+    std::vector<std::string> names;
+    char findString[512];
+    snprintf(findString, sizeof(findString), "%s*.tga", path2insignia);
+    WIN32_FIND_DATA findResult;
+    HANDLE searchHandle = FindFirstFile(findString, &findResult);
+    if (searchHandle != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if ((findResult.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+                names.push_back(findResult.cFileName);
+        } while (FindNextFile(searchHandle, &findResult) != 0);
+        FindClose(searchHandle);
+    }
+
+    const auto normalized = [](const char* text) {
+        std::string out(text);
+        for (char& c : out)
+            c = c == '\\' ? '/' : static_cast<char>(tolower(static_cast<unsigned char>(c)));
+        return out;
+    };
+    const std::string prefix = normalized(path2insignia);
+    for (long i = 0; fastFiles && i < numFastFiles; i++)
+    {
+        FastFile* ff = fastFiles[i];
+        const FILE_HANDLE* files = ff ? ff->getFilesInfo() : NULL;
+        for (long j = 0; files && j < ff->getNumFiles(); j++)
+        {
+            if (!files[j].pfe)
+                continue;
+            const std::string name = normalized(files[j].pfe->name);
+            if (name.size() > prefix.size() + 4 && name.compare(0, prefix.size(), prefix) == 0 &&
+                name.find('/', prefix.size()) == std::string::npos &&
+                name.compare(name.size() - 4, 4, ".tga") == 0)
+                names.push_back(name.substr(prefix.size()));
+        }
+    }
+
+    std::sort(names.begin(), names.end(), [&](const std::string& a, const std::string& b) {
+        return normalized(a.c_str()) < normalized(b.c_str());
+    });
+    names.erase(std::unique(names.begin(), names.end(), [&](const std::string& a, const std::string& b) {
+        return normalized(a.c_str()) == normalized(b.c_str());
+    }), names.end());
+    return names;
+}
 
 MPPrefs::MPPrefs(  )
 {
@@ -156,41 +212,29 @@ void MPPrefs::begin()
 	comboBox[2].ListBox().removeAllItems( true );
 	comboBox[2].SelectItem( -1 );
 
-    // need to add items to the save game list
-	char findString[512];
+    // The insignias normally sit in insignia.fst; loose files in the
+    // directory are listed too (mods, or a game directory without packs).
     char path[320];
-	sprintf(findString,"%s*.tga",path2insignia);
-
-	WIN32_FIND_DATA	findResult;
-	HANDLE searchHandle = FindFirstFile(findString,&findResult); 
-	do
-	{
-		// 24 or 32 bit files
-		if ((findResult.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 )
-		{
-			aBmpListItem* pItem = new aBmpListItem;
-			snprintf(path, sizeof(path), "%s%s", path2insignia, findResult.cFileName  );
-			if ( !pItem->setBmp( findResult.cFileName ) )
-			{
-				delete pItem;
-			}
-			else
-			{
-				long index = comboBox[2].AddItem( pItem );
-				if ( strstr( findResult.cFileName, prefs.insigniaFile ) )
-				{
-					comboBox[2].SelectItem( index );
-					insigniaBmp.setTexture( path );
-					insigniaBmp.setUVs( 0, 0, 32, 32 );
-					statics[12].setTexture( path );
-					statics[12].setUVs( 0, 0, 32, 32 );
-				}
-			}
-
-		}
-	} while (FindNextFile(searchHandle,&findResult) != 0);
-
-	FindClose(searchHandle);
+    std::vector<std::string> insignias = listInsignias();
+    for (const std::string& name : insignias)
+    {
+        aBmpListItem* pItem = new aBmpListItem;
+        snprintf(path, sizeof(path), "%s%s", path2insignia, name.c_str());
+        if ( !pItem->setBmp( name.c_str() ) )
+        {
+            delete pItem;
+            continue;
+        }
+        long index = comboBox[2].AddItem( pItem );
+        if ( strstr( name.c_str(), prefs.insigniaFile ) )
+        {
+            comboBox[2].SelectItem( index );
+            insigniaBmp.setTexture( path );
+            insigniaBmp.setUVs( 0, 0, 32, 32 );
+            statics[12].setTexture( path );
+            statics[12].setUVs( 0, 0, 32, 32 );
+        }
+    }
 
 	if ( comboBox[2].GetSelectedItem( ) == -1 )
 	{
