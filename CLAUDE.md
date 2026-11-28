@@ -2,75 +2,46 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-MechCommander 2 source port: the original game code on a reimplemented GameOS platform layer (SDL3, SDL3 GPU / OpenGL, ENet). Linux, Windows (MSVC) and macOS (Apple Silicon). Full developer docs: `doc/DEVELOPMENT.md` (Chinese: `doc/DEVELOPMENT.zh-TW.md`). Player docs: `README.md`, `doc/manual/`. Multiplayer / update / localization roadmap: `doc/ROADMAP_MULTIPLAYER_ZH.md`.
-
-See [AGENTS.md](AGENTS.md) for the feature map and targeted reading workflow.
+MechCommander 2 source port: original game code on a reimplemented GameOS layer (SDL3, SDL3 GPU / OpenGL, ENet). Linux, Windows (MSVC), macOS (Apple Silicon). Start with [AGENTS.md](AGENTS.md).
 
 ## Working rules
 
 - Reply to the user in Traditional Chinese.
 - Always run the game under `timeout` (it can hang; test scripts have their own timeouts).
 - Do not work on DXIL (D3D12 shaders) without the user's go-ahead.
-- Keep `HANDOFF.md` up to date (goal, done, open items, decisions, test commands and results, next steps) after every significant stage, not only at the end.
+- Keep `HANDOFF.md` short and current: status, items awaiting real-machine tests, open items, decisions, latest test results. Change details belong in commits, design notes in `doc/code-map.md`. No HANDOFF-only commit when nothing changed.
+- Push only to the assigned `claude/...` branch. Merging into `dev` needs the user's OK each time; never push `master` or tags; no PR unless asked.
+- Prefer the original game's behaviour unless something is a confirmed bug.
 - After a test pre-release is published (Release workflow run by hand), update the test-version download link at the top of `README.md` and `README.zh-TW.md` to the new tag without being asked. Do it only once the release exists.
 - Roadmap work stops at each milestone in `doc/ROADMAP_MULTIPLAYER_ZH.md` until the user reports real-machine test results.
+- Save tokens: read `doc/DEVELOPMENT.md` and the roadmap by section (`grep -n '^#' <file>`, then read the range), not whole.
 
-## Build
-
-```bash
-cmake -S . -B build                      # default RelWithDebInfo; SDL3 is downloaded and built statically if not installed
-cmake --build build -j"$(nproc)"
-```
-
-Options: `-DCMAKE_BUILD_TYPE=Debug` (defines `_ARMOR`: asserts, and extra checks inside game headers), `-DMC2_ENABLE_ASAN=ON`, `-DMC2_VERSION=1.2.3` (otherwise from `git describe`), `-DMC2_SHADER_REQUIRE=msl,hlsl` (CI). Outputs: `build/mc2`, test binaries in `build/out/tests/`.
-
-The game data lives in a separate repo; assemble a runnable game directory with:
+## Build and test
 
 ```bash
-git clone https://github.com/alariq/mc2srcdata.git
-MC2_PLACEHOLDER_MOVIES=1 scripts/prepare_game_dir.sh build mc2srcdata game
-cd game && timeout 120 ./mc2 -mission mc2_01
+cmake -S . -B build && cmake --build build -j"$(nproc)"   # SDL3 is fetched if not installed
+ctest --test-dir build --output-on-failure
+MC2_PLACEHOLDER_MOVIES=1 scripts/prepare_game_dir.sh build mc2srcdata game   # data: github.com/alariq/mc2srcdata
+scripts/run_screenshot_tests.py game shots [--renderer gpu] [--update]
+scripts/run_flow_tests.py game --renderer gl [--only <flow>]
+timeout 900 python3 scripts/run_net_test.py game [--scenario logistics|version|away]
 ```
 
-## Tests
-
-```bash
-ctest --test-dir build --output-on-failure          # all unit/tool tests
-ctest --test-dir build -R unit_net --output-on-failure   # one test
-```
-
-Unit tests use the in-repo framework `tests/framework/mc2test.h` (`TEST(name)`, `CHECK`, `CHECK_EQ`) and are registered with `mc2_add_unit_test(...)` in `tests/CMakeLists.txt`. A test that compiles game sources may need stand-ins for `_ARMOR`-only symbols in Debug builds (see `tests/unit/savelayout_stubs.cpp`).
-
-End-to-end tests run the real game headless (Xvfb, Mesa; they start Xvfb themselves) against a game directory:
-
-```bash
-scripts/smoke_test.sh game mc2_01 60
-scripts/run_screenshot_tests.py game shots [--renderer gpu] [--update]   # golden images in tests/golden
-scripts/run_flow_tests.py game --renderer gl [--only quick_save]          # scripted UI flows
-timeout 900 python3 scripts/run_net_test.py game [--scenario version]     # two instances, LAN host + client
-```
-
-Deterministic mode (`-fixedstep <ms> -seed <n> -capture-frames ... -input-script <file> -windowed`) makes frames pixel-identical; `MC2_NO_DIALOGS=1` turns error dialogs into stderr output, `MC2_USER_DIR` gives a fresh user folder. Flow tests fail on `STOP`, `FATAL`, `ASSERT`, `MSGBOX` or `Segmentation` in the log. Release builds have no `SPEW` output; use `fprintf(stderr, ...)` for messages that tests check.
-
-CI (`.github/workflows/ci.yml`): Linux RelWithDebInfo + Debug with all CTest tests, Windows and macOS unit tests, then smoke, screenshot (both backends), flow and LAN tests. Doc-only pushes skip CI. `release.yml` builds packages (tags `v*` create a draft release; `workflow_dispatch` with a `version` input builds test packages only).
+- Copy a fresh `build/mc2` and `build/out/res/libmc2res_64.so` into the game directory before end-to-end tests.
+- `MC2_NO_DIALOGS=1` turns dialogs into stderr; `MC2_USER_DIR` gives a fresh user folder. Flow tests fail on `STOP`, `FATAL`, `ASSERT`, `MSGBOX`, `Segmentation` in the log. Release builds have no `SPEW`; use `fprintf(stderr, ...)` for messages tests check.
+- Unit tests use `tests/framework/mc2test.h` and `mc2_add_unit_test(...)`. Debug builds define `_ARMOR`.
+- Build options, deterministic mode, CI and packaging: `doc/DEVELOPMENT.md` ("Automated tests", "Packages and releases").
 
 ## Architecture
 
-Four layers, each depending only on those below:
+`code/` game logic (entry `mechcmd2.cpp`) → `gui/`, `mclib/` (engine, `mlr/`, `gosfx/`, `stuff/`) → `GameOS/` (SDL3 platform layer; `render/gl/` is the only place OpenGL calls are allowed; `net/gos_net.h` is the only ENet user; `update/`, `mods/`). Feature → file map: `doc/code-map.md`.
 
-- `code/` — game logic (missions, units, AI, logistics screens, multiplayer). Entry point and main loop: `mechcmd2.cpp`.
-- `gui/` (widgets) and `mclib/` (engine: terrain, objects, A* pathfinding, ABL mission script interpreter, `.fst`/`.pak` archives; `mlr/` render pipeline, `gosfx/` effects, `stuff/` math/containers).
-- `GameOS/` — the reimplemented platform layer: `gameos/` (window, input, audio, files, fonts on SDL3), `gameos/render/` (backend interface with `gl/` and `gpu/` implementations — OpenGL calls are allowed only in `render/gl/`, enforced by the `render_isolation` test), `gameos/net/gos_net.h` (the only ENet user), `gameos/update/` (update check), `gameos/mods/` (mod system), `src/` (Win32 API replacements).
-- Third party in `thirdparty/` (ENet, pl_mpeg) plus SDL3 via `cmake/MC2Dependencies.cmake`.
-
-Cross-cutting points:
-
-- **Files**: `File::open()` prefers a loose file in the game directory, then the `.fst` archives. Settings and saves go to `SDL_GetPrefPath` (`~/.local/share/MechCommander2/` on Linux).
-- **Shaders**: GLSL in `shaders/`, loaded at run time by the GL backend and cross-compiled at build time to SPIR-V / MSL / HLSL for SDL3 GPU. The `PerDraw` uniform block must match its C++ struct (`shader_spirv` test).
-- **UI strings**: a new `IDS_*` string must be added to `resource.h`, `strings.res.h` and `test_scripts/res_conv/{resource.h,strings.res.h,strings.res.cpp}`; they build the `res/` string library.
-- **LAN multiplayer**: host-authoritative star topology. Messages are fixed-size `MCMSG_*` structs in `code/multplyr.h`; `multplyr.cpp` handles rooms, roster, chat and the load handshake, `multplyr_sync.cpp` handles in-mission sync. Bump the protocol stamp (`MC2NET-4` in `multplyr.cpp`) whenever a message changes. Room discovery shares UDP 27015.
-- **Saves**: campaign saves (`.fit`, text) must keep loading across versions: accepted range `OldestSaveGameVersionNumber..SaveGameVersionNumber` in `code/logisticsdata.cpp`. Quick saves (`.ims`) store structs byte for byte; the stamp carries a layout hash (`code/savelayout.cpp`). When a saved struct changes size, `unit_savelayout` fails on purpose: update `kCurrent` in the test, never the legacy table. `tests/saves/<version>/` holds old saves loaded by the flow tests.
-- **Mods**: `GameOS/gameos/mods/`, tool `tools/mc2mod/`, examples in `examples/`; see `doc/modding.md`.
+- **Files**: loose files in the game directory win over `.fst` archives. Settings and saves go to `SDL_GetPrefPath`.
+- **Shaders**: GLSL in `shaders/`, cross-compiled at build time for SDL3 GPU. `PerDraw` must match its C++ struct (`shader_spirv` test).
+- **UI strings**: a new `IDS_*` goes into `resource.h`, `strings.res.h`, `test_scripts/res_conv/{resource.h,strings.res.h,strings.res.cpp}` (latin-1) and `localization/zh-TW/strings.txt`.
+- **LAN multiplayer**: host-authoritative star. Fixed-size `MCMSG_*` structs in `code/multplyr.h`. Bump the protocol stamp (`MC2NET-4` in `multplyr.cpp`) whenever a message or a synced struct changes. UDP 27015.
+- **Saves**: campaign `.fit` must keep loading (`OldestSaveGameVersionNumber..SaveGameVersionNumber`). Quick saves carry a layout hash; when a saved struct changes size, update `kCurrent` in `unit_savelayout`, never the legacy table.
+- **CRLF files**: many sources are CRLF; keep line endings when editing.
 
 ## Git Commit Guidelines
 

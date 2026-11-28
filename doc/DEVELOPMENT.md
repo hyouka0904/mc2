@@ -563,56 +563,29 @@ Everything else is in `packaging/`: the icon (`icon.png` / `icon.ico`, a simple 
 
 Without `-renderer`, SDL3 GPU is tried first; if it fails (no Vulkan driver, missing `shaders/compiled/`, or the driver cannot create the shipped shaders) the window is recreated with OpenGL. With an explicit `-renderer` there is no fallback. The OpenGL backend stays for one release cycle as a fallback and is then removed (see [Decision log](#decision-log)).
 
-GameOS is an immediate-mode API (change state, update vertices, draw — hundreds of times per frame, reusing the same buffers), while SDL3 GPU needs uploads outside render passes and state baked into pipeline objects. So the SDL3 GPU backend (`render/gpu/gpu_device.cpp`) records a whole frame first:
+GameOS is an immediate-mode API; SDL3 GPU needs uploads outside render passes and state baked into pipelines. So `render/gpu/gpu_device.cpp` records a whole frame (pipeline, textures, parameters, changed vertex data copied into a per-frame upload ring), uploads once at the end, and replays it into an offscreen target that is then blitted to the swapchain. Static buffers are promoted to their own GPU buffers. The viewport is offset by 0.01 pixel so rasterization matches GL (menus are pixel-identical).
 
-- Each draw records everything it needs: the pipeline (shader variant + blend / depth / cull state + vertex format + primitive type, created and cached on first use), textures and samplers, shader parameters, and any vertex / index data changed this frame (copied into a per-frame upload ring buffer).
-- Texture updates are recorded in order between draws.
-- At the end of the frame the ring buffer is uploaded in one go and the recorded commands are replayed into an offscreen color + depth target; the render pass is only broken for texture updates or clears. Finally the target is blitted to the swapchain; screenshots are downloaded from the offscreen target.
-- Static buffers that did not change during a frame are copied into their own GPU buffers and drawn from there afterwards.
-- GL's origin is bottom-left and SDL GPU's is top-left; edges and lines exactly on pixel centers or borders end up on the other side after flipping y. Offsetting the viewport by 0.01 pixel makes rasterization match GL (menus are pixel-identical).
+Shared by both backends (`gameos_graphics.cpp`):
 
-**Draw batching** (`gameos_graphics.cpp`, shared by both backends): consecutive `gos_DrawTriangles` / `Quads` / `Lines` / `Points` / indexed triangle calls with identical render state are merged into one draw; the accumulated vertices are flushed only when the state changes, or before texture / buffer updates, other kinds of draws, text, or the end of the frame. Draw order is unchanged (transparent objects depend on it) and screenshot comparisons are unaffected. `-no-batching` turns it off.
+- **Draw batching**: consecutive draws with identical state are merged; draw order is unchanged. `-no-batching` turns it off.
+- **Texture atlas**: 32/64/128 pixel textures are also copied into 1024×1024 pages. They are used only when the texture coordinates stay inside the tile, so the image is identical.
+- **`gos_RenderShape`**: draws a mesh with its matrices and light indices; consecutive shapes are merged. Used by the 3D model hardware path.
 
-**Texture atlas**: 32 / 64 / 128 pixel square textures (terrain tiles are 64×64) are also copied into shared 1024×1024 atlas pages. When a draw's texture coordinates are guaranteed to sample only inside that tile (nearest: 0 ≤ u, v < 1; bilinear: u·s between 0.5 and s−0.5), it uses the atlas page with remapped coordinates; the sampled positions are the same, so the image is identical, but draws of neighbouring tiles can be merged.
+Result: mc2_01 went from 242 to 68 draw calls per frame, and average frame time on GL from 26.7 to 11.5 ms (Mesa).
 
-**`gos_RenderShape`** (a new draw API replacing "set material parameters by string, then call `gos_RenderIndexedArray(ib, vb, vdecl)`"): the game passes the mesh, world matrix, `wvp` and light indices directly. Consecutive shapes with the same state, lights, vertex format and camera are transformed to world space on the CPU by GameOS and merged into one draw (with a shared view-projection matrix). The 3D model hardware path in `mclib/txmmgr.cpp` uses it.
+**`-gpu-shapes`** (3D models transformed and lit on the GPU) is off by default:
 
-**The 3D model hardware path (`-gpu-shapes`) is off by default.** Besides CPU drawing (the original approach: transform and light on the CPU, then submit triangles), the upstream port added an experimental "give the whole model to the GPU to transform and light" path, and both paths drew every frame. While investigating the multi-texture bug it turned out this path's vertex shader still had a debug `+100` pixel horizontal offset (upstream commit 8fc2a89 "render shape base functionality (WIP)"), so its models were always drawn 100 pixels to the right: mostly covered by the CPU drawing that followed, and where not covered they showed up as "ghosts" of buildings (most visible on the tanks and pipes in mc2_03 frame 900; the old golden images contained these ghosts too). With the offset removed, GPU lighting did not match CPU lighting (team colors, night lights, etc.), so by default only the CPU path is used — as in the original game, without ghosts, and faster (mc2_01 draw calls per frame 74 → 68, average frame time GL 13.4 → 11.5 ms, GPU 11.4 → 10.6 ms) — and the golden images were regenerated. The hardware path remains as `-gpu-shapes` and was fixed: multi-texture models are split per texture (each part uses its own texture), building scaling (`shapeScalar`) is applied, `MC_TextureManager`'s shape list used the wrong field (`vertexData3`) for the third flag combination and dropped shapes, and the untextured list wrote one element too many.
-
-**`-gpu-shapes` lighting moved into shaders** (`shaders/include/lighting.hglsl`): the vertex shader reproduces `TG_Shape::MultiTransformShape`'s diffuse color and fog — night light colors (pink / yellow / green hot spots), lights baked into vertices, `BaseVertexColor`, ambient, infinite and attenuated infinite lights, selection highlight, height fog and distance fog. The specular terms the CPU path computes separately (point lights, spotlights, terrain lights) are read by no pixel shader, so they are not reproduced. Lights are computed in world space; height fog uses "how far the vertex is above the object origin", which differs slightly from the CPU only when a part is rotated by animation. Each object has a 1280-byte block of lighting parameters shared by its parts, which can still be batched; OpenGL binds only that object's block with `glBindBufferRange` (previously indexed in an array of at most 32), and the SDL3 GPU backend copies that block per draw. Solid faces drawn by the GPU are no longer redrawn by the CPU. Screenshot tests (`run_screenshot_tests.py --gpu-shapes`) against the CPU path's golden images: 18/18 on both OpenGL and SDL3 GPU, at most 0.25% of pixels different, no validation messages.
-
-On Mesa software rendering `-gpu-shapes` is actually slower (mc2_01 frames 1–900 average: GL 11.6 → 13.1 ms, SDL3 GPU 10.1 → 10.5 ms; draw calls per frame 49 → 55), because software vertex shaders run on the CPU too and objects cannot be merged. So the CPU path stays the default until it can be measured on a real GPU.
-
-Measurements (frames 300–900, Xvfb + Mesa software rendering, `-perf-csv`):
-
-| | mc2_01 draw calls at frame 600 | mc2_01 average | mc2_01 average frame time (GL / GPU) | mc2_07 frame 600 |
-|---|---|---|---|---|
-| Original (one draw per call) | 242 | 215 | 26.7 / 15.6 ms | — |
-| Merge consecutive draws with the same state | 156 | 140 | 19.9 / 14.2 ms | — |
-| + texture atlas | 107 | 98 | 16.7 / 10.9 ms | — |
-| + `gos_RenderShape` merges 3D models | 72 | 63 | 12.5 / 9.4 ms | 76 |
-| Hardware path off by default (no ghosts) | **68** | **68** | **11.5 / 10.6 ms** | — |
-
-Phase 7's stop condition (under 100 draw calls per frame in mc2_01) is met. Screenshot comparisons were unchanged for the first four rows; the last row removed the hardware path's ghosts and the golden images were updated (OpenGL pixel-identical, SDL3 GPU at most 0.24% different). The last row was measured over frames 1–900, so its averages cannot be compared directly with the rows above.
+- The upstream version drew every model a second time, 100 pixels to the right ("ghost" buildings). This port removed that and kept only the CPU path, as in the original game.
+- The GPU path is fixed and its lighting now runs in shaders (`shaders/include/lighting.hglsl`). It matches the CPU golden images within 0.25%.
+- It is slower on Mesa software rendering and still needs measuring on a real GPU.
 
 ### Benchmarks and CPU-side optimization
 
-`scripts/benchmark.py <game dir>` plays mc2_01 and mc2_07 for 900 frames each in deterministic mode (same settings as the screenshot tests), skips the first 100 frames, and reports per-frame wall time and **main thread CPU time**. `--exe a,b` interleaves runs of two executables so machine load affects both equally, for A/B comparisons.
-
-Without a GPU the SDL3 GPU backend runs on Mesa lavapipe: wall time is then mostly software rasterization (4 llvmpipe threads) and the main thread is busy only about 17% of the time. On a real GPU the main thread's CPU time limits the frame rate, so that is what the optimizations target.
-
-Main thread hot spots were found with `perf` and handled one at a time (each checked with the screenshot tests):
-
-| Change | Main thread CPU (mc2_01 + mc2_07, per frame) |
-|---|---|
-| Baseline | 3.46 ms |
-| `GpuDevice::flush` no longer walks all ~1700 buffers every frame looking for static buffers to promote; they are queued on create / update | 3.23 ms |
-| `MC_TextureManager::clearArrays` clears only the nodes used this frame instead of all 4096 | **2.84 ms** |
-| AI no longer fetches unused module info before running (it walked the whole ABL symbol table); closed debug windows no longer rebuild their text every frame; collision checks no longer fetch an unused block number | No measurable difference (within noise) |
-
-Work stopped after two rounds with no measurable gain. The remaining main thread time is the game logic itself (AI, collision, model transforms, about 5–10% each) and the fixed per-frame cost inside SDL3 GPU / the Vulkan driver; wall time is still dominated by software rasterization and needs measuring on a real GPU. Numbers on the same machine vary 5–10% between runs at different times, so use `--exe` interleaving to compare.
-
-Only 16 SDL3 GPU pipeline objects appear in a whole mission (8 state combinations × shader variants) and creating them the first time is negligible, so there is no pre-creation step.
+- `scripts/benchmark.py <game dir>` plays mc2_01 and mc2_07 for 900 frames in deterministic mode. It reports wall time and main thread CPU time.
+- Use `--exe a,b` to interleave two executables for an A/B comparison. Runs at different times vary by 5–10%.
+- On Mesa, wall time is mostly software rasterization. On a real GPU the main thread's CPU time (about 2.8 ms per frame) is the limit.
+- Two optimization rounds found no remaining hotspot; game logic takes 5–10% per subsystem.
+- `perf` does not work on some kernels. Then sample with gdb, and time with `std::chrono`: the game's own timers report simulated time in fixed-step mode.
 
 ### Shaders
 
@@ -633,22 +606,6 @@ Writing rules (`shaders/include/gos_common.hglsl`):
 - `gl_Position` goes through `gos_clip()`: unchanged on OpenGL; other targets map the depth range from -1..1 to 0..1.
 - With `-shader-reload`, editing files under `shaders/` recompiles them in game (development only, off by default).
 
-### Modernization plan progress
-
-By phase of the "MC2 GameOS modernization plan":
-
-| Phase | Status | Contents |
-|---|---|---|
-| 0 Screenshot tests | Done | Deterministic mode, frame capture, input scripts, 18 golden images, CI comparison; a deliberate shader change is detected |
-| 1 SDL2 → SDL3 | Done | Window, input, events, dynamic loading on SDL3; pixel-identical to the SDL2 version |
-| 2 SDL3_mixer / SDL3_ttf | Done | Audio and font tool rewritten; fixed volume truncation, resource leaks, 8-bit PCM; no SDL2 linked anywhere |
-| 3 Render backend abstraction | Done | `render/` interface, OpenGL only in `render/gl/`, fixed-function code removed (pure Core Profile), pipeline keys and cache, CPU shadow copies of lockable textures, `-perf-csv` |
-| 4 Shaders | Done (DXIL waits for dxc in CI) | Vulkan-style GLSL (`PerDraw` / `LightsData` / `SceneData` uniform blocks, explicit set / binding / location); compiled at build time to SPIR-V (passes `spirv-val`), MSL, HLSL; the OpenGL backend on uniform blocks is pixel-identical on all 18 screenshots; hot reload became the `-shader-reload` development option |
-| 5 SDL3 GPU backend | Done | `render/gpu/` (Vulkan via SDL3 GPU), `-renderer gl\|gpu`, record-and-replay immediate-mode emulation, pipeline cache, per-frame upload ring buffer; shared draw batching brings mc2_01 frame 600 from 242 to 156 draw calls; CI runs smoke and 18 screenshot tests on both backends (GPU backend with Vulkan validation layers, zero messages); backends differ by at most 0.25%, threshold stays 0.5% |
-| 6 Remove OpenGL / GLEW | In progress (OpenGL kept one release cycle by decision) | SDL3 GPU is the default with automatic fallback to OpenGL; the OpenGL backend moved into a separate `gameos_gl` library, and the data tools (including `aseconv`) and tests no longer link libGL / GLEW (checked with `ldd` in CI); Viewer removed; fixed a double `glDetachShader` at OpenGL shutdown. `render/gl/` and GLEW go once the fallback period ends |
-| 7 New draw API | Done (stop condition met) | New API `gos_RenderShape` (mesh + matrices + light indices, batchable), used by the 3D model hardware path; draw batching and the small-texture atlas; found the hardware path's `+100` pixel ghosts and turned it off by default (`-gpu-shapes` enables it); `-gpu-shapes` lighting moved into shaders; mc2_01 frame 600 draw calls 242 → 68, average frame time 26.7 → 11.5 ms (GL) |
-| 8 Platform layer cleanup and macOS | Done (playing on a real Mac awaits manual testing) | Files, time and message boxes in `GameOS/src/` moved to C++17 `std::filesystem` / SDL3, unused replacements and three files deleted; saves and settings in `SDL_GetPrefPath` with automatic migration from `~/.mechcommander2`; macOS build (Apple Silicon, minimum 13.0, no OpenGL) and `mc2.app`; CI builds and runs all unit tests on Windows (MSVC) and macOS. Fixed bugs found by clang / MSVC along the way (e.g. uninitialized `WAYPOINT_KEY`, `gosAudio` class/struct mismatch) |
-
 ### Decision log
 
 | Question | Decision |
@@ -666,11 +623,10 @@ By phase of the "MC2 GameOS modernization plan":
 
 ### Audio output
 
-- **Sample rate**: with an audio device the mixer runs at the device's own rate (usually 48 kHz) in 32-bit float. Previously it was fixed at 22.05 kHz 16-bit, while the music and about a third of the sounds are 44.1 kHz: they were cut down to 22.05 kHz (losing everything above 11 kHz) and then upsampled for the sound card, which sounded dull and rough. Without a device (tests) it is still 22.05 kHz.
-- **Clipping**: SDL3_mixer simply cuts off anything above full scale when summing tracks (hard clipping, heard as "crackling"). Each track is now mixed at half volume (`kGosMixHeadroom`) and `gosLimiter` restores the factor of two at the end: peaks below 0.95 are untouched; louder peaks are pulled down at once and recover within 150 ms, so nothing clips.
-- **Device buffer**: 2048 sample frames are requested by default (about 43 ms at 48 kHz), so short main thread stalls do not cause dropouts. Override with `SDL_AUDIO_DEVICE_SAMPLE_FRAMES`.
-
-This started with a player report that audio "crackles a bit" on Windows with OpenGL. Recording the game's output on Linux (`SDL_AUDIO_DRIVER=disk`) showed no clipping in normal combat, and sound file decoding matched ffmpeg bit for bit; the confirmed problem was the high-frequency loss from the sample rate. Clip protection and the larger buffer are precautions. The effect on Windows still needs confirming on real hardware.
+- The mixer runs at the device's rate (usually 48 kHz, float). Without a device, as in the tests, it runs at 22.05 kHz.
+- Each track is mixed at half volume and `gosLimiter` restores the level, so the sum never hard-clips.
+- The device buffer defaults to 2048 frames. Override it with `SDL_AUDIO_DEVICE_SAMPLE_FRAMES`.
+- The effect on Windows still needs confirming on real hardware.
 
 ### Memory and undefined behaviour checks
 
@@ -682,30 +638,15 @@ cmake -S . -B build-asan -DMC2_ENABLE_ASAN=ON -DCMAKE_CXX_FLAGS="-fsanitize=unde
 cmake --build build-asan -j
 ```
 
-Run with `ASAN_OPTIONS=detect_leaks=0` (the original code has static memory pools that are deliberately never freed, so leak reports are noise). Running CTest, then 8 missions for 2000 frames each on both render backends (mc2_01, 03, 05, 07, 10, 15, 20, 24) under AddressSanitizer + UndefinedBehaviorSanitizer found and fixed:
-
-| Problem | Effect |
-|---|---|
-| At shutdown the texture atlas was cleared before texture destructors returned their atlas slots (use-after-free) | Possible crash on exit |
-| The ABL script interpreter read one byte past the end of each code segment, left over in the buffer | Read outside the memory block; if the leftover byte happened to be a semicolon it kept reading |
-| Turrets with no team (id -1) read `turretsEnabled[-1]` | Read the byte before the array; it used to be 0, now explicitly treated as disabled, same behaviour |
-| Hover vehicles read an uninitialized `reachedEnd` when ground vehicles dodged a collision | Random results |
-| `NotationFile` moved overlapping strings with `strcpy` | An optimized `strcpy` could corrupt data |
-| Signed overflow, shifts by more than 31, and reads past the end of the string in string hashing | Hash values unchanged, now well-defined |
-| Shadow vertices marked invalid with `memset(0xff)`, leaving a `bool` field at 255 | Now set to `true` explicitly |
-| ABL's `RoutineKey` and `TokenCodeType` stored values outside their enums | The enums now have a fixed `int` underlying type |
-| Left shift of negative numbers, `memcpy` with a null pointer (size 0) | Now well-defined |
-
-ASan's allocator does not forward sized delete and nothrow new to the game's `operator new/delete` as the standard library does, so those overloads were added too (no change for normal builds). After the fixes, the screenshot and UI flow tests are unchanged, so game logic was not altered.
+- Run with `ASAN_OPTIONS=detect_leaks=0`. The original code has static memory pools that are never freed, so `unit_stuff` leak reports are noise.
+- Add `-DCMAKE_BUILD_TYPE=Debug` to get asserts too. Debug builds stop at PAUSE unless `MC2_NO_DIALOGS` is set.
+- Missions, all flow tests and the LAN scenarios have been run this way and come out clean. The fixes are listed by `git log -i --grep=asan`.
+- ASan's allocator needs the sized delete and nothrow new overloads that the game provides.
 
 ### Other open items
 
-- **Network play**: LAN skirmish is done (see the [LAN skirmish manual](manual/lan-skirmish.md)); co-op, roguelike and the other modes are in the roadmap.
-- **Whether `-gpu-shapes` becomes the default**: GPU lighting is done (see "The 3D model hardware path" above) but is slower than the CPU path on Mesa software rendering; it needs measuring on a real GPU.
-- Type safety for the remaining GameOS draw APIs (3D models already use `gos_RenderShape`).
-- Compiler warnings: down from 643 to 0 (GCC 13, Debug and RelWithDebInfo). Fixed every `printf` / `scanf` type mismatch (`long` with `%d` on 64-bit), every possible `sprintf` overflow and `snprintf` truncation (now `snprintf` with buffers large enough), null pointer access in the ABL `objectVisible` / `objectActivate` when used on groups, an infinite loop reading a truncated font file, a null pointer used as the player name while multiplayer was unimplemented; every `fread` return value is checked; unused variables deleted (timing variables used only in debug or `LAB_ONLY` code are kept and marked).
-- Not yet verified on real Windows / macOS machines, real GPUs, or in long play sessions (the game's own CI runs only on Linux + Mesa software rendering; Windows and macOS CI only build, run unit tests and check that the packages install and start).
-- The `FIXME`s in `GameOS/include/platform_*.h` come from Wine's Win32 headers and are upstream comments.
-
-The many `HACK` comments in `code/` and `mclib/` are development notes from Microsoft's 2001 source and describe deliberate game behaviour (AI, network packets, map cells, etc.);
-changing them would change gameplay, so they are left as they are.
+- Whether `-gpu-shapes` becomes the default: it needs measuring on a real GPU.
+- The OpenGL fallback is removed after one release cycle (see the decision log). DXIL is on hold.
+- Not yet verified on real Windows and macOS machines, real GPUs, or in long sessions. Game CI runs only on Linux with Mesa.
+- Compiler warnings are at 0 (GCC 13). Keep them there.
+- The `HACK` and `FIXME` comments in `code/`, `mclib/` and `GameOS/include/platform_*.h` come from the original or upstream sources and describe deliberate behaviour. Leave them alone.

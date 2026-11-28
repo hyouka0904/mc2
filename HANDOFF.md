@@ -1,340 +1,80 @@
 # 交接資訊（HANDOFF）
 
-> 每完成一個重要階段就更新這份文件，不等到任務結束。
-> 最後更新：2026-11-27（連線類型畫面、機甲字型統一）
+> 只記下次接手需要的狀態。改動細節看 `git log`，設計和檔案位置看 [code-map](doc/code-map.md)，計畫看 [ROADMAP](doc/ROADMAP_MULTIPLAYER_ZH.md)。
+> 最後更新：2026-11-28
 
-中英文 README 的測試版下載區已補上切回正式版更新頻道、手動安裝及備份存檔的步驟。更新器仍只提供較新的版本，回退後的存檔相容性待驗證。
+## 目前狀態
 
-## 整體除錯、重構、效能（2026-11-27）
+- 已完成：
+  - 移植與基礎：SDL3、GPU／GL 雙後端、三平台、Mod、影片、打包、存檔相容。
+  - M1 區網聯機（N1–N9）。
+  - U1–U3、測試版頻道、遊戲內下載安裝、區塊更新。
+  - 繁中補丁：2,108 條譯文、遊戲內語言切換。
+  - 大廳修正：整備流程、聊天、System 選單、準備與暫離。
+- 最新測試版：[v0.1.1-test.42](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.42)（dev `1cf6f4f`）。
+- 停在停止點 1＋U-a：等使用者實機回報。**收到回報前不開始 M2。**
 
-- 方法：Debug + AddressSanitizer 建置（`-DCMAKE_BUILD_TYPE=Debug -DMC2_ENABLE_ASAN=ON`），在上面跑單元測試、全部流程測試和聯機測試；用 gdb 取樣分析房間畫面的效能；用 clang-tidy（bugprone、clang-analyzer）檢查今天改過的檔案。
-- 修正：
-  - `EString::Compare` 用對方字串的長度做 memcmp，自己比較短時會讀超出緩衝區（ASan 抓到，在百科全書人物列表）。原版就有的 bug。
-  - `aObject` 釋放貼圖前先查 gos handle，結果是：快取出去的貼圖會先載回來才刪掉；結束遊戲時碰到已清除的貼圖會觸發「Bad texture handle」PAUSE（Debug 版直接中斷，Release 版只寫記錄）；快取出去的 handle 都相同，可能減到別張貼圖的使用數。新增 `MC_TextureManager::releaseTextureNode()`，直接依節點釋放。
-  - Debug 版每次 PAUSE 都會中斷進除錯器，`MC2_NO_DIALOGS` 的無人執行也一樣，所以「快速存檔來自別的版本」的提示會讓測試直接結束。改為設定 `MC2_NO_DIALOGS` 時，PAUSE 不中斷。STOP 和 assert 維持原樣。
-  - Player Prefs 用 strcpy 把名稱複製進 `MC2Player` 的固定長度欄位。徽章現在也會列出散檔（例如 Mod 的檔案），檔名太長就會溢位。改為有長度上限的複製，太長、存不下的徽章不列出，並檢查玩家資料是否存在。
-  - 房間 `begin()` 把 `missionSettings.map` 本身傳給 `setMission()`，之後又 strcpy 回自己，是未定義行為，ASan 會讓房主直接中止。改為來源和目的相同時不複製。原版就有。
-  - 資料工具 makefst、pak 的記憶體洩漏已修正；text_tool 每次執行都在 tmp/ 為每個字寫一張除錯 BMP，沒有東西會讀，已拿掉。
-- 效能：房間畫面每一幀都會打開地圖的 .pak 比對 GUID，實測每幀約 1.8 ms（以 60 FPS 計約佔一成）。改為依地圖名稱記住結果，每次進房清掉。之後取樣房間畫面，時間都花在繪圖上（llvmpipe 的 shader 套用與文字），沒有剩下遊戲邏輯的熱點。
-- ASan 結果：除了 `unit_stuff` 的記憶體池（原版設計就是整個執行期間都不釋放）之外，單元測試沒有錯誤；12 個流程測試和聯機 `away`、`battle` 情境全部通過，沒有 ASan 錯誤。
-- Release 全套：23 項單元測試、smoke、截圖（gl、gpu 各 18/18）、流程（gl、gpu 各 12/12）、聯機四個情境（battle、logistics、version、away）全部通過。
-- 沒處理：clang-tidy 其餘警告（signed char 當索引、switch 沒有 default 等）都在原版程式碼裡，看過不是實際問題。`unit_stuff` 的洩漏報告也一樣。
+## 待使用者實機確認
 
-## 房間的準備狀態與暫離（2026-11-27）
-
-- 「準備」改為只在三個條件都成立時顯示：完成整備、人在房間畫面、沒有暫離。`MPParameterScreen::setPresent()` 統一計算，`preparationValid()` 檢查整備是否仍有效（房規版本、預算、陣營、隊伍都沒變）。
-  - 打開 System 選單（含從選單進入的選項、百科全書）、Player Prefs、Add AI 時，顯示未準備。回到房間（`begin()`）時，整備仍有效就自動恢復準備。
-  - 以前從 Player Prefs 或選單回來，`begin()` 會清掉整備，玩家得重新整備。現在這三種返回都保留整備。
-- 暫離：房間上方、Player Prefs 左邊新增 **AWAY** 按鈕（沿用 Player Prefs 的按鈕圖）。按下後 `MC2Player::away = true`，同步給所有人；其他人在準備欄看到 AWAY；`allPlayersReady()` 遇到暫離的玩家回傳 false，所以房主不能開始遊戲。按鈕變成 **I'M BACK**，再按一次取消暫離。
-- `MC2Player` 新增 `away`（放在 `ready` 後面的對齊空位，結構大小不變），房主會接收客端送來的 `away`。協定 stamp 升為 `MC2NET-4`。新字串 60099–60100。
-- 修正 `run_net_test.py`：拿掉 Zone.com 列之後，Local network 移到 y=150，測試原本還點 243（變成點到 TCP/IP），所有聯機測試都會失敗。
-- 新增聯機測試情境 `--scenario away`（也加進 CI）：客端整備完 → 暫離（房主此時按開始，必須無效）→ 我回來了 → 打開 System 選單 → 關閉。房主看到的狀態依序是 準備、暫離、準備、未準備、準備，且遊戲只在最後才開始。
-- 測試結果：`away`、`battle`、`version`、`logistics` 四個情境通過；23 項單元測試通過。`logistics` 原本失敗：房主在自己的第 7900 幀才按開始，約等於客端第 6800 幀，但客端 8200 幀就結束，等不到任務載入完。已把客端延長到 10500 幀、房主延長到 11500 幀，並把這個情境加進 CI。
-- 房間名稱：輸入框本來就限制 24 字，房間廣播和加入時也截到 24 字（`MAXLEN_SESSION_NAME`）。實測 24 個最寬的字母 W，在房間畫面標題和房間列表欄位都放得下。補上房主自己那份名稱（原本最多可存 79 字），改用同一個上限。
-
-## 右上角 System 選單（2026-11-27）
-
-- 所有整備與聯機畫面右上角原本的 Main Menu 按鈕，改名為 **SYSTEM**（系統），提示文字改為「選項、百科全書，或回到主選單」。按下後，畫面調暗（不再全黑），中間跳出小選單：Options、Encyclopedia、Back to main menu、Close。程式在 `code/logisticsmenu.{h,cpp}`，由 `MissionBegin` 開關。
-  - 舊做法會把整個標題選單疊在畫面上，開場動畫結束後背景改用不透明黑色，所以周圍全黑。
-  - 按鈕沿用標題選單的圖（`mcl_mm.fit`），不畫背景圖，只畫半透明遮罩和橘色外框的面板。
-  - Esc、點選單外面或 Close 都會關閉選單，回到原畫面（呼叫原畫面的 `begin()`，和舊的疊加選單相同）。
-  - Options、Encyclopedia 關閉後回到小選單。
-- Back to main menu 會先跳確認框（`LogisticsLeaveDialog`，沿用 `mcl_dialog.fit`；Esc 或點框外 = 取消，回到小選單）：
-  - 戰役：「回到主選單前要儲存戰役嗎？」不儲存／儲存。按儲存會寫入 `savegame/Autosave.fit`（固定檔名，覆蓋上一次），再回標題。
-  - 聯機：「離開房間並回到主選單？」否／是。按是會斷線並釋放 MPlayer，再回標題。房主這樣離開時，客端應走原本的「主機已離開」流程（未實測）。
-  - Solo Mission：不問，直接回標題。
-- 新字串 60092–60098（中英）。`aObject` 新增 `setHelpHeader`。
-- 驗證：
-  - 戰役：Encyclopedia 和 Options 關閉後都回到小選單；Close 回到原畫面；確認框按 Esc 回到小選單；按「不儲存」回標題，沒有寫存檔；按「儲存」回標題，有寫 Autosave。
-  - 聯機：按「否」回到小選單；按「是」回標題，之後再開房正常。
-  - 流程測試 `main_menu` 改為 System → Back to main menu → Save。
-- 標題畫面的 Return to Game 維持原樣（在標題畫面沒有作用）。
-
-## 連線類型畫面與機甲字型統一（2026-11-27）
-
-- Zone.com：隱藏那一列（按鈕、外框、Zone 圖示），LAN 與 TCP/IP 往上移一格。
-- Main Menu：之後改成 System 選單，見上一節。
-- 機甲字型：拿掉退回 6 號字的邏輯，機甲名一律用 Mecha 字型。量過所有機甲名，最寬的 BUSHWACKER 約 63 像素，格子約 70 像素；超過的只有直升機，不會出現在出戰格子。
-
-## 多個 IP 位址的顯示（2026-11-27）
-
-- 問題：有 VPN、虛擬或容器網卡時，所有位址擠在同一行，換行後超出面板。
-- 做法：只顯示預設路由的位址，後面加「(+N)」；滑鼠移到那一行時，跳出清單列出所有位址與網卡名稱（預設路由的排第一、較亮）。連線類型、房間列表、房間設定三個畫面共用 `code/lanaddresses.cpp`；`gosNetInterface` 新增 `name`（Windows 用 FriendlyName，其他平台用 ifa_name）（`f38bd88`）。
-- 驗證：在 eth0 加兩個測試位址，三個畫面都截圖確認，之後已移除。Windows 版的網卡名稱需實機確認（中文 Windows 的網卡名在英文介面可能缺字）。說明書 `doc/manual/lan-skirmish*.md` 已更新。
-- Lock game：鎖定後主機拒絕新的加入請求（`MPLAYER_ERR_SESSION_LOCKED`），房間列表會標示已鎖定。
-
-## 房間按鈕 hover 標籤與機甲庫名稱超出格子（2026-11-27）
-
-- hover 標籤：房間的鎖定與移出玩家按鈕只有圖示，滑鼠停留時在按鈕上方顯示「Lock game／Unlock game」「Remove player」（繁中：鎖定房間／解除鎖定／移出玩家）。新字串 60089–60091，已加進五份字串檔與 `localization/zh-TW/strings.txt`。已截圖確認三種狀態。
-- 機甲庫名稱超出格子：master 與原作者版本相同，不是移植造成的。mc2srcdata 把所有 Arial 系列字型換成 `emulogic.ttf`（每字約 8 像素），十個字母的名稱要 80 像素，格子內只有約 70 像素。
-- 使用者選 A，並要求駕駛員名比機甲名小：機甲名改用 Mecha 字型（`agencyfb14`），駕駛員名用 6 號字（`arialnarrow6`）並移到機甲名下方（`453a663`，之後拿掉退回 6 號字的邏輯）。機甲庫與駕駛員畫面已截圖確認。
-
-## Player Prefs 閃退與聊天展開鈕（2026-11-27）
-
-- 閃退：Player Prefs 只在 `data/multiplayer/insignia/` 找散檔徽章，遊戲目錄把徽章放在 `insignia.fst`。找不到時仍用無效的搜尋代碼呼叫 `FindNextFile`，Linux 版因此閃退。改為同時列出散檔與 fst 內的徽章，找不到就跳過。已驗證：畫面可開啟，徽章清單有內容。
-- 聊天展開鈕：依使用者決定對調原版圖示，收合時向上、展開時向下（`aButton::swapNormalAndPressedArt()`）。
-- 「穿模」：使用者回報選項畫面預覽機甲穿模。原作者 v0.1.3 與本分支的預覽畫面看起來相同，尚未確認指的是哪個部位，待使用者說明。
-
-## 選項預設顏色與聊天收件人（2026-11-27）
-
-- 選項 DEFAULT：設定檔的顏色沒有 alpha（`BaseColor = 0xfae525`），按 DEFAULT 後色塊變透明、比對不到色卡，預覽機甲也沒重畫。載入時補上 alpha，DEFAULT 後重畫預覽。已驗證：選紅色再按 DEFAULT，回到青色底色，色卡框與機甲一致。
-- 聊天收件人：只有和另一位玩家同隊時才列出 TEAM。一人房間只剩「所有人」，兩人不同隊是「所有人」加悄悄話。最後一位隊友離開時改回「所有人」。選單往上展開，箭頭改為收合時朝上、展開時朝下。
-- 驗證：一人房間與兩人不同隊已截圖確認。同隊出現 TEAM 的情況沒有自動測到，需實機確認。Linux 23 項 CTest、OpenGL 流程測試全部通過。
-- 聊天展開鈕：原版貼圖收合向下、展開向上，使用者決定對調（見上一節）。
-
-## 機甲顏色預覽修正（2026-11-27）
-
-- 問題：在「選項 → Gameplay」選青色當底色，預覽機甲卻是黃色。master 與 dev 都會發生，OpenGL 和 SDL3 GPU 結果相同。
-- 原因：`resetPaintScheme()` 命中已上色的快取貼圖時，直接存入傳進來的 BGR 顏色。正常路徑 `setPaintScheme()` 會先轉成 RGB。LOD 切換時用 `getPaintScheme()` 讀回再重新上色，紅藍因此對調。只有命中快取的顏色會出錯，所以只有青色明顯。
-- 修正：`mclib/mech3d.cpp` 與 `mclib/gvactor.cpp`（車輛，兩處）的快取命中分支，改用和 `setPaintScheme()` 相同的轉換。
-- 驗證：依序點第一排 8 種顏色，青色從 (7f,5f,14) 變為 (1e,66,66)，其他 7 色不變。Linux 23 項 CTest 通過，OpenGL 截圖測試 18/18 通過。
-- 待辦：實機確認選項畫面與戰場上的機甲顏色。
-
-## 多人開局與繁中介面回報（fix/lobby-flow）
-
-- 目標：依回報修正房主過早開局、非快速開局卡住、悄悄話找不到收件人、套用語言需要手動重啟及小字可讀性。
-- 初步定位：部署畫面送出第 7 階段的訊息，但接收端未處理。畫面在等待只有進入載入階段才會交換的機甲資料。
-- 已實作：房主與訪客都從「任務整備」進簡報、機甲庫、駕駛員畫面，再按「完成整備」返回房間。依後續回饋移除連線房間的快速開局，統一使用整備流程。房主的獨立「開始遊戲」按鈕要求全員準備、在預算內且符合房間規則。
-- 按鈕配置：「開始遊戲」移到原 Quick Start 位置，「任務整備」移到右下角。已擷取繁中與英文房主畫面，並更新座標重跑 `scripts/run_net_test.py game --scenario logistics`，雙機整備及開局通過。
-- 重進整備會清除準備狀態，取消返回也維持未準備。從 dev 重整提交後，Linux 23 項 CTest 與雙機 logistics 測試通過。按鈕樣式已於後續提交整合。
-- 樣式：「開始遊戲」沿用 Load Map 的外框貼圖，啟用時為橘色，停用時為灰色。外框與點擊範圍對齊 FIT 的原 Quick Start 區域（260 × 35），文字置中。與聊天版面一併提交。
-- 樣式驗證：Linux 23 項 CTest 通過。以 `scripts/run_net_test.py game --scenario logistics` 的流程，從新增的左側點擊區（530, 488）啟動，繁中及英文雙機整備及開局皆通過，已擷取啟用和停用畫面。
-- 聊天版面：保留兩個藍色圖示，等比例縮至收件人選單的 17 像素高度，移到選單右側。收合時的訊息區向右延伸 49 像素，換行寬度同步調整。
-- 聊天版面驗證：Linux 23 項 CTest 通過。以 `scripts/run_net_test.py` 的輸入與截圖工具驗證中英文房主畫面、長訊息換行、展開與收合、說明切換和收件人選單。
-- 同步：房主保有各玩家的預算，啟動時再核對整備版本與支出。房規變動使舊的整備無效。開局從房間直接進入載入同步，沿用之前完成的配置。
-- 聊天：選擇所有人、隊伍或指定玩家。悄悄話只由主機送往指定玩家。語言提示加入立即重啟與稍後選項，小型繁中字形提高筆畫對比。
-- 決策：移除快速開局房規欄位後，進房握手升為 `MC2NET-3`。首次啟動原本已使用最高畫質預設 `hiprefs.cfg`。本次在獨立分支修改，M1、U1–U3 實機驗收仍待回報。
-- Linux 驗證：`ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 共 23 項通過。`scripts/smoke_test.sh game mc2_01 20` 通過。雙機整備開局載入兩台玩家配置機甲，戰鬥比對 90 秒，兩端同意一台失能及擊殺／損失統計，最大位置偏差 79。LAN 預設測試走同一個整備流程，並比對擊毀與失能狀態。
-- 其他驗證：三個 Linux 遊戲實例確認悄悄話封包只送到指定訪客。英翻中及中翻英各成功觸發一次重新啟動，「稍後」仍儲存設定。繁中產生器重建 12 套字型。
-- 連線驗證：`scripts/run_net_test.py game --scenario logistics` 與 `--scenario version` 都通過。房主畫面確認已移除快速開局，未準備時「開始遊戲」呈停用狀態。
-- CI：提交 `c702e52` 的 Linux Debug、RelWithDebInfo、smoke test、Windows 與 macOS 均通過，具備快轉合併至 `dev` 的條件。[CI 結果](https://github.com/hyouka0904/mc2/actions/runs/46009702601)
-- 待完成：M1、U1–U3 的 Windows 實機驗收，以及玩家回報的字體清晰度複驗。
-
-## 任務目標
-
-MechCommander 2 原始碼移植（SDL3、SDL3 GPU／OpenGL、ENet），支援 Linux、Windows（MSVC）、macOS（Apple Silicon）。目前在做 `doc/ROADMAP_MULTIPLAYER_ZH.md` 的聯機路線圖，分成三條線：
-
-- **M 線（聯機）**：M1 區網聯機 → M2 共通系統 → M3 合作關卡 → M4 地圖生成 → M5 合作任務擴充 → M6 Roguelike → M7 雙人對戰 → M8 機器學習接口。
-- **U 線（更新）**：版本檢查和自動更新。
-- **L 線（中文化）**：繁體中文補丁。
-
-詳細計畫在 `doc/ROADMAP_MULTIPLAYER_ZH.md`。
-
-### 工作規則（使用者指定）
-
-- **溝通**
-  - 用繁體中文回覆。
-  - 給測試步驟時要附完整指令。
-  - 每個里程碑結束就停下來，等使用者回報實機測試結果。
-- **Git**
-  - 路線圖工作分支為 `claude/admiring-maxwell-3xhqba`。臨時修正由獨立分支通過 CI 後整合至 `dev`。master 和 tag 由使用者處理。
-  - 不開 PR，除非使用者要求。
-  - commit 用 Conventional Commits（見 `CLAUDE.md`），不要寫進模型名稱。
-- **執行與範圍**
-  - 遊戲一律在 `timeout` 下執行。
-  - 沒有使用者同意，不做 DXIL（D3D12 shader）。
-
-## 繁中補丁預覽
-
-### 遊戲內語言切換
-
-- 目標：在設定的遊戲玩法切換英文和繁中，套用後重新啟動生效。
-- 實作：語言獨立儲存在使用者資料目錄的 `language.cfg`，載入時同時選擇譯文和字型。尚未儲存選擇時支援 `MC2_LANGUAGE`。只有具備繁中資源的版本會顯示此選項。
-- README：兩份 README 都直達目前已發布的 `v0.1.1-test.36`。之後每次發佈 `dev` 測試版時一起更新版本號與連結。
-- 本機驗證：Release 建置後 `ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 通過 23 項。Xvfb 的 OpenGL 及 SDL3 GPU 遊戲流程驗證取消不儲存、英文切到繁中、重啟載入繁中、再切回英文及重啟，並比對主選單截圖。資源函式庫逐條比對 2,108 條譯文，驗證明確選擇英文及既有環境變數。
-- 整合驗證：功能提交 `2f138ae` 的 CI 45949062193 全數通過，包含 Windows、Linux、macOS 和畫面、流程、區網測試。Release 45949062200 的三平台安裝包驗證及 Windows、Linux 區塊更新檢查通過。
-- 已發佈：`dev` 的 `9a29982` 已上架為 [v0.1.1-test.36](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.36)。CI 45951131773 和 Release 45951945884 全數通過。確認五個安裝包已上傳。以 `gh release download` 下載並核對繁中區塊、Windows 與 Linux 更新清單的 SHA-256，確認有 2,108 條譯文與 12 套字型。
-- 下一步：Windows 實機驗收語言切換，M1、U1–U3 驗收仍待使用者回報。
-
-### 測試版整合
-
-- 目標：讓 `dev` 測試版隨附繁中字型和譯文。Release 在 Linux 產生資源並提供給其他平台，Windows 和 Linux 的區塊更新將繁中資源放在獨立區塊。
-- 驗證：文字補譯送合併前，CI 45922319707 的 Windows、Linux、macOS、兩種渲染後端的畫面與流程、區網聯機均通過。Release 流程新增安裝內容及區塊更新驗證。首次發佈（45925115516）Linux、macOS 及 Windows 安裝測試通過，Windows 更新驗證缺少由 Linux 產出的繁中區塊 ZIP。共用產物現在會傳遞該 ZIP，Windows 測試結束後移除副本，發佈時仍以 Linux 產出的區塊為準。
-- 已發佈：`dev` 的 `d85198e` 已發佈為 [v0.1.1-test.33](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.33)。CI 45927044447 全部通過。Release 45927045219 通過 Windows、Linux、macOS 安裝包檢查，Windows 和 Linux 均驗證可透過區塊更新補回譯文。已確認五個安裝包及 2.5 MB 繁中更新區塊均已上傳。
-- 下一步：用測試版驗收繁中介面，預設使用英文，設定 `MC2_LANGUAGE=zh-TW` 可啟用繁中。Windows 實機和 M1、U1–U3 驗收仍待使用者回報。
-
-### 文字補譯：百科、戰場與多人地圖
-
-- 已完成：百科人物、機甲、載具、建築、歷史及裝備描述，並補譯戰場物件、裝備名稱與縮寫、操作提示、勳章、技能、多人圖名及原版「2of3」顯示文字。核對原版任務 FIT 內的簡報及目標資源 ID，補上第 21 關的工業園區次要目標。
-- 版面：戰役簡報與百科正文預留文字縮排和捲軸的空間。保留機甲與載具型號、駕駛員呼號、存檔與地圖檔名、連線預設名稱。原版圖片維持原樣。
-- 驗證：`python3 scripts/build_zh_tw_patch.py /workspace/scratch/mc2-zh-hud-game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 2,104 條譯文、1,604 個擴充字形及 12 套字型。直接呼叫資源函式庫逐條比對 2,104 項，並驗證重載後的原版語言。`ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 23 項通過。Linux OpenGL 的 `run_flow_tests.py --only options,campaign,encyclopedia,load_game,solo_mission,pause_menu` 六條流程通過。預設英文的主選單、戰役選擇、第一關三張基準比對均通過。截圖已確認第二關簡報換行與多人地圖清單顯示「三取二」。
-- 尚待：Windows 實機及更多解析度校對。M1、U1–U3 的實機待測狀態與 M2 排程沿用原規劃。
-
-### 文字補譯：關卡與百科首批
-
-- 目標：補齊可由文字資源或資料檔翻譯的遊戲內容。原版圖片維持原樣。
-- 已完成：新增 245 條譯文，包含 24 關戰役、5 關訓練及 18 條多人簡報的其餘內文，159 條對應目標，以及百科歷史與 30 條載具介紹。
-- 驗證：`python3 scripts/build_zh_tw_patch.py /workspace/scratch/mc2-zh-hud-game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 1,132 條譯文、1,296 個擴充字形、12 套字型。Linux 的 `MC2_LANGUAGE=zh-TW timeout 340 python3 scripts/run_flow_tests.py /workspace/scratch/mc2-zh-hud-game --out /workspace/scratch/mc2-zh-text-milestone --renderer gl --only campaign,encyclopedia --timeout 155` 通過兩個流程。第二關簡報顯示繁中，右緣有文字裁切需要追查。
-- 下一步：補齊人物、機甲、裝備、建築與剩餘提示；盤點原版資料檔的顯示文字及修正長文裁切。補譯尚在進行，Windows 實機驗收待測。
-
-### 繁中介面首版
-
-- 目標：在同一分支先完成主要遊戲介面譯文，使用 Linux 截圖檢查版面。中文輸入法留待後續。
-- 已完成：涵蓋設定與快捷鍵、存讀檔、戰前部署、戰鬥與支援面板、結算、百科介面、多人房間與更新提示。加入全部戰役和訓練關卡的標題及概要，保留原有英文備援。
-- 決策：保留存檔檔名樣式、預設連線名稱與機甲型號。產生工具檢查格式參數並按需要放寬單頁字型貼圖寬度。共用字型元件將已格式化的文字視為字面值，以正確顯示百分號。
-- 補丁產生：`python3 scripts/build_zh_tw_patch.py game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 887 條譯文、796 個擴充字形、12 套字型。直接載入資源函式庫逐筆比對 887 條譯文，並驗證存檔名稱及預設英文。
-- Linux Release 的 `ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 通過 23 項。英文 `run_screenshot_tests.py` 的主選單、戰役與第一關三張比對均通過。以 `MC2_LANGUAGE=zh-TW` 執行 `run_flow_tests.py --renderer gl`，設定、戰役、存讀檔、單人任務、百科、暫停與快速存讀檔流程通過。800×600 的繁中截圖另核對戰鬥操作提示、資源點、連線方式及多人任務設定。
-- 區網測試：標準 `run_net_test.py` 在設定的 280 秒時限內完成 89 秒同步比對，主機未在時限內退出。以同一驗證器縮短主客端幀數後重跑通過，兩端均正常退出，共比對 90 秒、8 個單位遭擊破，存活單位最大位置差 41，最終擊破與損失一致。
-- 待辦：完整關卡簡報和目標（第一關已譯）、百科內文、未涵蓋的裝備與原版資料檔或貼圖文字、Windows 實機與其他解析度。M1、U1–U3 實機驗收及 M2 狀態維持原排程。
-
-### 初始預覽
-
-- 目標：在 `feat/zh-tw-localization`（起點 `dev` 提交 `9ec2c9d`）驗證主選單與第一關的中文字形、斷行、任務文字與英文備援。
-- 已完成：UTF-8 繪製與量測、基本中文標點禁則、相容舊字型的稀疏字形表、外部翻譯覆寫，以及 30 條試譯。預覽以 `MC2_LANGUAGE=zh-TW` 啟用，翻譯與疊加字型置於遊戲資料夾的 `localization/zh-TW/`。
-- 補丁產生已確認：`python3 scripts/build_zh_tw_patch.py /workspace/scratch/mc2-zh-game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3` 產生 12 套字型，每套涵蓋試譯用的 201 字。
-- Linux Release 的 `ctest --test-dir /workspace/scratch/mc2-zh-build --output-on-failure` 共 23 項通過。`python3 scripts/run_screenshot_tests.py game shots --renderer gl --only main_menu campaign_select mc2_01_0300` 三張預設英文截圖均符合基準。
-- 以 `MC2_LANGUAGE=zh-TW timeout 285 python3 scripts/run_flow_tests.py game --renderer gl --only campaign,solo_mission --timeout 135` 驗證戰役及單人任務流程，並檢閱主選單與第一關簡報截圖。以資源 DLL 直接確認英文備援與重新啟動後的語言選擇。
-- 待辦：Windows 實機、其他解析度與全量翻譯。字型多頁、遊戲內語言設定、輸入法支援仍待後續。M1 與 U1–U3 維持實機待測，M2 保持待辦。
-
-## 開發文件整理
-
-- 工作分支：`docs/development-map`。開發指南、聯機路線圖、玩家手冊、Mod 文件及發佈說明集中到 `doc/`。根目錄 README 保留中英入口，`HANDOFF.md` 保留原路徑。
-- 新增 [功能與檔案索引](doc/code-map.md) 和 [AGENTS.md](AGENTS.md)。先查相關條目，再用 `rg -n` 核對入口、共用狀態、連動檔案與測試。
-- 已驗證：Markdown 相對連結與標題錨點檢查通過，`git diff --check HEAD` 通過。發佈流程和 CI 已同步改用 `doc/` 的路徑。
-- 分支提交 `0be7619` 通過 Windows、Linux Debug／RelWithDebInfo 及 Linux 遊戲端到端測試（雙渲染後端、UI、區網與版本相容性）。macOS 排隊後取消，沒有開始執行。依既有條件整合至 `dev`。[CI 執行紀錄](https://github.com/hyouka0904/mc2/actions/runs/45857701890)
-- 發佈流程的 Windows 與 Linux 打包檢查通過，macOS 尚無結果。[打包執行紀錄](https://github.com/hyouka0904/mc2/actions/runs/45857485973)
-- 下一步：M1、U1–U3 仍待實機回報，M2 保持待辦，平行開發擱置。
-
-## 測試版下載入口
-
-- 中英 README 在正式版下載下方新增測試版入口，指向 GitHub Releases，以便選取最新的 Pre-release。已核對目前正式版 v0.1.0 尚無遊戲內更新功能，v0.1.1-test.24 提供 Windows 和 Linux 套件。
-- 以 `git merge-base --is-ancestor` 確認修正與文件分支的提交均已整合至 `dev`。M1、U1–U3 仍待實機回報。
-
-## 臨時修正
-
-- 目標：修正關卡 MOD 動態生成與移除、Resource Points 顯示、維修車遇到卡模時的指令延續。
-- 工作分支：`fix/mc2-mission-regressions`，從 `dev` 分出。兩者起點為已測的 Claude 分支 `bf8494e`。
-- 里程碑維持 M1、U1–U3 的實機待測。這次插入修正，M2 保持待辦。
-- 合併條件：同一修復版本的 Windows 與 Linux CI 均須通過。macOS 如因 runner 不可用而無結果，可略過。
-- 本機確認：Release 建置、MOD／ENet／更新相關 4 組 CTest、`mc2_01` ABL 連續 16 波共 512 次建立與清場，以及 `objectsuicide` 後重啟用通過。預置單位連續四波移除後，檔案描述符依序從 97 降到 85、73、61、49。
-- 資源點以主機同步的餘額更新 HUD，扣款與取消退款共用既有的資源差額訊息。地圖缺少起始值時以零顯示。800×600 實測完整標籤會裁掉數字，寬度不足時改用 RP 標籤。單人 HUD 已確認完整顯示 22000。雙實例測試確認客戶端顯示 3000，扣除探測器費用變成 1000，取消後回到 3000。
-- 回歸確認：維修指令跨越避障移動保留，超出維修距離時回到接近階段。同座標部署及遠距離接近兩個本機關卡測試都成功修回裝甲。不同平台的實機操作仍待驗證。
-- 修復分支 `8940d6c` 的 CI 五項全過，涵蓋 Windows、macOS、Linux Debug／RelWithDebInfo 與 Linux 遊戲端到端。聯機、版本提示、兩個渲染後端的畫面和 UI 流程均通過。[CI 執行紀錄](https://github.com/hyouka0904/mc2/actions/runs/45847432179)
-- 測試命令
-  - `cmake --build build --target mc2 unit_net unit_update unit_mods`
-  - `ctest --test-dir build -R '^(unit_net|unit_update|unit_mods|tool_mc2mod)$' --output-on-failure`
-  - `timeout 900 python3 scripts/run_net_test.py game --out net --timeout 900`（CI 內執行同一聯機測試）
-- 下一步：在 `dev` 整合版驗證 M1、U1–U3 的 Windows／Linux 跨實體裝置操作，並回報原地圖的維修脫困情境。保持 M2 待辦。
-
-## 已完成事項
-
-### 移植與基礎（早期）
-
-- 平台與渲染：
-  - SDL2 換成 SDL3。
-  - 新增渲染後端抽象層，有 SDL3 GPU 和 OpenGL 兩個後端。
-  - 支援 macOS 和 Windows，三平台都有 CI。
-- 遊戲內容與修正：
-  - Mod 系統。
-  - 影片播放（pl_mpeg）。
-  - 修好音效爆音。
-- 版本與發佈：
-  - 版本號系統。
-  - 打包腳本 `scripts/package.py`，加上 `release.yml`。
-- 測試：
-  - 截圖比對測試（`tests/golden`）。
-  - 流程測試（`scripts/run_flow_tests.py`）。
-- 存檔安全：
-  - 快速存檔記錄結構佈局的指紋（`code/savelayout.cpp`）。
-  - 戰役存檔讀取時能容忍格式差異。
-  - CI 會讀舊版存檔（`tests/saves/`）。
-
-### M1 區網聯機（N1–N9）
-
-- 傳輸層用 ENet（`GameOS/gameos/net/gos_net.*`）。
-- 房間探索、大廳、遊戲內同步、指令歸屬、斷線處理、暫停、結算都已完成。
-- `scripts/run_net_test.py` 會開兩個遊戲實例，一台開房、一台加入來測試。
-- N9：
-  - 畫面上顯示本機 IP。
-  - 有多張網卡時，對每張網卡的子網廣播位址送出搜尋。
-
-### U 線（使用者要求提前做）
-
-- **U1–U3**：
-  - 啟動時查詢 GitHub 最新版（`GameOS/gameos/update/`），24 小時查一次，結果記在 `update.ini`。
-  - 主選單顯示新版通知。
-  - 房間列表顯示版本，版本不符時提示。
-- **測試版頻道**：
-  - 選項「RECEIVE TEST VERSIONS」打開後，遊戲也會收到預發布版。
-  - 在 GitHub 上手動按 Run workflow 會發布預發布版 `v<next>-test.<run>`。
-- **遊戲內下載安裝**：依安裝方式下載對應的安裝包，用 SHA256SUMS 驗證，裝好後自動重開。
-- **區塊更新**（commit b312106）：
-  - 安裝包拆成兩種區塊：
-    - 每個平台一個程式區塊。
-    - 六個資料區塊，所有平台共用。
-  - 另附一份 manifest，列出每個區塊、每個檔案和它的 SHA-256。
-  - 遊戲只下載內容有變的區塊，也只替換有變的檔案；要嘛全部換成功，要嘛完全不動。
-  - Windows 遊戲資料夾沒有寫入權限時（裝在 Program Files），會用管理員權限執行 `mc2.exe -apply-update <plan>`，跳一次 UAC，並同步更新「已安裝的應用程式」裡的版本號。
-  - AppImage、macOS，以及沒有 manifest 的 release，仍然下載整包。
-- **資料建置可重現**（commit 6dc5355）：
-  - tgl.fst 原本有沒清零的欄位，現已改掉。
-  - 兩次乾淨建置產出的 571 個檔案完全相同，所以資料區塊在不同版本之間不會變。
-- **Linux 打包**：會 strip 掉除錯資訊，mc2 從 67 MB 降到 9 MB。
+1. M1、N9、U1–U3：Windows＋Linux 兩台搜房、加入、對戰、版本提示。
+2. 區塊更新：連發兩個測試版，第二次應只下載程式區塊；裝在 Program Files 時跳 UAC。
+3. 大廳：
+   - 房主從 System 選單離開後，客端的畫面。
+   - 「暫離／我回來了」的中文寬度，長房名和 AWAY 按鈕會不會重疊。
+   - 房主暫離時，客端看得到、房主不能開始。
+   - 同隊時聊天出現 TEAM。
+   - Windows 網卡名稱（中文 Windows）。
+4. 戰役 System → 回到主選單 → 儲存，`Autosave.fit` 能否讀回。
+5. 機甲顏色預覽（選項畫面和戰場）、繁中語言切換、小字清晰度。
+6. 擱置：選項畫面預覽機甲「穿模」，使用者說先不處理。
 
 ## 未完成事項
 
-1. **等使用者實測（最優先）**：M1、N9、U1–U3 在 Windows 和 Linux 實機上的測試結果。**收到回報前不開始 M2。**
-2. **等使用者實測區塊更新**：
-   - 先按兩次 Run workflow，產生兩個測試版。
-   - 第二次更新應該只下載程式區塊：Linux 約幾 MB，Windows 是 mc2.exe 加上 DLL。
-   - 裝在 Program Files 時會跳 UAC。
-3. **macOS CI 待確認**：
-   - commit 67c5a31 修了 `unit_update` 在 macOS 上的 SIGPIPE 問題。
-   - 但 macOS 的 job 連續幾次 15 分鐘內排不到機器、被取消，所以這個修正還沒在 macOS 上跑過。
-   - 需要按 Re-run failed jobs：https://github.com/hyouka0904/mc2/actions/runs/45632610803
-4. **U4 minisign 簽章**：要使用者建立 secret `MINISIGN_KEY`（建議同時開 2FA）。不急。
-5. **之後的里程碑**：M2–M8、U5–U7、L 線，見 ROADMAP 和下面的「下一步」。
+- U4 minisign 簽章：需要使用者建立 secret `MINISIGN_KEY`，不急。
+- 之後的里程碑：M2–M8、U5–U7、L4–L6，見 ROADMAP。
+
+## 工作規則（使用者指定，補充 CLAUDE.md）
+
+- 工作分支 `claude/admiring-maxwell-3xhqba`。推 `dev` 要先問（使用者說「要」才合併並發測試版）。不碰 master 和 tag，不開 PR。
+- 原版行為優先；確認是 bug 才改。
+- 沒有內容變動時，不做只改 HANDOFF 的 commit。
 
 ## 重要決策
 
-- **聯機設計**：
-  - 主機權威的星狀拓撲。
-  - 訊息改動時要更新協定標記 `MC2NET-1`。
-  - 搜尋房間共用 UDP 27015。
-- **房間人數**：1–4 人，一人也能開。
-- **玩法設計**：
-  - 「改裝」取代原本的武器特性：每台機甲只能裝一個；要付解鎖費和安裝費，換掉時安裝費不退。
-  - M7 佔領模式用勝利條；指揮中心被毀直接判負。
-  - M8 不提供畫面影像；做 M8 之前要先完成 A0（模擬和畫面幀率脫鉤）。
-  - 里程碑順序 M5 → M6 → M7 → M8。
-- **更新機制**：
-  - 用平台內建的 HTTPS：Windows 用 WinHTTP，Linux 和 macOS 執行時才載入 libcurl。
-  - 開發版不會查詢更新。
-  - `MC2_UPDATE_URL` 可指向本機假伺服器做測試。
-- **區塊切法**：
-  - 資料區塊：textures、models（tgl.fst）、archives（其他 .fst）、sound、movies、misc。
-  - zip 裡的檔案日期固定、排序固定，所以同樣內容產出的區塊位元組完全相同。
-- **簽章金鑰**：只有負責發佈的機器需要，或放在 GitHub Secrets；多台開發機不必各放一份。
-- **macOS CI 被取消**：是 GitHub 那邊 Mac 機器不夠用，不是程式問題。
+- 聯機：主機權威星狀拓撲，協定 stamp 目前是 `MC2NET-4`，搜房共用 UDP 27015。房間 1–4 人，一人可開。
+- 玩法（M5 之後）：
+  - 「改裝」取代武器特性：每台機甲一個，收解鎖費＋安裝費，換掉不退。
+  - 佔領用勝利條，指揮中心被毀判負。
+  - M8 不提供影像，做之前先完成 A0。
+  - 順序 M5 → M6 → M7 → M8。
+- 更新：
+  - 平台內建 HTTPS（WinHTTP；Linux、macOS 執行時才載入 libcurl）。開發版不查更新；`MC2_UPDATE_URL` 可以指向假伺服器。
+  - 資料區塊分 textures、models、archives、sound、movies、misc（另有繁中區塊），內容相同時產出的位元組也相同。
+- macOS CI 偶爾被取消：GitHub 排不到 Mac，不是程式問題。
 
-## 測試指令與結果
+## 測試指令
 
 ```bash
 cmake -S . -B build && cmake --build build -j"$(nproc)"
 ctest --test-dir build --output-on-failure
-MC2_PLACEHOLDER_MOVIES=1 scripts/prepare_game_dir.sh build mc2srcdata game
-scripts/run_screenshot_tests.py game shots
+scripts/run_screenshot_tests.py game shots [--renderer gpu]
 scripts/run_flow_tests.py game --renderer gl
-timeout 900 python3 scripts/run_net_test.py game
+timeout 900 python3 scripts/run_net_test.py game [--scenario logistics|version|away]
 ```
 
-最近一次結果（2026-11-25，commit b312106 和 67c5a31）：
+- 測試前要把 `build/mc2` 和 `build/out/res/libmc2res_64.so` 複製到遊戲目錄，否則會跑到舊版本，或出現 missing string res。
+- ASan：`-DCMAKE_BUILD_TYPE=Debug -DMC2_ENABLE_ASAN=ON`。`unit_stuff` 的洩漏報告來自原版記憶體池，可以忽略。
 
-- **本機**：
-  - ctest 23/23 通過。
-  - 截圖測試 18/18 和 golden 一致。
-  - 流程測試（gl）全部通過。
-  - 區塊更新端對端測試：用本機伺服器發 0.2.0-test.1 → test.2，只下載 1/7 個區塊（28.8 MB，未 strip），重開後版本正確。
-- **CI（67c5a31）**：
-  - Linux（Debug 和 RelWithDebInfo）、Windows、截圖、流程、聯機測試都通過。
-  - macOS 排不到機器，被取消。
-- **Release workflow（b312106）**：
-  - Linux：「Test a part update」通過。
-  - Windows：「Test a part update in Program Files」通過，包含提權套用、正在執行的 exe 改名、登錄檔版本號、最後解除安裝。
-  - macOS：dmg 打包通過。
+## 最近一次結果（2026-11-27，`1cf6f4f`）
+
+- Release：
+  - ctest 23/23、smoke。
+  - 截圖 gl、gpu 各 18/18；流程 gl、gpu 各 12/12。
+  - 聯機 battle、logistics、version、away 都通過。
+- ASan：12 個流程和聯機 away、battle 都通過，沒有 ASan 錯誤。
+- Release workflow run 42：三平台打包、安裝和區塊更新測試都通過，已發佈 test.42。
 
 ## 下一步
 
-1. 等使用者回報 M1、U1–U3 和區塊更新的實機測試；有問題就先修。
-2. macOS CI 有排到機器時，確認 `unit_update` 通過。
-3. 使用者確認 M1 後開始 **M2**，順序 S5 → S1 → S4 → S2 → S3 → S6（詳見 ROADMAP 第 4 節）。M2 做完後同樣停下來等實測。
+1. 等實機回報；有問題就先修。
+2. 使用者確認後開始 M2，順序 S5 → S1 → S4 → S2 → S3 → S6（ROADMAP 第 4 節），做完再停下來等實測。

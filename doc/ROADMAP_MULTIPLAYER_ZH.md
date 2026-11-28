@@ -12,9 +12,7 @@
 
 標「**（暫定）**」的數值和命名是先定下來讓開發能往前走的，全部集中在[第 11 節 可調整設定](#11-可調整設定暫定)，之後可以隨時改。
 
-> **進度（2026-11）**：M1 已完成，在 Linux 上用兩個本機實例自動測試通過，等待 Windows 實機測試。和原規劃不同的地方：ENet 直接放進 `thirdparty/enet`（不用 FetchContent，建置時不需要網路）；房間探索與遊戲共用 UDP 27015（主機在遊戲埠回應探索查詢），不另開 27016；自動測試直接用腳本操作原本的大廳介面，沒有另加 `-mphost` 等命令列參數；暫停改成網路暫停（P 鍵），Esc 選單不會停住戰鬥。追加 N9：區網面板、房間列表、房間畫面都會顯示本機 IP；房間探索除了 255.255.255.255，也送到每張網卡的子網廣播，解決 Windows 多網卡時搜不到房間。使用說明見[區網對戰說明書](manual/lan-skirmish.zh-TW.md)。
-
-> **進度（2026-11-24）**：U1–U3 已完成（啟動時背景檢查新版、主選單通知、房間列表顯示版本、版本不符時顯示雙方版本）。和原規劃不同的地方：對話框不顯示版本說明（Release 內文目前只有免責聲明）；「略過這個版本」與「稍後提醒」合併成 **Later**（同一版 7 天內不再提示，有更新的版本立刻提示）；關閉檢查改寫在 `update.ini` 的 `check=0` 和 `-noupdatecheck`，選項畫面沒有加開關（選項畫面的版面在遊戲資料裡，不在本 repository）；macOS 和 Linux 一樣用系統的 libcurl，沒有用 NSURLSession。
+> **進度（2026-11-28）**：M1（N1–N9）、U1–U3、U5、U6、L1、L2、L5 已完成，L3 已譯約 2,100 條。停在停止點 1＋U-a 等實機測試。完成項目和原規劃不同的地方記在各節的「已完成」說明裡；實作細節見[開發說明](DEVELOPMENT.zh-TW.md)和[功能索引](code-map.md)。
 
 > 規模：**S** ≈ 半天內，**M** ≈ 1–2 天，**L** ≈ 3–5 天，**XL** ≈ 一週以上或高風險。這是給 AI 協作開發的相對估計，不是精確工時。
 
@@ -24,7 +22,7 @@
 
 1. [總覽](#1-總覽)
 2. [現況盤點](#2-現況盤點)
-3. [M1 區網聯機底層](#3-m1-區網聯機底層)
+3. [M1 區網聯機底層 ✅](#3-m1-區網聯機底層-)
 4. [M2 聯機共通系統](#4-m2-聯機共通系統)
 5. [M3 模式一：合作攻堅關卡](#5-m3-模式一合作攻堅關卡)
 6. [M4 地形與關卡程序生成器](#6-m4-地形與關卡程序生成器)
@@ -33,7 +31,7 @@
 9. [M7 雙人對戰（佔領、殲滅）](#9-m7-雙人對戰佔領殲滅)
 10. [M8 機器學習接口](#10-m8-機器學習接口)
 - [L 線：繁體中文補丁](#l-線繁體中文補丁)（與 M1–M8 並行）
-- [U 線：版本檢查與自動更新](#u-線版本檢查與自動更新)（U1–U3 排在 M2 前）
+- [U 線：版本檢查與自動更新](#u-線版本檢查與自動更新)（剩 U4、U7）
 11. [可調整設定（暫定）](#11-可調整設定暫定)
 12. [測試與交付方式](#12-測試與交付方式)
 13. [風險](#13-風險)
@@ -81,25 +79,7 @@ U 線 版本更新 ── U1–U3 在 M2 前，U4–U6 在 M2 後
 
 ## 2. 現況盤點
 
-### 聯機
-
-- `code/multplyr.h` / `code/multplyr.cpp` 留著原版完整的協定定義：`MultiPlayer`、`MCMSG_*` 訊息、`WorldChunk`、`MC2Session`/`MC2Player`、各類更新頻率。但**所有實作都是空殼**：
-  - `StartupNetworking()` 回傳 false。
-  - `send*`、`handle*`、`processMessages`、`add*Chunk` 全部是空的。
-- 遊戲邏輯裡還保留約 93 處 `MPlayer->isServer()` 判斷和約 79 處 `MPlayer->send*` / `add*Chunk` 呼叫。原版是**主機權威**模式（客端送指令，主機送狀態），不是 lockstep。
-  - 指令：`controlgui.cpp` 的 `sendPlayerOrder`、`artlry.cpp` 的 `sendPlayerArtillery`。
-  - 傷害：`turret.cpp`、`gvehicl.cpp`、`tacordr.cpp` 的 `addWeaponHitChunk`。
-  - 每幀更新：`mechcmd2.cpp` 的 `MPlayer->update()`。
-- 大廳 UI 有編譯進遊戲：`mpconnectiontype`、`mpgamebrowser`、`mphostgame`、`mpparameterscreen`（完整的房間畫面）、`mpprefs`、`mpstats`、`chatwindow`。畫面串接寫在 `missionbegin.cpp`。
-- **主選單的聯機按鈕被無條件停用**：`code/mainmenu.cpp:441` 的 `getButton( MM_MSG_MULTIPLAYER )->disable( true );`。
-- `mpdirecttcpip.cpp`、`mpaddaiplayer.cpp` 沒有編譯。
-- 專案**沒有任何網路函式庫**；CMake 只抓 SDL3 和 SDL3_mixer。
-
-### 模擬
-
-- 用可變步長（`mechcmd2.cpp` 的 `frameLength = 1/frameRate`，上限 0.25 秒）。亂數是全域種子的 `RandomNumber()`（`mclib/routines.cpp`）。
-- `gameosmain.cpp` 有固定步長模式，但只給測試用。
-- **結論**：沿用原版的主機權威架構和既有呼叫點，不改成 lockstep。lockstep 需要整個模擬完全決定性，改動太大。
+M2 之後會用到的既有機制。聯機現況見第 3 節，文字現況見 L 線。
 
 ### 經濟與整備
 
@@ -140,106 +120,25 @@ U 線 版本更新 ── U1–U3 在 M2 前，U4–U6 在 M2 後
   - 存檔：`Terrain::save`、`data_tools/pak.cpp`。
 - 放單位用 `Mission::addMover`，放建築用 `GameObjectManager::addObject`。
 
-### 文字
-
-- 介面字串在 `test_scripts/res_conv/strings.res.cpp`，約 3990 條，編進 `libmc2res_64`，遊戲用 `cLoadString` 讀取。其中約 372 條其實是字型檔名（`IDS_*_FONT`）。
-- 任務簡報、目標說明、機甲和武器名稱大多也透過 ID 從這張表讀。
-- 字型是 `.bmp` + `.glyph` 點陣字，只涵蓋字元 32–254，用 `text_tool` 搭配 SDL3_ttf 離線產生。
-- `gos_TextDraw`、`gos_TextStringLength`、`findTextBreak` 是一個位元組對一個字形，**不支援 UTF-8**，也只在空白處斷行。
-- 沒有字幕系統；無線電語音只有聲音。
-
 ---
 
-## 3. M1 區網聯機底層
+## 3. M1 區網聯機底層 ✅
 
-**目標**：兩台區網電腦能用現有的多人地圖連線、聊天、打完一場。
+兩台區網電腦能用現有的多人地圖連線、聊天、打完一場。N1–N9 已全部完成，等待 Windows 實機驗收。
 
-| 編號 | 任務 | 規模 | 依賴 |
-|---|---|---|---|
-| N1 | 傳輸層 ✅ | L | — |
-| N2 | 區網房間探索＋手動輸入 IP ✅ | M | N1 |
-| N3 | `MultiPlayer` 連線與房間邏輯 ✅ | L | N1 |
-| N4 | 主選單入口與大廳 UI 串接 ✅ | M | N2, N3 |
-| N5 | 遊戲內同步 ✅ | XL | N3 |
-| N6 | 指令歸屬（只能操控自己的單位） ✅ | M | N5 |
-| N7 | 斷線、暫停、結算 ✅ | M | N5 |
-| N8 | 自動化測試與手動測試腳本 ✅ | M | N5 |
-
-### N1 傳輸層
-
-- 加入 [ENet](https://github.com/lsalzman/enet)（MIT 授權）。它跑在 UDP 上，同時提供可靠和不可靠通道，很適合即時遊戲。透過 CMake FetchContent 引入，三平台都能編。
-- 新增 `GameOS/gameos/net/gos_net.h/.cpp`，只對外提供：
-
-  ```cpp
-  bool gos_NetHost(uint16_t port, int maxPeers);
-  bool gos_NetJoin(const char* host, uint16_t port);
-  void gos_NetSend(int peer, const void* data, size_t len, gosNetChannel ch); // Reliable / Unreliable
-  bool gos_NetPoll(gosNetEvent* ev);   // Connect / Disconnect / Receive
-  void gos_NetShutdown();
-  ```
-
-  遊戲層只呼叫這組 API，不直接碰 ENet，日後要換底層也不用動遊戲碼。
-- 預設埠號（暫定）：遊戲用 UDP **27015**，探索用 UDP **27016**。
-- **驗收**：單元測試在本機開主機和客端，互傳 1000 個可靠封包，不遺失、順序正確。
-
-### N2 區網房間探索
-
-- 主機每秒在區網廣播一次 beacon，內容包含：房名、目前人數／上限、模式、地圖、遊戲版本、資料雜湊。
-- 客端監聽並列出房間，取代原本空著的 `getSessions()` / `beginSessionScan()`。
-- 「直接輸入 IP」畫面：把 `mpdirecttcpip.cpp` 納入編譯，改接 `gos_NetJoin`。之後跨網（Tailscale 等虛擬區網）也是走這條。
-- **驗收**：同一區網的兩台電腦，3 秒內能看到對方的房間。
-
-### N3 MultiPlayer 連線與房間邏輯
-
-- 實作 `hostSession`、`joinSession`、`update`、`processMessages`、`waitTill*`。
-- 分配玩家名單和 commander ID（CID），處理顏色與隊伍，沿用現有的 `setNextFreeColor`、`setPlayerTeam`。
-- 握手時比對版本號和資料雜湊（mission.fst 等），不一致就拒絕加入並提示原因。
-- 聊天訊息走 `sendChat` / `handleChat`。
-- **驗收**：4 個客端（可以都在本機）加入同一房間，名單、顏色、聊天都同步。
-
-### N4 主選單入口與大廳 UI
-
-- 移除 `code/mainmenu.cpp:441` 的無條件停用。
-- 打通流程：主選單 → 聯機類型（區網／直接 IP）→ 房間列表 → 房間設定（`MPParameterScreen`）→ 整備 → 開始。
-- 聯機類型畫面加上「模式」選項：對戰（原版）、合作關卡、Roguelike 攻堅、Roguelike 防守、雙人對戰。對應的里程碑（M3、M6、M7）完成前，選項先灰掉。
-- UI 一律拼貼現有元件（按鈕、清單、對話框），不新增美術資源。
-- **驗收**：從主選單一路點到房間，主機按開始後所有人一起進入讀取畫面。
-
-### N5 遊戲內同步
-
-採**主機權威**模型，沿用原版的協定和呼叫點：
-
-- 客端 → 主機：玩家指令（`sendPlayerOrder`）、砲擊、增援請求。
-- 主機 → 客端：
-  - 單位狀態，依 `moverUpdateFrequency` 等頻率傳送位置、朝向、目標。
-  - 開火事件、命中與傷害（`WeaponHitChunk`）。
-  - 世界事件（`WorldChunk`：佔領、地雷、火焰、分數）。
-- 客端只做插值顯示，所有判定以主機為準。
-- 開局時主機送出亂數種子和任務設定，讓不影響判定的表現（煙霧、爆炸碎片）兩邊看起來差不多。
-- 頻寬目標：4 人、單位總數 48 時，每位客端低於 100 KB/s。
-- **驗收**：用現有多人地圖對打 20 分鐘，兩邊的單位位置、血量、勝負結果一致，客端沒有明顯瞬移。
-
-### N6 指令歸屬
-
-- 每位玩家只能選取和命令自己的單位，盟友的單位可以看見、可以點選查看資訊，但不能下令。
-- 盟友單位用不同顏色的選取框和小地圖標記。
-- 主機收到不屬於該玩家的指令時直接丟棄（防止作弊和錯誤）。
-- **驗收**：嘗試框選盟友單位不會選到；用修改過的客端送出他人單位的指令，主機會拒絕。
-
-### N7 斷線、暫停、結算
-
-- 超過 10 秒（暫定）沒有回應視為斷線。斷線玩家的單位改由 AI 接管（沿用 `mpaddaiplayer` 的 AI 邏輯）。
-- 主機斷線時遊戲結束，所有客端回到大廳並顯示原因。
-- 任一玩家都能發起暫停，每人每場限 3 次（暫定），由主機廣播。
-- 結算畫面沿用 `mpstats`。
-- **驗收**：比賽中拔掉一台客端的網路線，其他人能繼續玩，斷線玩家的單位會繼續作戰。
-
-### N8 測試
-
-- **自動**：
-  - 新增 `tests/net/`，在同一台機器開兩個 headless 遊戲實例（127.0.0.1），用既有的 input_script 下指令，比對兩邊的狀態雜湊。
-  - 傳輸層單元測試加入 ctest。
-- **手動**：提供給你在兩台 Windows 電腦上測試的完整步驟（下載、防火牆放行、開房、加入、要確認的項目）。
+- N1 傳輸層：ENet 直接放在 `thirdparty/enet`，只透過 `GameOS/gameos/net/gos_net.h` 使用。
+- N2 房間探索：與遊戲共用 UDP 27015（原規劃要另開 27016），也可以直接輸入 IP。
+- N3 房間邏輯：名單、顏色、隊伍、聊天，握手時比對協定 stamp（目前 `MC2NET-4`）。
+- N4 大廳 UI：主選單 → 聯機類型 → 房間列表 → 房間 → 整備 → 開始。整備流程與 System 選單見 code-map。
+- N5–N7：
+  - 主機權威同步，客端插值。
+  - 只能操控自己的單位。
+  - 斷線的玩家由 AI 接管。
+  - 網路暫停用 P 鍵。
+  - 結算沿用 `mpstats`。
+- N8 測試：`scripts/run_net_test.py`，同一台機器開兩個實例，情境有 battle、logistics、version、away。
+- N9：顯示本機 IP；有多張網卡時，對每張網卡的子網廣播位址送出搜尋。
+- 使用說明：[區網對戰說明書](manual/lan-skirmish.zh-TW.md)。
 
 ---
 
@@ -744,56 +643,26 @@ Roguelike 兩種模式共用，也能拿來加速 M3 的地圖製作。這是整
 
 | 編號 | 任務 | 規模 | 依賴 |
 |---|---|---|---|
-| L1 | UTF-8 文字繪製與斷行 | L | — |
-| L2 | 中文字型（多頁、稀疏字集） | L | L1 |
-| L3 | 全文翻譯（約 3600 條） | XL | — |
+| L1 | UTF-8 文字繪製與斷行 ✅ | L | — |
+| L2 | 中文字型（多頁、稀疏字集） ✅ | L | L1 |
+| L3 | 全文翻譯（約 3600 條，已譯約 2,100） | XL | — |
 | L4 | 輸入框、緩衝區、中文輸入法 | M | L1 |
-| L5 | 語言切換 | M | L3 |
+| L5 | 語言切換 ✅ | M | L3 |
 | L6 | 測試與文件 | M | 全部 |
 
-### L1 UTF-8 文字繪製
+### L1–L3、L5 已完成
 
-- 修改 `gos_TextDraw`、`gos_TextStringLength`、`findTextBreak` 以及取字寬和取字形座標的函式，改成解碼 UTF-8 碼位，不再一個位元組一個字。
-- 斷行規則：
-  - 中日韓字元之間任何位置都能斷行。
-  - 遵守基本禁則：「，。、；：！？」）」』」不放行首，「（「『」不放行尾。
-- 英文版的行為不能改變（截圖測試驗證）。
-
-### L2 中文字型
-
-- 擴充 `.glyph` 格式（加上版本號，舊格式照樣能讀）：
-  - 支援稀疏碼位表（排序陣列加二分搜尋）。
-  - 支援多張字形貼圖頁。
-- `text_tool` 改成掃描翻譯檔，只烘焙實際用到的字，預估 2500–3500 字，不必烘焙整個字集。
-- 字型使用 **Noto Sans TC**（SIL OFL 授權，可以隨遊戲散布），並在 THIRD_PARTY.txt 註明。
-- 原版的小字（AgencyFB 8、11 點）對中文太小，需要調整 `IDS_*_FONT` 對應的中文字級，必要時讓文字區塊自動縮放。
-
-### L3 全文翻譯
-
-- 範圍：`strings.res.cpp` 中約 3990 條減去約 372 條字型名稱，約 3600 條。涵蓋：
-  - 選單與介面
-  - 任務簡報、目標說明
-  - 機甲與武器名稱、說明
-  - 駕駛員資料
-- 新增的聯機模式文字也要同步提供中英文。
-- **用詞原則（暫定）**：
-  - 機甲名保留英文原名（Atlas、Mad Cat），說明文字翻譯。
-  - 武器用通用譯名（「中型雷射」「LRM 10」「自動砲 AC/20」）。
-  - 建立術語表 `localization/zh-TW/glossary.md`，確保全文一致。
-- 翻譯檔格式：改用外部文字檔 `localization/zh-TW/strings.txt`，每行一條，格式為 `IDS_xxx<TAB>翻譯`，方便校對和後續修改。
-- 分批交付：先介面，再簡報和目標，再名稱和說明。每批你都可以先玩看看再回饋。
+- L1：UTF-8 繪製與斷行，加上中文標點禁則；英文截圖不變。
+- L2：`.glyph` 支援稀疏碼位表與擴充字形，字型用 Noto Sans CJK 產生 12 套。
+- L3：`localization/zh-TW/strings.txt` 約 2,100 條，涵蓋介面、簡報、目標、百科；機甲型號、呼號、檔名保留英文。
+- L5：在選項畫面切換語言（存在 `language.cfg`），切換後重新啟動。也可以用環境變數 `MC2_LANGUAGE`。
+- 產生方式與注意事項見[繁中補丁文件](localization.zh-TW.md)。尚待：Windows 實機、其他解析度、小字清晰度。
 
 ### L4 輸入框與緩衝區
 
 - 檢查固定長度的 `char` 緩衝區（例如 `MAXLEN_COMPONENT_NAME`），中文一個字佔 3 個位元組，必要時加大，並避免把一個字從中間截斷。
 - 存檔名、玩家名稱、聊天輸入改用 SDL3 的文字輸入事件，支援 Windows 注音、倉頡等中文輸入法。
 - 存檔檔名含中文時，三個平台都要能正確讀寫。
-
-### L5 語言切換
-
-- 設定畫面加上「語言」選項：English／繁體中文，重新啟動遊戲後生效。
-- 執行時優先讀 `localization/<語言>/strings.txt`，讀不到就退回內建英文。這樣中文補丁也能當成一般 mod 散布。
-- 安裝程式提供語言選擇，預設依系統語言判斷。
 
 ### L6 測試與文件
 
@@ -807,76 +676,35 @@ Roguelike 兩種模式共用，也能拿來加速 M3 的地圖製作。這是整
 
 ## U 線：版本檢查與自動更新
 
-和聯機玩法無關，但聯機要求雙方版本一致，越早做越好。**U1–U3 已在 M1 實測前完成（使用者決定提前，方便 M1 出問題時更新）；U4–U6（下載、驗證、自動安裝）排在 M2 之後**，順序可以調。
-
-**2026-11-25 更新**：使用者要測試未發佈的版本，U5、U6 提前完成（M1 實測前），並加上「測試版頻道」：手動執行 Release workflow 會發佈預發布版 `v<下一版>-test.<編號>`，選項畫面勾選「Receive test versions」就會收到。驗證暫時只比對 `SHA256SUMS.txt`；U4（minisign 簽章）仍待做，需要使用者建立 secret。細節見 DEVELOPMENT 的「版本檢查」。
-
-**2026-11-25 區塊更新**：應使用者要求，更新改成只下載有變動的部分。安裝包拆成程式區塊（每個平台一個）和 6 個遊戲資料區塊（各平台共用），每個平台附一份清單；遊戲比對已安裝檔案的雜湊，只下載含有變動檔案的區塊。只改程式時 Linux 約 5 MB。Windows 裝在 Program Files 時，以系統管理員權限執行 `mc2.exe -apply-update` 寫入檔案。為了讓資料區塊在各版本間相同，修正了 `aseconv` 寫出未初始化位元組的問題（遊戲資料建置現在逐位元組可重現）。AppImage 和 macOS 仍下載整包。
+和聯機玩法無關，但聯機要求雙方版本一致，越早做越好。U1–U3、U5、U6 已完成（使用者決定提前到 M1 實測前），另外加了測試版頻道和區塊更新。只剩 U4（簽章）和 U7 的簽章測試。細節見 DEVELOPMENT 的「Update check」和「Packages and releases」。
 
 | 編號 | 任務 | 規模 | 依賴 |
 |---|---|---|---|
-| U1 | 查詢最新版本 | M | — |
-| U2 | 主選單通知與設定 | S | U1 |
-| U3 | 聯機版本不符的提示 | S | U1 |
+| U1 | 查詢最新版本 ✅ | M | — |
+| U2 | 主選單通知與設定 ✅ | S | U1 |
+| U3 | 聯機版本不符的提示 ✅ | S | U1 |
 | U4 | 發佈簽章（release 流程） | S | — |
-| U5 | 下載與驗證 | M | U1、U4 |
-| U6 | 各平台自動安裝與重啟 | L | U5 |
+| U5 | 下載與驗證 ✅ | M | U1、U4 |
+| U6 | 各平台自動安裝與重啟 ✅ | L | U5 |
 | U7 | 測試與文件 | M | 全部 |
 
-### U1 查詢最新版本
+### U1–U3、U5、U6 已完成
 
-- 啟動後在背景執行緒查詢 `https://api.github.com/repos/hyouka0904/mc2/releases/latest`，逾時 5 秒，不擋住主選單。這個網址只會回傳已發佈的正式版，草稿和預覽版（pre-release）不會出現。
-- 取 `tag_name` 和 Assets 清單，用語意化版本跟 `MC2_VERSION_STRING` 比較。自己建置的開發版（`0.0.0-dev`、`git describe` 帶 `-g<hash>`）不檢查。
-- 結果快取在使用者資料夾的 `update.ini`，**24 小時最多查一次**（GitHub 未登入的限制是每個 IP 每小時 60 次，綽綽有餘）。
-- HTTPS 用各平台內建的元件，不另外打包 TLS 函式庫：Windows 用 WinHTTP；macOS 用 NSURLSession；Linux 在執行時 `dlopen("libcurl.so.4")`，找不到就跳過檢查（AppImage 不帶 libcurl，避免憑證路徑問題）。
-- 不送出任何識別資料，只有一般的 HTTP 請求（GitHub 會看到 IP，和打開網頁一樣）。
-- `-noupdatecheck` 參數和 `MC2_NO_UPDATE_CHECK=1` 環境變數可以關掉；截圖、流程、網路測試一律關掉，避免測試連網。
-
-### U2 主選單通知與設定
-
-- 有新版時，主選單角落出現「有新版本 x.y.z」，點開是對話框：版本說明摘要（Release 內文的前幾行）、「更新」「查看 Release 頁面」「略過這個版本」「稍後提醒」。
-- U4–U6 還沒做之前，「更新」就是打開 Release 頁面。
-- 選項畫面新增：自動檢查更新（預設開）、自動下載（預設關，U5 之後才有）。
-- 新字串 `IDS_UPDATE_*`，三份字串檔都要加。
-
-### U3 聯機版本不符的提示
-
-- 現在握手只比對 `MC2_NET_PROTOCOL_STAMP`，不符時顯示「版本不符」。改成：
-  - 房間廣播帶上主機的遊戲版本，房間列表直接顯示版本，版本不符的房間變灰。
-  - 加入失敗時顯示「主機 x.y.z／你 a.b.c」，較舊的一方看到「前往更新」按鈕。
-- 協定 stamp 仍然是判斷能否連線的依據（同協定的小版本可以互連），版本字串只用來顯示。
+- U1：背景查詢 GitHub releases，24 小時一次，結果存在 `update.ini`。HTTPS 用 WinHTTP，Linux、macOS 在執行時才載入 libcurl。開發版不查；`-noupdatecheck`、`MC2_NO_UPDATE_CHECK=1` 可以關掉。
+- U2：主選單通知；對話框有 Update、Release 頁面、Later（7 天內不再提示，有更新的版本會立刻提示）。
+- U3：房間列表顯示版本；版本不符時列出雙方的版本。能不能連線仍以協定 stamp 判斷。
+- U5、U6：依安裝方式下載對應的 Asset，用 `SHA256SUMS.txt` 驗證。
+  - 區塊更新：只下載有變動的程式區塊或資料區塊。
+  - Windows 裝在 Program Files 時，用 UAC 提權執行 `mc2.exe -apply-update`。
+  - AppImage 用原子取代；macOS 下載後打開 dmg。
+  - 更新前先備份存檔。
+- 測試版頻道：手動執行 Release workflow 會發佈 `v<下一版>-test.<編號>`，在選項裡勾選 Receive test versions 才會收到。
 
 ### U4 發佈簽章
 
 - 安裝包沒有數位簽章，`SHA256SUMS.txt` 和安裝包放在同一個 Release，只能防下載損壞，防不了帳號被盜後換檔。
 - 改用 minisign（Ed25519）：release 流程用私鑰簽 `SHA256SUMS.txt`，多上傳 `SHA256SUMS.txt.minisig`；公鑰編進遊戲。驗證程式用 monocypher 這類單檔函式庫，放進 `thirdparty/`。
 - **需要你做一次**：在本機產生金鑰（指令會附上），把私鑰存成 repository 的 Actions secret `MINISIGN_KEY`。私鑰不進 repository。
-
-### U5 下載與驗證
-
-- 依平台和安裝方式挑 Asset：
-
-  | 目前的安裝方式 | 下載 |
-  |---|---|
-  | Windows 安裝版（有解除安裝資訊） | `…-windows-x64-setup.exe` |
-  | Windows 免安裝版 | `…-windows-x64.zip` |
-  | Linux AppImage（有 `$APPIMAGE`） | `…-linux-x86_64.AppImage` |
-  | Linux tarball | `…-linux-x86_64.tar.gz` |
-  | macOS | `…-macos-arm64.dmg` |
-
-- 下載到使用者資料夾的 `updates/`，顯示進度、可取消、可續傳（HTTP Range）。
-- 先驗證 `SHA256SUMS.txt.minisig`，再比對檔案的 SHA-256；任何一步失敗就刪檔，並告訴玩家改用手動下載。
-- 每個安裝包都含完整遊戲資料，一次約 600 MB。之後可以考慮只下載變動的部分（AppImage 的 zsync，或另出「只有程式」的 Asset），先不做。
-
-### U6 各平台自動安裝與重啟
-
-- 安裝前先把存檔和設定備份到 `backup-<舊版本>/`（只保留最近 2 份）。
-- **Windows 安裝版**：Inno Setup 已經是 `PrivilegesRequired=lowest`（裝在使用者資料夾，不需要系統管理員）。遊戲啟動 `setup.exe /VERYSILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS` 後自己結束，安裝程式裝完重新開遊戲。裝在 Program Files 的情況，安裝程式會跳出 UAC。
-- **Windows 免安裝版**：Windows 不能覆寫執行中的 exe，但可以改名。把 `mc2.exe` 改名成 `mc2.exe.old`，解壓新版覆蓋，重啟；下次啟動時刪掉 `.old`。新版啟動失敗時可以手動改回。
-- **Linux AppImage**：新檔下載到同一個資料夾，`chmod +x` 後用 `rename` 原子地取代舊檔，重啟。資料夾沒有寫入權限時改成提示手動更新。
-- **Linux tarball**：和免安裝版相同的改名做法；系統套件管理器裝的版本（日後如果有）不自動更新。
-- **macOS**：先做到「下載並驗證後打開 dmg，請玩家拖到應用程式資料夾取代」。全自動取代 `.app` 在沒有簽章的情況下會再觸發一次 Gatekeeper，等有簽章再做。
-- 更新後第一次啟動顯示「已更新到 x.y.z」和版本說明。
 
 ### U7 測試與文件
 
