@@ -315,6 +315,7 @@ ctest --test-dir build --output-on-failure
 | `unit_net` | 區網傳輸層，見[區網聯機的實作](#區網聯機的實作) |
 | `unit_update` | 版本檢查，見[版本檢查](#版本檢查) |
 | `unit_savelayout` | 快速存檔寫入的資料結構大小，見[存檔相容性](#存檔相容性) |
+| `zh_tw_translations` | `localization/zh-TW/strings.txt`：每個名稱都存在且有英文原文、沒有重複、printf 佔位符一致（`scripts/check_translations.py`） |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
 | `shader_validation` | 以 glslangValidator 離線編譯並連結所有著色器變體（與執行時相同的 `#version 420`、`ALPHA_TEST` 定義與 `#include` 展開），不需要 GPU；未安裝 `glslang-tools` 時略過 |
 | `shader_spirv` | 所有變體編成 Vulkan SPIR-V 並通過 `spirv-val`、兩個階段的介面能連結、轉出 MSL / HLSL，並檢查 `PerDraw` uniform block 與 C++ 結構的位移一致；`-DMC2_SHADER_REQUIRE=msl,hlsl` 可要求轉換器必須存在（CI 使用） |

@@ -322,6 +322,7 @@ ctest --test-dir build --output-on-failure
 | `unit_net` | LAN transport, see [How LAN multiplayer works](#how-lan-multiplayer-works) |
 | `unit_update` | Update check, see [Update check](#update-check) |
 | `unit_savelayout` | Sizes of the structures the quick save stores, see [Save game compatibility](#save-game-compatibility) |
+| `zh_tw_translations` | `localization/zh-TW/strings.txt`: every name exists and has English text, no duplicates, same printf placeholders (`scripts/check_translations.py`) |
 | `render_isolation` | Checks that OpenGL appears only in `GameOS/gameos/render/gl/` |
 | `shader_validation` | Compiles and links every shader variant offline with glslangValidator (same `#version 420`, `ALPHA_TEST` define and `#include` expansion as at run time), no GPU needed; skipped without `glslang-tools` |
 | `shader_spirv` | Every variant compiles to Vulkan SPIR-V and passes `spirv-val`, the two stages' interfaces link, conversion to MSL / HLSL works, and the `PerDraw` uniform block offsets match the C++ struct; `-DMC2_SHADER_REQUIRE=msl,hlsl` makes the converters mandatory (CI uses it) |

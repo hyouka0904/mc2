@@ -3,38 +3,15 @@
 
 import argparse
 from pathlib import Path
-import re
 import struct
 
 from PIL import Image, ImageFont
 
+from check_translations import load_translations
 
-ROOT = Path(__file__).resolve().parents[1]
+
 HEADER = struct.Struct("<5I")
 GLYPH = struct.Struct("<I5i3I")
-PRINTF_TOKEN = re.compile(r"%%|%[-+#0 ]*(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:hh|ll|[hljztL])?[diouxXfFeEgGaAcspn]")
-
-
-def load_translations():
-    symbols = dict(re.findall(
-        r"^\s*(IDS_\w+)\s*=\s*(\d+)\s*,",
-        (ROOT / "res/strings/strings.res.h").read_text(),
-        re.MULTILINE,
-    ))
-    originals = dict(re.findall(
-        r'\{\s*(IDS_\w+)\s*,\s*"((?:\\.|[^"\\])*)"\s*\}',
-        (ROOT / "res/strings/strings.res.cpp").read_text(encoding="cp1252"),
-    ))
-    entries = {}
-    for line in (ROOT / "localization/zh-TW/strings.txt").read_text(encoding="utf-8").splitlines():
-        symbol, translation = line.split("\t", 1)
-        number = int(symbols[symbol])
-        if number in entries:
-            raise ValueError(f"Duplicate translation for {symbol} ({number})")
-        if PRINTF_TOKEN.findall(originals[symbol]) != PRINTF_TOKEN.findall(translation):
-            raise ValueError(f"Format placeholders differ from the original for {symbol}")
-        entries[number] = translation
-    return entries
 
 
 def bake_font(source, target, font_path, face_index, characters):

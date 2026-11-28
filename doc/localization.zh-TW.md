@@ -21,6 +21,10 @@ python3 scripts/build_zh_tw_patch.py game /path/to/NotoSansTC-Regular.otf
 python3 scripts/build_zh_tw_patch.py game /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --face-index 3
 ```
 
+## 檢查譯文
+
+修改 `localization/zh-TW/strings.txt` 後，可先執行 `python3 scripts/check_translations.py`（不需字型或 Pillow）。它檢查名稱是否存在、有沒有重複，以及 `%d`、`%s` 等佔位符是否和英文一致。ctest 的 `zh_tw_translations` 跑的也是它，所以 CI 每次推送都會檢查。
+
 ## 切換語言
 
 自 `v0.1.1-test.36` 起，開啟主選單的「Options → Gameplay」，勾選「Traditional Chinese」後按「Accept」，再關閉並重新啟動遊戲。切回英文時，在「選項 → 遊戲玩法」取消勾選「繁體中文」，套用並重新啟動。設定會存在存檔目錄的 `language.cfg`。
