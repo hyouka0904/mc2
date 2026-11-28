@@ -4,8 +4,9 @@
 // the network changed size, so the stamp is bumped on purpose:
 //   1. bump MC2_NET_PROTOCOL_STAMP (MC2NET-4 -> MC2NET-5),
 //   2. set kStamp below to the same text,
-//   3. set kCurrent to the hash this test prints, for every platform (the
-//      Windows value comes from the CI log).
+//   3. set kCurrent to the hash this test prints.
+// The hash is the same on every platform (Linux, Windows, macOS): builds for
+// different systems play together, so a platform-only value is a bug.
 // Changes inside a field (the bit layout of a chunk, a new enum value) do
 // not change sizes: bump the stamp for those by hand.
 #include "mc2test.h"
@@ -15,11 +16,7 @@
 #include <cstring>
 
 static const char* const kStamp = "MC2NET-4";
-#if defined(_WIN32)
-static const uint32_t kCurrent = 0x00000000u; // Windows x64
-#else
-static const uint32_t kCurrent = 0x8cb28b61u; // Linux x86_64, macOS arm64 (LP64)
-#endif
+static const uint32_t kCurrent = 0x8cb28b61u;
 
 TEST(net_layout_matches_the_protocol_stamp)
 {

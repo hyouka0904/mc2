@@ -237,7 +237,7 @@ For playing, see the [LAN skirmish manual](manual/lan-skirmish.md).
 
 - The room beacon ends with the host's game version (hosts before 0.2 send the shorter beacon; it is still accepted and shown as "< 0.2"). The client marks a room compatible when the protocol stamp and the game data hash match its own.
 - Incompatible rooms show `VERSION x.y.z` (or `DIFFERENT GAME DATA`) in the map column. Join does not connect; it shows both versions. If the host is newer the room list dialog offers **Download** (opens the release page); the direct IP panel says where to download it. If the host is older it says the host needs to update.
-- The protocol stamp (`MC2NET-4` in `code/multplyr_wire.h`) still decides whether two games can play together; the version string is only shown. Bump the stamp whenever a network message changes. `unit_netlayout` hashes the sizes of every message and wire structure and fails when one changes while the stamp stays: bump the stamp, then set `kStamp` and `kCurrent` in `tests/unit/test_netlayout.cpp` (the Windows value is printed in the CI log). Changes that keep sizes, such as a new bit layout inside a chunk, still need a bump by hand.
+- The protocol stamp (`MC2NET-4` in `code/multplyr_wire.h`) still decides whether two games can play together; the version string is only shown. Bump the stamp whenever a network message changes. `unit_netlayout` hashes the sizes of every message and wire structure and fails when one changes while the stamp stays: bump the stamp, then set `kStamp` and `kCurrent` in `tests/unit/test_netlayout.cpp` (one value for every platform: a size that differs between systems would break cross-platform games). Changes that keep sizes, such as a new bit layout inside a chunk, still need a bump by hand.
 
 ---
 
