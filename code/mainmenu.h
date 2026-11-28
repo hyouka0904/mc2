@@ -112,6 +112,7 @@ class MainMenu: public LogisticsScreen
 		bool					bUpdateNoticeHidden;	// for this session
 		bool					bUpdateResultShown;		// the download's end was announced
 		bool					bUpdateSizeShown;		// the open prompt shows the download size
+		bool					bUpdateLater;			// "Later" this session
 		std::string				updateFailure;
 		bool					updateNoticeVisible();
 		void					updateNoticeRect( GUI_RECT& rect );

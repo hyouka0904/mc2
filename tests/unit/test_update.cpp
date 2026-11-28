@@ -264,8 +264,6 @@ TEST(update_state_file)
     s.lastCheck = 1700000000;
     s.latestVersion = "1.4.0";
     s.latestUrl = "https://github.com/hyouka0904/mc2/releases/tag/v1.4.0";
-    s.snoozedVersion = "1.3.0";
-    s.snoozedUntil = 1700600000;
     CHECK(saveState(path, s));
     State t;
     CHECK(loadState(path, &t));
@@ -273,8 +271,6 @@ TEST(update_state_file)
     CHECK_EQ(t.lastCheck, (int64_t)1700000000);
     CHECK_EQ(t.latestVersion, s.latestVersion);
     CHECK_EQ(t.latestUrl, s.latestUrl);
-    CHECK_EQ(t.snoozedVersion, s.snoozedVersion);
-    CHECK_EQ(t.snoozedUntil, s.snoozedUntil);
     remove(path.c_str());
 }
 
@@ -282,18 +278,12 @@ TEST(update_should_notify)
 {
     State s;
     s.latestVersion = "1.4.0";
-    CHECK(shouldNotify(s, "1.3.2", 1000));
-    CHECK(!shouldNotify(s, "1.4.0", 1000));
-    CHECK(!shouldNotify(s, "1.5.0", 1000));
-    s.snoozedVersion = "1.4.0";
-    s.snoozedUntil = 2000;
-    CHECK(!shouldNotify(s, "1.3.2", 1000));
-    CHECK(shouldNotify(s, "1.3.2", 2000));
-    s.latestVersion = "1.4.1"; // a newer release ends the snooze
-    CHECK(shouldNotify(s, "1.3.2", 1000));
-    CHECK(shouldNotify(s, "9b62e18-dirty", 1000)); // development build
+    CHECK(shouldNotify(s, "1.3.2"));
+    CHECK(!shouldNotify(s, "1.4.0"));
+    CHECK(!shouldNotify(s, "1.5.0"));
+    CHECK(shouldNotify(s, "9b62e18-dirty")); // development build
     s.latestVersion = "";
-    CHECK(!shouldNotify(s, "1.3.2", 1000));
+    CHECK(!shouldNotify(s, "1.3.2"));
 }
 
 TEST(update_check_against_local_server)
@@ -336,11 +326,11 @@ TEST(update_check_against_local_server)
     CHECK(status() == Status::Available);
     CHECK_EQ(server.requests.load(), 1);
 
-    // "Later" hides it.
-    snooze();
-    CHECK(status() == Status::UpToDate);
-    CHECK(loadState(path, &s));
-    CHECK_EQ(s.snoozedVersion, std::string("1.4.0"));
+    // Asking again at once works from the cached state too
+    checkNow();
+    waitForCheck();
+    CHECK(status() == Status::Available);
+    CHECK_EQ(server.requests.load(), 2);
 
     // A day later the server is asked again; already up to date.
     resetForTests();
@@ -349,7 +339,7 @@ TEST(update_check_against_local_server)
     startCheck(cfg);
     waitForCheck();
     CHECK(status() == Status::UpToDate);
-    CHECK_EQ(server.requests.load(), 2);
+    CHECK_EQ(server.requests.load(), 3);
 
     // Server errors leave the cached answer alone.
     server.status = "500 Internal Server Error";

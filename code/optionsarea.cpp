@@ -26,6 +26,7 @@ CPrefs originalSettings;
 
 #include"mission.h"
 #include "update/gos_update.h"
+#include "mc2_version.h"
 
 extern SoundSystem *sndSystem;
 
@@ -915,6 +916,7 @@ void OptionsGamePlay::init(long xOffset, long yOffset)
 		testVersions.setText( IDS_UPDATE_TEST_CHANNEL );
 		testVersions.setHelpID( 0 );
 		testVersionsDY = 2.f * ( click->globalY() - ammo->globalY() );
+		updateFont.init( IDS_CHAT_FONT );
 		showLanguageOption = traditionalChineseAvailable();
 		if ( showLanguageOption )
 		{
@@ -1009,6 +1011,7 @@ void OptionsGamePlay::render()
 	testVersions.render();
 	if ( showLanguageOption )
 		traditionalChinese.render();
+	renderUpdateButton();
 
 	camera.render();
 
@@ -1024,6 +1027,27 @@ void OptionsGamePlay::update()
 	testVersions.update();
 	if ( showLanguageOption )
 		traditionalChinese.update();
+	// The channel changes at once, so the button below can offer its versions
+	if ( testVersions.isPressed() != appliedTestChannel )
+	{
+		appliedTestChannel = testVersions.isPressed();
+		gos_update::setTestChannel( appliedTestChannel );
+	}
+	if ( updateButtonVisible() )
+	{
+		if ( gos_update::status() == gos_update::Status::Available )
+			gos_update::startEstimate();
+		GUI_RECT r;
+		updateButtonRect( r );
+		char text[256];
+		const long mx = userInput->getMouseX(), my = userInput->getMouseY();
+		if ( userInput->isLeftClick() && mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom
+			&& updateButtonText( text, sizeof(text) ) )
+		{
+			soundSystem->playDigitalSample( LOG_SELECT );
+			updateButtonClicked();
+		}
+	}
 	
 	aRect* pRect = getButton( MSG_BASE )->isPressed() ? 
 		&rects[36] : &rects[37];
@@ -1128,8 +1152,127 @@ void OptionsGamePlay::reset(const CPrefs& newPrefs)
 
 	getButton( MSG_UNLIMITED_AMMO )->press( newPrefs.useUnlimitedAmmo );
 	getButton( MSG_LEFT_CLICK )->press( newPrefs.useLeftRightMouseProfile );
-	testVersions.press( gos_update::testChannel() );
+	appliedTestChannel = gos_update::testChannel();
+	testVersions.press( appliedTestChannel );
 //	getButton( MSG_TUTORIALS )->press( newPrefs.tutorials );
+}
+
+bool OptionsGamePlay::updateButtonVisible()
+{
+	if ( !getButton( MSG_UNLIMITED_AMMO ) )
+		return false;
+	return testVersions.isPressed() || gos_update::status() == gos_update::Status::Available;
+}
+
+// The row below the last check box, as wide as the check box column
+void OptionsGamePlay::updateButtonRect( GUI_RECT& rect )
+{
+	aButton* ammo = getButton( MSG_UNLIMITED_AMMO );
+	const float row = showLanguageOption ? 1.95f : 1.45f;
+	rect.left = (long)ammo->globalX();
+	rect.top = (long)( ammo->globalY() + row * testVersionsDY );
+	rect.right = rect.left + 340;
+	rect.bottom = rect.top + 16;
+}
+
+bool OptionsGamePlay::updateButtonText( char* text, size_t size )
+{
+	char fmt[256];
+	const gos_update::Status st = gos_update::status();
+	const gos_update::DownloadStatus ds = gos_update::downloadStatus();
+	const std::string version = gos_update::available().version;
+	if ( st == gos_update::Status::Available && ds == gos_update::DownloadStatus::Downloading )
+	{
+		int64_t received = 0, total = 0;
+		if ( gos_update::downloadBytes( &received, &total ) )
+		{
+			cLoadString( IDS_UPDATE_BUTTON_DOWNLOADING, fmt, 255 );
+			snprintf( text, size, fmt, version.c_str(), gos_update::formatProgress( received, total ).c_str(),
+				(int)( gos_update::downloadProgress() * 100.f ) );
+		}
+		else
+		{
+			cLoadString( IDS_UPDATE_PREPARING, fmt, 255 );
+			snprintf( text, size, fmt, version.c_str() );
+		}
+		return false;
+	}
+	if ( st == gos_update::Status::Available && ds == gos_update::DownloadStatus::Ready )
+	{
+		cLoadString( IDS_UPDATE_BUTTON_READY, fmt, 255 );
+		snprintf( text, size, fmt, version.c_str() );
+		return false;
+	}
+	if ( st == gos_update::Status::Available && ds == gos_update::DownloadStatus::Failure )
+	{
+		cLoadString( IDS_UPDATE_BUTTON_RETRY, text, (int)size - 1 );
+		return true;
+	}
+	if ( st == gos_update::Status::Available )
+	{
+		const bool install = gos_update::canInstall();
+		cLoadString( install ? IDS_UPDATE_BUTTON_INSTALL : IDS_UPDATE_BUTTON_PAGE, fmt, 255 );
+		snprintf( text, size, fmt, version.c_str() );
+		int64_t bytes = 0;
+		if ( install && gos_update::downloadEstimate( &bytes ) )
+		{
+			const size_t len = strlen( text );
+			snprintf( text + len, size - len, " (%s)", gos_update::formatSize( bytes ).c_str() );
+		}
+		return true;
+	}
+	if ( st == gos_update::Status::UpToDate )
+	{
+		cLoadString( IDS_UPDATE_BUTTON_UP_TO_DATE, fmt, 255 );
+		snprintf( text, size, fmt, MC2_VERSION );
+		return true;
+	}
+	if ( st == gos_update::Status::CheckFailed )
+	{
+		cLoadString( IDS_UPDATE_BUTTON_FAILED, text, (int)size - 1 );
+		return true;
+	}
+	cLoadString( st == gos_update::Status::Disabled ? IDS_UPDATE_BUTTON_OFF : IDS_UPDATE_BUTTON_CHECKING,
+		text, (int)size - 1 );
+	return false;
+}
+
+void OptionsGamePlay::updateButtonClicked()
+{
+	const gos_update::Status st = gos_update::status();
+	if ( st == gos_update::Status::Available )
+	{
+		if ( gos_update::canInstall() )
+			gos_update::startDownload(); // the main menu offers to install it when done
+		else
+			gos_OpenURL( gos_update::available().url.c_str() );
+	}
+	else if ( st == gos_update::Status::UpToDate || st == gos_update::Status::CheckFailed )
+		gos_update::checkNow();
+}
+
+void OptionsGamePlay::renderUpdateButton()
+{
+	if ( !updateButtonVisible() )
+		return;
+	GUI_RECT r;
+	updateButtonRect( r );
+	char text[256];
+	const bool clickable = updateButtonText( text, sizeof(text) );
+	const long mx = userInput->getMouseX(), my = userInput->getMouseY();
+	const bool hovered = clickable && mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
+	// Colors as the check box labels; geometry colors are BGR
+	const DWORD foreground = hovered ? 0xffffb14a : clickable ? 0xffff941e : 0xff858585;
+	if ( clickable )
+	{
+		const DWORD border = hovered ? 0xff4ab1ff : 0xff1e94ff;
+		drawEmptyRect( r, border, border );
+	}
+	DWORD width, height;
+	updateFont.getSize( width, height, text );
+	const long left = r.left + 6;
+	const long top = r.top + ( r.bottom - r.top - (long)height ) / 2;
+	updateFont.render( text, left, top, r.right - left + 16, r.bottom - top, foreground, false, 0 );
 }
 
 //*************************************************************************************************

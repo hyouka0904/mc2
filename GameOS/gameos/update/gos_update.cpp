@@ -635,8 +635,6 @@ bool loadState(const std::string& path, State* out)
         else if (key == "last_check") s.lastCheck = strtoll(val.c_str(), nullptr, 10);
         else if (key == "latest_version") s.latestVersion = val;
         else if (key == "latest_url") s.latestUrl = val;
-        else if (key == "snoozed_version") s.snoozedVersion = val;
-        else if (key == "snoozed_until") s.snoozedUntil = strtoll(val.c_str(), nullptr, 10);
     }
     if (out)
         *out = s;
@@ -658,9 +656,7 @@ bool saveState(const std::string& path, const State& s)
           << "latest_channel=" << s.latestChannel << "\n"
           << "last_check=" << (long long)s.lastCheck << "\n"
           << "latest_version=" << s.latestVersion << "\n"
-          << "latest_url=" << s.latestUrl << "\n"
-          << "snoozed_version=" << s.snoozedVersion << "\n"
-          << "snoozed_until=" << (long long)s.snoozedUntil << "\n";
+          << "latest_url=" << s.latestUrl << "\n";
         for (const Asset& a : s.latestAssets)
             o << "asset=" << a.name << "|" << (long long)a.size << "|" << a.url << "\n";
         if (!o)
@@ -676,7 +672,7 @@ bool saveState(const std::string& path, const State& s)
     return true;
 }
 
-bool shouldNotify(const State& s, const std::string& current, int64_t now)
+bool shouldNotify(const State& s, const std::string& current)
 {
     Version cur, latest;
     if (!parseVersion(s.latestVersion, &latest))
@@ -685,11 +681,7 @@ bool shouldNotify(const State& s, const std::string& current, int64_t now)
     // against a test server (MC2_UPDATE_URL): treat them as 0.0.0.
     if (!parseVersion(current, &cur))
         cur = Version();
-    if (compareVersions(latest, cur) <= 0)
-        return false;
-    if (s.snoozedVersion == s.latestVersion && now < s.snoozedUntil)
-        return false;
-    return true;
+    return compareVersions(latest, cur) > 0;
 }
 
 //==============================================================================
@@ -1098,7 +1090,7 @@ void runCheckBody(const Config& cfg)
         if (!saveState(cfg.statePath, state))
             fprintf(stderr, "update check: cannot write %s\n", cfg.statePath.c_str());
     }
-    if (shouldNotify(state, cfg.currentVersion, cfg.now)) {
+    if (shouldNotify(state, cfg.currentVersion)) {
         Release r;
         r.version = state.latestVersion;
         r.url = state.latestUrl.empty() ? kReleasesPage : state.latestUrl;
@@ -1162,18 +1154,30 @@ Release available()
     return c.release;
 }
 
-void snooze()
+namespace {
+// With c.m held: run the check again now (or right after the running one).
+void recheckLocked(Checker& c)
+{
+    if (c.status == Status::Disabled || c.status == Status::Idle)
+        return;
+    if (c.running) {
+        c.recheck = true;
+        return;
+    }
+    Config cfg = c.config;
+    cfg.force = true;
+    cfg.now = (int64_t)time(nullptr);
+    c.status = Status::Checking;
+    c.running = true;
+    std::thread(runCheck, cfg).detach();
+}
+} // namespace
+
+void checkNow()
 {
     Checker& c = checker();
     std::lock_guard<std::mutex> lock(c.m);
-    if (c.status != Status::Available)
-        return;
-    State state;
-    loadState(c.statePath, &state);
-    state.snoozedVersion = c.release.version;
-    state.snoozedUntil = (int64_t)time(nullptr) + kSnoozeTime;
-    saveState(c.statePath, state);
-    c.status = Status::UpToDate;
+    recheckLocked(c);
 }
 
 void setStatePath(const std::string& path)
@@ -1205,18 +1209,7 @@ void setTestChannel(bool on)
     state.testChannel = on;
     saveState(c.statePath, state);
     // Check again with the new channel (unless the check is off for good)
-    if (c.status == Status::Disabled || c.status == Status::Idle)
-        return;
-    if (c.running) {
-        c.recheck = true;
-        return;
-    }
-    Config cfg = c.config;
-    cfg.force = true;
-    cfg.now = (int64_t)time(nullptr);
-    c.status = Status::Checking;
-    c.running = true;
-    std::thread(runCheck, cfg).detach();
+    recheckLocked(c);
 }
 
 bool usingTestServer()

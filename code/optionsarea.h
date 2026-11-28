@@ -197,6 +197,16 @@ public:
 	bool			showLanguageOption = false;
 	bool			initialTraditionalChinese = false;
 	void			placeGameplayOptions();
+	// Update button under the test versions box: always there while the box
+	// is ticked or a newer version is known (the main menu notice can be
+	// dismissed with "Later")
+	aFont			updateFont;
+	bool			appliedTestChannel = false;
+	bool			updateButtonVisible();
+	void			updateButtonRect( GUI_RECT& rect );
+	bool			updateButtonText( char* text, size_t size ); // true: clickable
+	void			updateButtonClicked();
+	void			renderUpdateButton();
 };
 
 class HotKeyListItem : public aListItem

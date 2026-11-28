@@ -242,7 +242,7 @@ cd game && ./mc2
 - 結果存在使用者資料夾的 `update.ini`，**24 小時最多連網查一次**。請求只帶一個通用的 `User-Agent`。
 - HTTPS：Windows 用 WinHTTP；Linux 和 macOS 用 `dlopen` 載入系統的 libcurl（建置時不需要它，AppImage 也會用系統的憑證）。找不到 libcurl 就跳過檢查。
 - 開發版不檢查：解析不了的版本、`0.0.0*`（本機和 CI 的測試建置），以及 `git describe` 產生、在 tag 之後的版本（`1.2.0-14-gabc1234`）。
-- 主選單：左下角一行會閃爍的「NEW VERSION x.y.z AVAILABLE - CLICK HERE」，只在真正的主選單出現。對話框有 **Download**（打開 GitHub 的 Release 頁面；在跑新版之前，下次啟動還會提示）和 **Later**（這個版本 7 天內不再提示；有更新的版本時立刻再提示）。
+- 主選單：左下角一行會閃爍的「NEW VERSION x.y.z AVAILABLE - CLICK HERE」，只在真正的主選單出現。對話框有 **Download**（打開 GitHub 的 Release 頁面；在跑新版之前，下次啟動還會提示）和 **Later**（隱藏通知到下次啟動遊戲）。選項 > Gameplay 的「接收測試版本」下面有更新按鈕（勾選時或已知有新版時出現）：可再檢查、下載並安裝（附預計大小），或顯示下載進度。
 - 關閉方式：`-noupdatecheck`、`MC2_NO_UPDATE_CHECK=1`（CI 有設）、`update.ini` 裡的 `check=0`，以及決定性或腳本模式（`-fixedstep`、`-input-script`）。
 - `MC2_UPDATE_URL=<網址>` 讓檢查改連測試伺服器（可以用 http）；設了它，開發版和腳本模式也會檢查。
 - 測試：`unit_update`（CTest）涵蓋版本解析與排序、Release JSON（草稿、預覽版、格式錯誤、不是 GitHub 的網址）、`update.ini`、延後提示的規則，以及對 127.0.0.1 上小型 HTTP 伺服器的完整背景檢查（快取、伺服器錯誤、`check=0`、開發版）。

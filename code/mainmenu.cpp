@@ -91,6 +91,7 @@ MainMenu::MainMenu(  )
 	bUpdateNoticeHidden = 0;
 	bUpdateResultShown = 0;
 	bUpdateSizeShown = 0;
+	bUpdateLater = 0;
 
 	introMovie = 0;
 }
@@ -675,7 +676,7 @@ void MainMenu::update()
 			if ( kind == UPDATE_DLG_AVAILABLE )
 			{
 				if ( !yes )
-					gos_update::snooze();
+					bUpdateLater = true; // until the next start; Options keeps an update button
 				else if ( gos_update::canInstall() )
 				{
 					bUpdateResultShown = 0;
@@ -969,7 +970,9 @@ void MainMenu::render()
 // over and no other dialog is up.
 bool MainMenu::updateNoticeVisible()
 {
-	return bDrawBackground && introOver && !bUpdateNoticeHidden && !MPlayer
+	// After "Later" a download started in Options brings the notice back
+	const bool later = bUpdateLater && gos_update::downloadStatus() == gos_update::DownloadStatus::Idle;
+	return bDrawBackground && introOver && !bUpdateNoticeHidden && !later && !MPlayer
 		&& gos_update::status() == gos_update::Status::Available
 		&& !promptToQuit && !promptToDisconnect && !bLegal && !bHostLeftDlg
 		&& !bOptions && !bSave && !bLoad && !bLoadSingle && !bLoadCampaign && !bDrawMechlopedia;

@@ -691,7 +691,7 @@ Roguelike 兩種模式共用，也能拿來加速 M3 的地圖製作。這是整
 ### U1–U3、U5、U6 已完成
 
 - U1：背景查詢 GitHub releases，24 小時一次，結果存在 `update.ini`。HTTPS 用 WinHTTP，Linux、macOS 在執行時才載入 libcurl。開發版不查；`-noupdatecheck`、`MC2_NO_UPDATE_CHECK=1` 可以關掉。
-- U2：主選單通知；對話框有 Update、Release 頁面、Later（7 天內不再提示，有更新的版本會立刻提示）。
+- U2：主選單通知；對話框有 Update、Release 頁面、Later（隱藏到下次啟動）；選項畫面另有常駐更新按鈕。
 - U3：房間列表顯示版本；版本不符時列出雙方的版本。能不能連線仍以協定 stamp 判斷。
 - U5、U6：依安裝方式下載對應的 Asset，用 `SHA256SUMS.txt` 驗證。
   - 區塊更新：只下載有變動的程式區塊或資料區塊。

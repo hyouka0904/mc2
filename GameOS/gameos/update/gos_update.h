@@ -37,9 +37,9 @@ namespace gos_update {
 extern const char* const kDefaultUrl;
 extern const char* const kListUrl; // all releases, newest first
 extern const char* const kReleasesPage;
-// Seconds between network checks, and how long "later" hides a version.
+// Seconds between network checks. ("Later" in the main menu only hides the
+// notice until the game is started again.)
 const int64_t kCheckInterval = 24 * 60 * 60;
-const int64_t kSnoozeTime = 7 * 24 * 60 * 60;
 
 struct Version {
     int major = 0, minor = 0, patch = 0;
@@ -87,15 +87,13 @@ struct State {
     int64_t lastCheck = 0;       // unix time of the last successful check
     std::string latestVersion;   // from that check
     std::string latestUrl;
-    std::string snoozedVersion;  // "later" was chosen for this version...
-    int64_t snoozedUntil = 0;    // ...until this time
     std::vector<Asset> latestAssets;
 };
 bool loadState(const std::string& path, State* out); // false: no file (defaults)
 bool saveState(const std::string& path, const State& state);
 
 // Whether the notice should be shown for `latest` at time `now`.
-bool shouldNotify(const State& state, const std::string& current, int64_t now);
+bool shouldNotify(const State& state, const std::string& current);
 
 // One GET; follows redirects. Fills body (at most 1 MB) and returns true on
 // HTTP 200. Blocks for up to timeoutSec.
@@ -123,8 +121,8 @@ void setStatePath(const std::string& path);
 Status status();
 // The newer release when status() is Available.
 Release available();
-// "Later": hide this version for kSnoozeTime.
-void snooze();
+// Asks the server again now (the options' update button after a failed check).
+void checkNow();
 // Waits for the background thread (tests, shutdown).
 void waitForCheck();
 // Forget the result so startCheck can run again (tests).
