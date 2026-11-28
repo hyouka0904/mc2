@@ -90,6 +90,7 @@ MainMenu::MainMenu(  )
 	bUpdateDlg = 0;
 	bUpdateNoticeHidden = 0;
 	bUpdateResultShown = 0;
+	bUpdateSizeShown = 0;
 
 	introMovie = 0;
 }
@@ -657,6 +658,14 @@ void MainMenu::update()
 	}
 	else if ( bUpdateDlg )
 	{
+		// The size estimate arrived while the prompt is open
+		if ( bUpdateDlg == UPDATE_DLG_AVAILABLE && !bUpdateSizeShown )
+		{
+			char text[1024];
+			availablePromptText( text, sizeof(text) );
+			if ( bUpdateSizeShown )
+				LogisticsOKDialog::instance()->setText( text );
+		}
 		LogisticsOKDialog::instance()->update();
 		if ( LogisticsOKDialog::instance()->isDone() )
 		{
@@ -763,6 +772,7 @@ void MainMenu::update()
 		LogisticsScreen::update();
 		if ( updateNoticeVisible() )
 		{
+			gos_update::startEstimate(); // once per version, in the background
 			// The download finished (or failed) while the menu was up
 			const gos_update::DownloadStatus ds = gos_update::downloadStatus();
 			if ( !bUpdateResultShown && ds == gos_update::DownloadStatus::Ready )
@@ -910,10 +920,18 @@ void MainMenu::render()
 		char text[512];
 		const gos_update::DownloadStatus ds = gos_update::downloadStatus();
 		const std::string version = gos_update::available().version;
-		if ( ds == gos_update::DownloadStatus::Downloading )
+		int64_t received = 0, total = 0;
+		if ( ds == gos_update::DownloadStatus::Downloading && gos_update::downloadBytes( &received, &total ) )
 		{
 			cLoadString( IDS_UPDATE_DOWNLOADING, fmt, 255 );
-			snprintf( text, sizeof(text), fmt, version.c_str(), (int)(gos_update::downloadProgress() * 100.f) );
+			snprintf( text, sizeof(text), fmt, version.c_str(),
+				gos_update::formatProgress( received, total ).c_str(),
+				(int)(gos_update::downloadProgress() * 100.f) );
+		}
+		else if ( ds == gos_update::DownloadStatus::Downloading )
+		{
+			cLoadString( IDS_UPDATE_PREPARING, fmt, 255 );
+			snprintf( text, sizeof(text), fmt, version.c_str() );
 		}
 		else
 		{
@@ -967,8 +985,7 @@ void MainMenu::showUpdateDialog( long kind )
 	{
 		const bool install = gos_update::canInstall();
 		const long prompt = install ? IDS_UPDATE_PROMPT_INSTALL : IDS_UPDATE_PROMPT;
-		cLoadString( prompt, fmt, 511 );
-		snprintf( text, sizeof(text), fmt, rel.version.c_str(), MC2_VERSION );
+		availablePromptText( text, sizeof(text) );
 		dlg->setText( prompt, IDS_UPDATE_LATER, install ? IDS_UPDATE_INSTALL : IDS_UPDATE_DOWNLOAD );
 	}
 	else if ( kind == UPDATE_DLG_INSTALL )
@@ -991,6 +1008,31 @@ void MainMenu::showUpdateDialog( long kind )
 	dlg->setText( text );
 	dlg->begin();
 	bUpdateDlg = kind;
+}
+
+// "Version x is available...", plus the download size when the game installs it
+void MainMenu::availablePromptText( char* text, size_t size )
+{
+	const gos_update::Release rel = gos_update::available();
+	const bool install = gos_update::canInstall();
+	char fmt[512];
+	cLoadString( install ? IDS_UPDATE_PROMPT_INSTALL : IDS_UPDATE_PROMPT, fmt, 511 );
+	snprintf( text, size, fmt, rel.version.c_str(), MC2_VERSION );
+	bUpdateSizeShown = !install;
+	if ( !install )
+		return;
+	int64_t bytes = 0;
+	char line[256];
+	if ( gos_update::downloadEstimate( &bytes ) )
+	{
+		cLoadString( IDS_UPDATE_SIZE, fmt, 255 );
+		snprintf( line, sizeof(line), fmt, gos_update::formatSize( bytes ).c_str() );
+		bUpdateSizeShown = true;
+	}
+	else
+		cLoadString( IDS_UPDATE_SIZE_CALCULATING, line, 255 );
+	const size_t len = strlen( text );
+	snprintf( text + len, size - len, "\n\n%s", line );
 }
 
 // Over the earth in the bottom left corner, clear of the menu buttons

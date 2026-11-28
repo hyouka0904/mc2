@@ -111,10 +111,12 @@ class MainMenu: public LogisticsScreen
 		long					bUpdateDlg;				// UPDATE_DLG_*
 		bool					bUpdateNoticeHidden;	// for this session
 		bool					bUpdateResultShown;		// the download's end was announced
+		bool					bUpdateSizeShown;		// the open prompt shows the download size
 		std::string				updateFailure;
 		bool					updateNoticeVisible();
 		void					updateNoticeRect( GUI_RECT& rect );
 		void					showUpdateDialog( long kind );
+		void					availablePromptText( char* text, size_t size );
 
 		MC2MoviePtr			introMovie;
 			

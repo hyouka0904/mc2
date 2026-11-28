@@ -216,6 +216,21 @@ TEST(update_development_builds)
     CHECK(!isDevelopmentBuild("1.2.0-beta.1"));
 }
 
+TEST(update_format_size)
+{
+    CHECK(formatSize(0) == "0 KB");
+    CHECK(formatSize(1) == "1 KB");
+    CHECK(formatSize(850 * 1024) == "850 KB");
+    CHECK(formatSize(12 * 1024 * 1024 + 300 * 1024) == "12.3 MB");
+    CHECK(formatSize((int64_t)999 * 1024 * 1024) == "999.0 MB");
+    CHECK(formatSize((int64_t)1280 * 1024 * 1024) == "1.25 GB");
+    CHECK(formatSize(-5) == "0 KB");
+    CHECK(formatProgress((int64_t)3 * 1024 * 1024, (int64_t)120 * 1024 * 1024) == "3.0 / 120.0 MB");
+    CHECK(formatProgress(200 * 1024, 500 * 1024) == "200 / 500 KB");
+    CHECK(formatProgress((int64_t)900 * 1024 * 1024, (int64_t)2048 * 1024 * 1024) == "0.88 / 2.00 GB");
+    CHECK(formatProgress(10, 5) == "0 / 0 KB");
+}
+
 TEST(update_parse_release_json)
 {
     Release r;

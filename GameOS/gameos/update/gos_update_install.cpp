@@ -1172,7 +1172,11 @@ struct Installer {
     std::atomic<int64_t> received{0}; // the current download
     std::atomic<int64_t> done{0};     // finished downloads (part updates)
     int64_t total = 0;
+    bool totalKnown = false;
     std::atomic<bool> cancel{false};
+    // startEstimate
+    std::string estimateVersion;  // the version asked for
+    int64_t estimate = -1;        // -1: not known
     // launchPendingRestart
     std::vector<std::string> args;
     std::string relaunch; // executable to start after shutdown
@@ -1296,35 +1300,87 @@ void downloadThread(Release rel, Asset asset, Asset sums, std::string dir)
     in.version = rel.version;
 }
 
+// The release's manifest, checked against SHA256SUMS.txt.
+bool fetchManifest(const Asset& manifestAsset, const Asset& sums, Manifest* m, std::string* error)
+{
+    std::string sumsText, body, err, expected;
+    if (!httpGet(sums.url, &sumsText, &err, 30)) {
+        *error = "SHA256SUMS.txt: " + err;
+        return false;
+    }
+    if (!findChecksum(sumsText, manifestAsset.name, &expected)) {
+        *error = manifestAsset.name + " is not in SHA256SUMS.txt";
+        return false;
+    }
+    if (!httpGet(manifestAsset.url, &body, &err, 60)) {
+        *error = manifestAsset.name + ": " + err;
+        return false;
+    }
+    if (sha256Hex(body.data(), body.size()) != expected) {
+        *error = manifestAsset.name + ": checksum does not match";
+        return false;
+    }
+    if (!parseManifest(body, m)) {
+        *error = manifestAsset.name + ": not a manifest";
+        return false;
+    }
+    return true;
+}
+
+// changedFiles() for the estimate and the download, one at a time: both
+// rewrite the hash cache.
+std::vector<std::vector<PartFile>> changedFilesLocked(const Manifest& m, const std::string& root,
+                                                      const std::string& dir)
+{
+    static std::mutex hashMutex;
+    std::lock_guard<std::mutex> lock(hashMutex);
+    return changedFiles(m, root, withSlash(dir) + "filehash.txt");
+}
+
+// A part downloaded before but not installed yet.
+bool haveDownloadedPart(const Part& part, const std::string& dir)
+{
+    const std::string target = withSlash(dir) + part.name;
+    if (stampOf(target).size != part.size)
+        return false;
+    std::string actual;
+    return sha256File(target, &actual) && actual == part.sha256;
+}
+
+void estimateThread(std::string version, Asset manifestAsset, Asset sums, std::string root, std::string dir)
+{
+    Manifest m;
+    std::string err;
+    if (!fetchManifest(manifestAsset, sums, &m, &err)) {
+        fprintf(stderr, "update: no size estimate (%s)\n", err.c_str());
+        return;
+    }
+    makeDirs(dir);
+    const std::vector<std::vector<PartFile>> changed = changedFilesLocked(m, root, dir);
+    int64_t bytes = 0;
+    for (size_t i = 0; i < m.parts.size(); ++i)
+        if (!changed[i].empty() && !haveDownloadedPart(m.parts[i], dir))
+            bytes += m.parts[i].size;
+    fprintf(stderr, "update: about %s to download for %s\n", formatSize(bytes).c_str(), version.c_str());
+    Installer& in = installer();
+    std::lock_guard<std::mutex> lock(in.m);
+    if (in.estimateVersion == version)
+        in.estimate = bytes;
+}
+
 // Part update: the manifest, then only the parts with changed files.
 void partsThread(Release rel, Asset manifestAsset, Asset sums, std::string root, std::string dir)
 {
     Installer& in = installer();
     makeDirs(dir);
-    std::string sumsText, body, err, expected;
-    if (!httpGet(sums.url, &sumsText, &err, 30)) {
-        fail("SHA256SUMS.txt: " + err);
-        return;
-    }
-    if (!findChecksum(sumsText, manifestAsset.name, &expected)) {
-        fail(manifestAsset.name + " is not in SHA256SUMS.txt");
-        return;
-    }
-    if (!httpGet(manifestAsset.url, &body, &err, 60)) {
-        fail(manifestAsset.name + ": " + err);
-        return;
-    }
+    std::string err;
     Manifest m;
-    if (sha256Hex(body.data(), body.size()) != expected) {
-        fail(manifestAsset.name + ": checksum does not match");
+    if (!fetchManifest(manifestAsset, sums, &m, &err)) {
+        fail(err);
         return;
     }
-    if (!parseManifest(body, &m)) {
-        fail(manifestAsset.name + ": not a manifest");
-        return;
-    }
-    const std::vector<std::vector<PartFile>> changed = changedFiles(m, root, withSlash(dir) + "filehash.txt");
-    int64_t total = 0, files = 0;
+    const std::vector<std::vector<PartFile>> changed = changedFilesLocked(m, root, dir);
+    int64_t total = 0, files = 0, toFetch = 0;
     std::vector<size_t> needed;
     for (size_t i = 0; i < m.parts.size(); ++i)
         if (!changed[i].empty()) {
@@ -1332,11 +1388,21 @@ void partsThread(Release rel, Asset manifestAsset, Asset sums, std::string root,
             total += m.parts[i].size;
             files += (int64_t)changed[i].size();
         }
-    fprintf(stderr, "update: %d of %d parts (%lld files, %.1f MB) to download\n", (int)needed.size(),
-            (int)m.parts.size(), (long long)files, total / 1e6);
+    // Parts already downloaded count as received at once
+    int64_t reused = 0;
+    std::vector<bool> have(m.parts.size(), false);
+    for (size_t i : needed)
+        if ((have[i] = haveDownloadedPart(m.parts[i], dir)))
+            reused += m.parts[i].size;
+    toFetch = total - reused;
+    fprintf(stderr, "update: %d of %d parts (%lld files, %.1f MB, %.1f MB to fetch) to download\n",
+            (int)needed.size(), (int)m.parts.size(), (long long)files, total / 1e6, toFetch / 1e6);
     {
         std::lock_guard<std::mutex> lock(in.m);
-        in.total = total;
+        in.total = toFetch;
+        in.totalKnown = true;
+        if (in.estimateVersion == rel.version)
+            in.estimate = toFetch;
     }
     std::vector<PartInstall> installs;
     for (size_t i : needed) {
@@ -1353,7 +1419,7 @@ void partsThread(Release rel, Asset manifestAsset, Asset sums, std::string root,
         const std::string tmp = target + ".part";
         std::string actual;
         // Downloaded before but not installed: use it again
-        if (!(sha256File(target, &actual) && actual == part.sha256)) {
+        if (!have[i]) {
             fprintf(stderr, "update: downloading %s\n", asset->url.c_str());
             if (!httpDownload(asset->url, tmp, &in.received, &in.cancel, &err)) {
                 fail("download: " + err);
@@ -1370,7 +1436,8 @@ void partsThread(Release rel, Asset manifestAsset, Asset sums, std::string root,
             }
         }
         in.received = 0;
-        in.done += part.size;
+        if (!have[i])
+            in.done += part.size;
         installs.push_back({target, part.dest, changed[i]});
     }
     fprintf(stderr, "update: parts downloaded and verified\n");
@@ -1551,6 +1618,7 @@ void startDownload()
     in.kind = kind;
     in.root = root;
     in.total = parts ? 0 : asset.size;
+    in.totalKnown = !parts && asset.size > 0;
     in.received = 0;
     in.done = 0;
     in.cancel = false;
@@ -1579,6 +1647,61 @@ float downloadProgress()
         return 0.f;
     const float p = (float)(in.done.load() + in.received.load()) / (float)in.total;
     return p < 0.f ? 0.f : p > 1.f ? 1.f : p;
+}
+
+bool downloadBytes(int64_t* received, int64_t* total)
+{
+    Installer& in = installer();
+    std::lock_guard<std::mutex> lock(in.m);
+    if (!in.totalKnown)
+        return false;
+    int64_t got = in.done.load() + in.received.load();
+    if (in.status == DownloadStatus::Ready || got > in.total)
+        got = in.total;
+    *received = got;
+    *total = in.total;
+    return true;
+}
+
+void startEstimate()
+{
+    Installer& in = installer();
+    if (status() != Status::Available)
+        return;
+    const Release rel = available();
+    {
+        std::lock_guard<std::mutex> lock(in.m);
+        if (rel.version.empty() || in.estimateVersion == rel.version)
+            return;
+        in.estimateVersion = rel.version;
+        in.estimate = -1;
+    }
+    if (!canInstall())
+        return;
+    std::string root;
+    const InstallKind kind = detectInstallKind(exeDir(), appImagePath(), &root);
+    Asset asset, sums;
+    for (const Asset& s : rel.assets)
+        if (s.name == "SHA256SUMS.txt")
+            sums = s;
+    const std::string dir = updatesDir();
+    if (findManifest(rel, kind, &asset)) {
+        if (!dir.empty())
+            std::thread(estimateThread, rel.version, asset, sums, root, dir).detach();
+    } else if (pickAsset(rel, kind, &asset) && asset.size > 0) {
+        std::lock_guard<std::mutex> lock(in.m);
+        in.estimate = asset.size;
+    }
+}
+
+bool downloadEstimate(int64_t* bytes)
+{
+    Installer& in = installer();
+    std::lock_guard<std::mutex> lock(in.m);
+    if (in.estimate < 0)
+        return false;
+    *bytes = in.estimate;
+    return true;
 }
 
 std::string downloadError()

@@ -166,6 +166,58 @@ bool isDevelopmentBuild(const std::string& version)
     return false;
 }
 
+namespace {
+// Divisor and decimals for the unit that fits bytes.
+const char* sizeUnit(int64_t bytes, double* div, int* decimals)
+{
+    const double mb = 1024.0 * 1024.0;
+    if (bytes < 1024 * 1024) {
+        *div = 1024.0;
+        *decimals = 0;
+        return "KB";
+    }
+    if (bytes < (int64_t)1000 * 1024 * 1024) {
+        *div = mb;
+        *decimals = 1;
+        return "MB";
+    }
+    *div = mb * 1024.0;
+    *decimals = 2;
+    return "GB";
+}
+} // namespace
+
+std::string formatSize(int64_t bytes)
+{
+    if (bytes < 0)
+        bytes = 0;
+    double div;
+    int dec;
+    const char* unit = sizeUnit(bytes, &div, &dec);
+    double v = bytes / div;
+    if (bytes > 0 && dec == 0 && v < 1.0)
+        v = 1.0; // never "0 KB" for something that is there
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.*f %s", dec, v, unit);
+    return buf;
+}
+
+std::string formatProgress(int64_t received, int64_t total)
+{
+    if (total < 0)
+        total = 0;
+    if (received < 0)
+        received = 0;
+    if (received > total)
+        received = total;
+    double div;
+    int dec;
+    const char* unit = sizeUnit(total, &div, &dec);
+    char buf[96];
+    snprintf(buf, sizeof(buf), "%.*f / %.*f %s", dec, received / div, dec, total / div, unit);
+    return buf;
+}
+
 //==============================================================================
 // Minimal JSON reader: builds a small tree (numbers are kept as text).
 

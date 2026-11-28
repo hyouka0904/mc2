@@ -4458,6 +4458,9 @@
 #define IDS_LOGISTICS_MENU_HELP          60098
 #define IDS_MP_AWAY                      60099
 #define IDS_MP_BACK                      60100
+#define IDS_UPDATE_SIZE                  60101
+#define IDS_UPDATE_SIZE_CALCULATING      60102
+#define IDS_UPDATE_PREPARING             60103
 */
 
 #include "strings.res.h"

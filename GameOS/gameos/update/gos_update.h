@@ -56,6 +56,11 @@ int compareVersions(const Version& a, const Version& b);
 // (1.2.0-14-gabc1234, optionally -dirty).
 bool isDevelopmentBuild(const std::string& version);
 
+// "850 KB", "12.3 MB", "1.25 GB" (1 MB = 1024 * 1024 bytes).
+std::string formatSize(int64_t bytes);
+// "12.3 / 456.7 MB": both numbers in the unit of total.
+std::string formatProgress(int64_t received, int64_t total);
+
 struct Asset {
     std::string name;
     std::string url; // browser_download_url
@@ -222,6 +227,15 @@ bool canInstall();
 void startDownload();
 DownloadStatus downloadStatus();
 float downloadProgress();          // 0..1
+// Bytes received and to receive. False while the total is not known yet
+// (a part update first reads the manifest and compares the installed files).
+bool downloadBytes(int64_t* received, int64_t* total);
+// How much startDownload() would fetch: the package size, or for a part
+// update the changed parts not already in the updates folder. Worked out in
+// the background once per version; downloadEstimate() is false until then
+// (and when the game cannot install the update).
+void startEstimate();
+bool downloadEstimate(int64_t* bytes);
 std::string downloadError();
 // After Ready: puts the new version in place. True: the game must quit now
 // (the new version starts on its own). False with *error on failure.
