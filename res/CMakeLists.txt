@@ -9,5 +9,5 @@ else("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 	set(res_suffix 32)
 endif("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 
-include_directories("." "../test_scripts/res_conv")
+include_directories("." "strings")
 add_library(mc2res_${res_suffix} SHARED ${RES_SOURCES})

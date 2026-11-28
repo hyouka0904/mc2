@@ -9,7 +9,7 @@
 #include <algorithm>
 #include"mclib.h"
 #include"multplyr.h"
-#include "../resource.h"
+#include "../res/resource.h"
 
 ChatWindow* ChatWindow::s_instance = NULL;
 

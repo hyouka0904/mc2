@@ -12,7 +12,7 @@
 #include"logisticsdata.h"
 
 #include"warrior.h"
-#include"../resource.h"
+#include"../res/resource.h"
 #include"mechicon.h"
 #include"objmgr.h"
 

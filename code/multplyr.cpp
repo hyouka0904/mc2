@@ -114,7 +114,7 @@
 //#include"version.h"
 //#endif
 
-#include "../resource.h"
+#include "../res/resource.h"
 
 #ifdef USE_MISSION_RESULTS_SCREEN
 extern bool EventsToMissionResultsScreen;

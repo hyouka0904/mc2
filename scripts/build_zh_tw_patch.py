@@ -17,13 +17,13 @@ PRINTF_TOKEN = re.compile(r"%%|%[-+#0 ]*(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:hh|ll|[hl
 
 def load_translations():
     symbols = dict(re.findall(
-        r"^#define\s+(IDS_\w+)\s+(\d+)\s*$",
-        (ROOT / "test_scripts/res_conv/resource.h").read_text(),
+        r"^\s*(IDS_\w+)\s*=\s*(\d+)\s*,",
+        (ROOT / "res/strings/strings.res.h").read_text(),
         re.MULTILINE,
     ))
     originals = dict(re.findall(
         r'\{\s*(IDS_\w+)\s*,\s*"((?:\\.|[^"\\])*)"\s*\}',
-        (ROOT / "test_scripts/res_conv/strings.res.cpp").read_text(encoding="cp1252"),
+        (ROOT / "res/strings/strings.res.cpp").read_text(encoding="cp1252"),
     ))
     entries = {}
     for line in (ROOT / "localization/zh-TW/strings.txt").read_text(encoding="utf-8").splitlines():

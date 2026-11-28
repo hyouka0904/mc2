@@ -33,7 +33,7 @@ controlGui.cpp			: Implementation of the controlGui component.
 
 #include"txmmgr.h"
 
-#include "../resource.h"
+#include "../res/resource.h"
 #include "platform_stdlib.h" // alloca
 
 #include"chatwindow.h"

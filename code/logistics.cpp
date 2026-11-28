@@ -80,7 +80,7 @@ extern float loadProgress;
 
 extern bool aborted;
 
-#include "../resource.h"
+#include "../res/resource.h"
 void DEBUGWINS_print (const char* s, long window = 0);
 
 

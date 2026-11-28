@@ -8,7 +8,7 @@ KeyboardRef.cpp			: Implementation of the KeyboardRef component.
 
 #include"keyboardref.h"
 #include"mclib.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"missiongui.h"
 #include"utilities.h"
 

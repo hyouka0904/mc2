@@ -7,7 +7,7 @@ MPStats.cpp			: Implementation of the MPStats component.
 \*************************************************************************************************/
 
 #include"mpstats.h"
-#include"../resource.h"
+#include"../res/resource.h"
 #include"missionbriefingscreen.h"
 #include"chatwindow.h"
 #include"mechbayscreen.h"

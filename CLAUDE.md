@@ -38,7 +38,7 @@ timeout 900 python3 scripts/run_net_test.py game [--scenario logistics|version|a
 
 - **Files**: loose files in the game directory win over `.fst` archives. Settings and saves go to `SDL_GetPrefPath`.
 - **Shaders**: GLSL in `shaders/`, cross-compiled at build time for SDL3 GPU. `PerDraw` must match its C++ struct (`shader_spirv` test).
-- **UI strings**: a new `IDS_*` goes into `resource.h`, `strings.res.h`, `test_scripts/res_conv/{resource.h,strings.res.h,strings.res.cpp}` (latin-1) and `localization/zh-TW/strings.txt`.
+- **UI strings**: a new `IDS_*` goes into `res/strings/strings.res.h` (number), `res/strings/strings.res.cpp` (English text, latin-1) and `localization/zh-TW/strings.txt`. `res/strings/original/` is the frozen upstream `.rc` source; do not edit or rerun it.
 - **LAN multiplayer**: host-authoritative star. Fixed-size `MCMSG_*` structs in `code/multplyr.h`. Bump the protocol stamp (`MC2NET-4` in `multplyr.cpp`) whenever a message or a synced struct changes. UDP 27015.
 - **Saves**: campaign `.fit` must keep loading (`OldestSaveGameVersionNumber..SaveGameVersionNumber`). Quick saves carry a layout hash; when a saved struct changes size, update `kCurrent` in `unit_savelayout`, never the legacy table.
 - **CRLF files**: many sources are CRLF; keep line endings when editing.

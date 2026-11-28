@@ -23,7 +23,7 @@ mechlopedia.h			: Interface for the mechlopedia component.
 #include"simplecomponentlistbox.h"
 #endif
 
-#include"../resource.h"
+#include"../res/resource.h"
 
 class LogisticsChassis;
 class LogisticsVehicle;

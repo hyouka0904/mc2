@@ -10,7 +10,7 @@ MPLoadMap.cpp			: Implementation of the MPLoadMap component.
 #include"prefs.h"
 #include"inifile.h"
 #include"userinput.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"platform_windows.h"
 #include"missionbriefingscreen.h"
 #include <cstring>

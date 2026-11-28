@@ -10,7 +10,7 @@ MPGameBrowser.cpp			: Implementation of the MPGameBrowser component.
 #include"prefs.h"
 #include"inifile.h"
 #include"userinput.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include "lanaddresses.h"
 #include"multplyr.h"
 #include"mechbayscreen.h"

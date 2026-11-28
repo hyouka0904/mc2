@@ -21,7 +21,7 @@ struct DDSURFACEDESC2 {
 #include"logisticsdialog.h"
 #include"abutton.h"
 #include"optionsscreenwrapper.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"mechlopedia.h"
 #include"gamesound.h"
 #include"aanimobject.h"

@@ -7,7 +7,7 @@
 #include "optionsscreenwrapper.h"
 #include "mechlopedia.h"
 #include "gamesound.h"
-#include "../resource.h"
+#include "../res/resource.h"
 
 // Buttons taken from the main menu art (mcl_mm.fit)
 #define MENU_CLOSE			94	// "Return to game"

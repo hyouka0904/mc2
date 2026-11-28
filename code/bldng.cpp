@@ -80,7 +80,7 @@
 #include"logisticsdata.h"
 #endif
 
-#include "../resource.h"
+#include "../res/resource.h"
 
 #define BLIP_FRAME_RATE		0.067
 //extern unsigned long NextIdNumber;

@@ -110,7 +110,7 @@
 #include"loadscreen.h"
 #endif
 
-#include "../resource.h"
+#include "../res/resource.h"
 #include<gameos.hpp>
 #ifndef LINUX_BUILD
 #include<ddraw.h>

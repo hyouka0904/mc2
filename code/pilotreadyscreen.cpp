@@ -9,7 +9,7 @@ PilotReadyScreen.cpp			: Implementation of the PilotReadyScreen component.
 #include"logisticsmech.h"
 #include"logisticsdata.h"
 #include"logisticsmechicon.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"mechbayscreen.h"
 #include"warrior.h"
 #include"gamesound.h"

@@ -59,7 +59,7 @@
 | `gui/` | 介面元件庫。 |
 | `GameOS/` | 平台層，見上方分層圖。 |
 | `shaders/` | GLSL 著色器。OpenGL 後端執行時從遊戲目錄的 `shaders/` 載入；建置時另外編成 SPIR-V / MSL / HLSL（見「著色器」）。 |
-| `res/` | 字串資源動態函式庫 `libmc2res_64.so`，內容來自 `test_scripts/res_conv/strings.res.cpp`。 |
+| `res/` | 字串資源動態函式庫 `libmc2res_64.so`，以及遊戲碼引用的 `resource.h`（控制項與對話框 ID）。`res/strings/strings.res.h` 定義每個 `IDS_*` 的編號，`res/strings/strings.res.cpp` 是英文原文。`res/strings/original/` 保留原作者最早產生它們的 `Script1.rc` 和 `res_conv.pl`，已不再更新。 |
 | `tools/data_tools/` | 資料建置工具：`aseconv`（ASE 模型轉 TGL）、`makefst`（打包 / 解包 `.fst`）、`makersp`（產生檔案清單）、`pak`（打包 / 解包 `.pak`）。 |
 | `tools/text_tool/` | 字型烘焙工具：把 TTF 字型轉成遊戲使用的字型圖集（`.bmp`）與字元資訊（`.glyph`）。不需要顯示器。 |
 | `GameOS/gameos/mods/` | Mod 系統（`mod_system.h`：版本、manifest、Modpack、載入順序、檔案覆蓋層；`gos_mods.h`：遊戲端掛勾）。 |
@@ -72,7 +72,6 @@
 | `scripts/` | `prepare_game_dir.sh`（建置遊戲資料並組出可執行的遊戲目錄）、`smoke_test.sh`（無頭端到端測試），以及測試、打包、效能量測腳本。 |
 | `cmake/MC2Dependencies.cmake` | 取得 SDL3 / SDL3_mixer / SDL3_ttf：優先用已安裝的版本，否則自動下載固定版本並靜態編譯。 |
 | `.github/workflows/ci.yml` | GitHub Actions：建置、單元測試、實際執行遊戲的冒煙測試。 |
-| `test_scripts/res_conv/` | 介面字串原始檔（`strings.res.cpp`、`resource.h`）和原作者的轉換腳本 `res_conv.pl`。 |
 | `doc/` | 玩家說明書與 Mod 說明。 |
 
 ### 遊戲資料流程

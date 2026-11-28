@@ -111,7 +111,7 @@
 #include"comndr.h"
 #endif
 
-#include "../resource.h"
+#include "../res/resource.h"
 
 extern unsigned long		NextIdNumber;
 

@@ -30,7 +30,7 @@ MissionBegin.cpp			: Implementation of the MissionBegin component.
 #include"chatwindow.h"
 #include"logisticsmechicon.h"
 #include"logisticsmenu.h"
-#include "../resource.h"
+#include "../res/resource.h"
 
 #include"prefs.h"
 extern CPrefs prefs;

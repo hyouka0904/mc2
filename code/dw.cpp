@@ -7,7 +7,7 @@
 #include"msodw.h"
 
 #include"utilities.h"
-#include "../resource.h"
+#include "../res/resource.h"
 
 #include<gameos.hpp>
 

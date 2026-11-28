@@ -13,7 +13,7 @@ MPConnectionType.cpp			: Implementation of the MPConnectionType component.
 //#include"../userinput.h"
 #include"userinput.h"
 
-#include "../resource.h"
+#include "../res/resource.h"
 #include "lanaddresses.h"
 #include"multplyr.h"
 #include"mechbayscreen.h"

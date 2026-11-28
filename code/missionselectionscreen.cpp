@@ -9,7 +9,7 @@ MissionSelectionScreen.cpp			: Implementation of the MissionSelectionScreen comp
 #include"missionselectionscreen.h"
 #include"mechbayscreen.h"
 #include"logisticsdata.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"missionbriefingscreen.h"
 #include"sounds.h"
 #include"mc2movie.h"

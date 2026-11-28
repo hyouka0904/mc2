@@ -8,7 +8,7 @@ LogisticsPilotListBox.cpp			: Implementation of the LogisticsPilotListBox compon
 
 #include"logisticspilotlistbox.h"
 #include"logisticspilot.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"pilotreadyscreen.h"
 
 LogisticsPilotListBoxItem* LogisticsPilotListBoxItem::s_templateItem = NULL;

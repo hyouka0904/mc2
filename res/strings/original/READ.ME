@@ -1,0 +1,10 @@
+Frozen upstream sources: Script1.rc, resource.h and res_conv.pl produced the
+first strings.res.cpp/h. The port adds strings straight to ../strings.res.h and
+../strings.res.cpp, so rerunning res_conv.pl would drop them.
+
+Original note:
+before processing by script
+run vim and
+
+:%s/""/\\"/g
+

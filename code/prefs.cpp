@@ -17,7 +17,7 @@
 #include"missiongui.h"
 
 #include"soundsys.h"
-#include"../resource.h"
+#include"../res/resource.h"
 
 extern SoundSystem *sndSystem;
 

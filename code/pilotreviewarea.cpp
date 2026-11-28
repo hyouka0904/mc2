@@ -11,7 +11,7 @@ SalvageMechArea.cpp			: Implementation of the SalvageMechArea component.
 #include"objmgr.h"
 #include"logisticspilot.h"
 #include"logisticsdata.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"mech.h"
 #include "platform_stdlib.h" // alloca
 #include"mechicon.h"

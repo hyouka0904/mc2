@@ -66,7 +66,7 @@
 
 extern CPrefs prefs;
 
-#include "../resource.h"
+#include "../res/resource.h"
 
 #include<gameos.hpp>
 #include<toolos.hpp>

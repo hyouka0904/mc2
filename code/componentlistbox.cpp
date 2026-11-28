@@ -9,7 +9,7 @@ ComponentListBox.cpp			: Implementation of the ComponentListBox component.
 #include"componentlistbox.h"
 #include"logisticsvariant.h"
 #include"logisticscomponent.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include "platform_stdlib.h" // alloca
 #include"mclib.h"
 #include"logisticsdata.h"

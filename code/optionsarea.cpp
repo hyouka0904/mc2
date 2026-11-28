@@ -10,7 +10,7 @@ OptionsArea.cpp			: Implementation of the OptionsArea component.
 #include"prefs.h"
 #include"inifile.h"
 #include"userinput.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"prefs.h"
 #include"missiongui.h"
 #include"logisticsdialog.h"

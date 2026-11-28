@@ -58,7 +58,7 @@
 #include"team.h"
 #endif
 
-#include "../resource.h"
+#include "../res/resource.h"
 #include<stdio.h>
 
 extern unsigned long NextIdNumber;

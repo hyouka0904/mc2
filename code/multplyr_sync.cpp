@@ -110,7 +110,7 @@
 //#include"version.h"
 //#endif
 
-#include "../resource.h"
+#include "../res/resource.h"
 
 #include "net/gos_net.h"
 #include "gamesound.h"

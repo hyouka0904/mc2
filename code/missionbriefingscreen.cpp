@@ -8,7 +8,7 @@
 #include"logisticsdata.h"
 #include"inifile.h"
 #include"packet.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"objective.h"
 #include"multplyr.h"
 #include"chatwindow.h"

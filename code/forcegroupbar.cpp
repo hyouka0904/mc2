@@ -12,7 +12,7 @@ ForceGroupBar.cpp			: Implementation of the ForceGroupBar component.
 #include"team.h"
 #include"missiongui.h"
 #include"controlgui.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"multplyr.h"
 #include"mc2movie.h"
 #include"comndr.h"

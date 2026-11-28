@@ -12,7 +12,7 @@ MPParameterScreen.cpp			: Implementation of the MPParameterScreen component.
 #include"prefs.h"
 #include"inifile.h"
 #include"userinput.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include "lanaddresses.h"
 #include"assert.h"
 #include"multplyr.h"

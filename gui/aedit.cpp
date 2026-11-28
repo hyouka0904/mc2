@@ -15,7 +15,7 @@ aEdit.cpp			: Implementation of the aEdit component of the GUI library.
 #include"platform_mbstring.h" // isleadbyte
 //#include<winnls.h>
 #include"soundsys.h"
-#include "../resource.h"
+#include "../res/resource.h"
 
 #define ENTRY_MAX_CHARS 1000
 #define ENTRY_MARGIN 4.f

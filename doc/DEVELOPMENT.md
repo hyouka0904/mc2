@@ -67,7 +67,7 @@ The code has four layers; each depends only on the ones below it:
 | `gui/` | UI widget library. |
 | `GameOS/` | Platform layer, see the diagram above. |
 | `shaders/` | GLSL shaders. The OpenGL backend loads them from the game directory's `shaders/` at run time; the build also compiles them to SPIR-V / MSL / HLSL (see [Shaders](#shaders)). |
-| `res/` | String resource library `libmc2res_64.so`, generated from `test_scripts/res_conv/strings.res.cpp`. |
+| `res/` | String resource library `libmc2res_64.so` and `resource.h` (control and dialog IDs, included by game code). `res/strings/strings.res.h` gives each `IDS_*` its number, `res/strings/strings.res.cpp` its English text. `res/strings/original/` keeps the upstream `Script1.rc` and `res_conv.pl` that first produced them; they are no longer updated. |
 | `tools/data_tools/` | Data build tools: `aseconv` (ASE models to TGL), `makefst` (pack / unpack `.fst`), `makersp` (file lists), `pak` (pack / unpack `.pak`). |
 | `tools/text_tool/` | Font baking tool: turns TTF fonts into the game's font atlases (`.bmp`) and glyph data (`.glyph`). Needs no display. |
 | `GameOS/gameos/mods/` | Mod system (`mod_system.h`: versions, manifests, modpacks, load order, file overlay; `gos_mods.h`: game hooks). |
@@ -80,7 +80,6 @@ The code has four layers; each depends only on the ones below it:
 | `scripts/` | `prepare_game_dir.sh` (build the game data and assemble a runnable game directory), `smoke_test.sh` (headless end-to-end test), and the test, packaging and benchmark scripts. |
 | `cmake/MC2Dependencies.cmake` | Gets SDL3 / SDL3_mixer / SDL3_ttf: an installed version if there is one, otherwise a pinned version downloaded and built statically. |
 | `.github/workflows/ci.yml` | GitHub Actions: build, unit tests, smoke test that runs the game. |
-| `test_scripts/res_conv/` | UI string sources (`strings.res.cpp`, `resource.h`) and the upstream conversion script `res_conv.pl`. |
 | `doc/` | Player manuals and the modding guide. |
 
 ### Game data pipeline

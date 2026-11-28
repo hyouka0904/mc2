@@ -12,7 +12,7 @@ MechLabScreen.cpp			: Implementation of the MechLabScreen component.
 #include"mechbayscreen.h"
 #include"cmponent.h"
 #include"platform_windows.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"logisticsdialog.h"
 #include "platform_stdlib.h" // alloca
 #include"gamesound.h"

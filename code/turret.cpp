@@ -68,7 +68,7 @@
 #include"gamelog.h"
 #endif
 
-#include "../resource.h"
+#include "../res/resource.h"
 //***************************************************************************
 
 //extern float worldUnitsPerMeter;

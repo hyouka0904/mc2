@@ -14,7 +14,7 @@ gameTacMap.cpp			: Implementation of the gameTacMap component.
 #include"objective.h"
 #include"mission.h"
 #include"platform_windows.h"
-#include "../resource.h"
+#include "../res/resource.h"
 extern unsigned char godMode;
 extern bool useLeftRightMouseProfile;
 

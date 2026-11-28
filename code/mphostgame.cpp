@@ -10,7 +10,7 @@ MPHostGame.cpp			: Implementation of the MPHostGame component.
 #include"prefs.h"
 #include"inifile.h"
 #include"userinput.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"multplyr.h"
 
 #ifndef GAMESOUND_H

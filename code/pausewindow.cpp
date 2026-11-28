@@ -8,7 +8,7 @@ PauseWindow.cpp			: Implementation of the PauseWindow component.
 
 #include"pausewindow.h"
 #include"controlgui.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"userinput.h"
 #include"missiongui.h"
 #include"logisticsdialog.h"

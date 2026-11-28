@@ -8,7 +8,7 @@ InfoWindow.cpp			: Implementation of the InfoWindow component.
 
 #include"infowindow.h"
 #include"mclib.h"
-#include "../resource.h"
+#include "../res/resource.h"
 #include"mover.h"
 #include"mechicon.h"
 #include"team.h"

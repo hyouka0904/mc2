@@ -96,7 +96,7 @@
 #include"keyboardref.h"
 #endif
 
-#include "../resource.h"
+#include "../res/resource.h"
 
 #include"platform_windows.h"
 
