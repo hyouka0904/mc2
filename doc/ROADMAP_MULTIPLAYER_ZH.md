@@ -117,7 +117,7 @@ M2 之後會用到的既有機制。聯機現況見第 3 節，文字現況見 L
 - repo 裡**沒有地圖編輯器**，但引擎留有編輯器用的 API，可以在程式裡產生地形：
   - 建立與編輯：`Terrain::init(N, NULL)`、`MapData::newInit`、`setVertexHeight`、`MapData::setTerrain` / `setOverlay`。
   - 後處理：`calcWater`、`calcLight`、`calcTransitions`。
-  - 存檔：`Terrain::save`、`data_tools/pak.cpp`。
+  - 存檔：`Terrain::save`、`tools/data_tools/pak.cpp`。
 - 放單位用 `Mission::addMover`，放建築用 `GameObjectManager::addObject`。
 
 ---

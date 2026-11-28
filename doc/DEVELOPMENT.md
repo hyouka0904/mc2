@@ -68,8 +68,8 @@ The code has four layers; each depends only on the ones below it:
 | `GameOS/` | Platform layer, see the diagram above. |
 | `shaders/` | GLSL shaders. The OpenGL backend loads them from the game directory's `shaders/` at run time; the build also compiles them to SPIR-V / MSL / HLSL (see [Shaders](#shaders)). |
 | `res/` | String resource library `libmc2res_64.so`, generated from `test_scripts/res_conv/strings.res.cpp`. |
-| `data_tools/` | Data build tools: `aseconv` (ASE models to TGL), `makefst` (pack / unpack `.fst`), `makersp` (file lists), `pak` (pack / unpack `.pak`). |
-| `text_tool/` | Font baking tool: turns TTF fonts into the game's font atlases (`.bmp`) and glyph data (`.glyph`). Needs no display. |
+| `tools/data_tools/` | Data build tools: `aseconv` (ASE models to TGL), `makefst` (pack / unpack `.fst`), `makersp` (file lists), `pak` (pack / unpack `.pak`). |
+| `tools/text_tool/` | Font baking tool: turns TTF fonts into the game's font atlases (`.bmp`) and glyph data (`.glyph`). Needs no display. |
 | `GameOS/gameos/mods/` | Mod system (`mod_system.h`: versions, manifests, modpacks, load order, file overlay; `gos_mods.h`: game hooks). |
 | `tools/mc2mod/` | Mod tool `mc2mod` (create, validate, list, resolve load order). |
 | `examples/mods/`, `examples/modpacks/` | Example mods and modpacks (also used by the tests). |

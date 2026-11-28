@@ -298,8 +298,8 @@ else()
 endif()
 
 add_subdirectory("./res" "./out/res")
-add_subdirectory("./data_tools" "./out/data_tools")
-add_subdirectory("./text_tool" "./out/text_tool")
+add_subdirectory("./tools/data_tools" "./out/data_tools")
+add_subdirectory("./tools/text_tool" "./out/text_tool")
 add_subdirectory("./tools/mc2mod" "./out/tools/mc2mod")
 
 option(MC2_BUILD_TESTS "Build the automated tests (run with ctest)" ON)

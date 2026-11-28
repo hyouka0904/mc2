@@ -60,8 +60,8 @@
 | `GameOS/` | 平台層，見上方分層圖。 |
 | `shaders/` | GLSL 著色器。OpenGL 後端執行時從遊戲目錄的 `shaders/` 載入；建置時另外編成 SPIR-V / MSL / HLSL（見「著色器」）。 |
 | `res/` | 字串資源動態函式庫 `libmc2res_64.so`，內容來自 `test_scripts/res_conv/strings.res.cpp`。 |
-| `data_tools/` | 資料建置工具：`aseconv`（ASE 模型轉 TGL）、`makefst`（打包 / 解包 `.fst`）、`makersp`（產生檔案清單）、`pak`（打包 / 解包 `.pak`）。 |
-| `text_tool/` | 字型烘焙工具：把 TTF 字型轉成遊戲使用的字型圖集（`.bmp`）與字元資訊（`.glyph`）。不需要顯示器。 |
+| `tools/data_tools/` | 資料建置工具：`aseconv`（ASE 模型轉 TGL）、`makefst`（打包 / 解包 `.fst`）、`makersp`（產生檔案清單）、`pak`（打包 / 解包 `.pak`）。 |
+| `tools/text_tool/` | 字型烘焙工具：把 TTF 字型轉成遊戲使用的字型圖集（`.bmp`）與字元資訊（`.glyph`）。不需要顯示器。 |
 | `GameOS/gameos/mods/` | Mod 系統（`mod_system.h`：版本、manifest、Modpack、載入順序、檔案覆蓋層；`gos_mods.h`：遊戲端掛勾）。 |
 | `tools/mc2mod/` | Mod 製作工具 `mc2mod`（建立、檢查、列出、解析載入順序）。 |
 | `examples/mods/`、`examples/modpacks/` | 範例 Mod 與 Modpack（也用於自動測試）。 |

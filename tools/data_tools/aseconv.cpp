@@ -9,7 +9,7 @@
 static const char versionStamp[1024] = "00.05.10.2712";
 
 
-#include "../thirdparty/ARM/Microsoft.Xna.Arm.h"
+#include "../../thirdparty/ARM/Microsoft.Xna.Arm.h"
 using namespace Microsoft::Xna::Arm;
 
 
