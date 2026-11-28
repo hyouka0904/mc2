@@ -356,6 +356,29 @@ void MPParameterScreen::render(int xOffset, int yOffset )
     awayButton.render();
     awayButton.move(-xOffset, -yOffset);
 
+	const bool dialogUp = bMapInfoDlg || bLoading || bShowNoMapDlg || bBootDlg || bDisconnectDlg || bErrorDlg;
+	// The players stay visible behind a dialog (Map Info used to hide them)
+	if ( !xOffset && !yOffset )
+	{
+		aPlayerParams* pFocus = 0;
+
+		for ( int i = 0; i < playerCount; i++ )
+		{
+			if ( playerParameters[i].hasFocus() )
+				pFocus = & playerParameters[i];
+			playerParameters[i].render();
+		}
+
+		if ( pFocus )
+			pFocus->render();
+
+		ChatWindow::instance()->render(xOffset, yOffset);
+		if ( !dialogUp )
+			renderHoverLabel();
+		if ( MPlayer->isHost() )
+			RenderLanAddressList( textObjects[11] );
+	}
+
 	if ( bMapInfoDlg )
 	{
 		mapInfoDlg.render();
@@ -367,32 +390,10 @@ void MPParameterScreen::render(int xOffset, int yOffset )
 	else if ( bShowNoMapDlg || bBootDlg || bDisconnectDlg )
 	{
 		LogisticsOKDialog::instance()->render();
-
 	}
 	else if ( bErrorDlg )
 	{
 		LogisticsOneButtonDialog::instance()->render();
-	}
-	else if ( !xOffset && !yOffset )
-	{
-		aPlayerParams* pFocus = 0;
-
-		for ( int i = 0; i < playerCount; i++ )
-		{
-			if ( playerParameters[i].hasFocus() )
-				pFocus = & playerParameters[i];
-			
-			playerParameters[i].render();
-				 
-		}
-
-		if ( pFocus )
-			pFocus->render();
-
-		ChatWindow::instance()->render(xOffset, yOffset);
-		renderHoverLabel();
-		if ( MPlayer->isHost() )
-			RenderLanAddressList( textObjects[11] );
 	}
 
 	if ( bHostLeftDlg )

@@ -29,7 +29,8 @@ to the room. The client reopens preparation, backs out, then completes it
 again. The host must observe ready, unready and ready before launching.
 Both games must load the two prepared mechs.
 
---scenario away: after preparing, the client steps away (Away), comes back
+--scenario away: after preparing, the client opens and closes Map Info (players stay
+visible behind it, capture 3500), steps away (Away), comes back
 (I'm back), opens the System menu and closes it. The host tries to start
 while the client is away. The host must see ready, away, ready, unready,
 ready, and the game must only start after that.
@@ -71,6 +72,8 @@ BACK = (65, 566)              # briefing: Back
 AWAY = (330, 28)              # room: Away / I'm back
 SYSTEM = (702, 28)            # room: System menu
 SYSTEM_CLOSE = (402, 358)     # System menu: Close
+MAP_INFO = (700, 175)         # room: Map Info
+MAP_INFO_CLOSE = (555, 436)   # Map Info dialog: Close
 
 HOST_FRAMES = 15000
 CLIENT_FRAMES = 9500
@@ -286,11 +289,13 @@ def main():
             client, client_dir = start("client", join_room_script(), 1600, game_dir, out,
                                        args.renderer, display, {}, captures="1380,1560")
         elif away:
+            # Map Info keeps the players visible behind it (capture 3500)
             script = (join_room_script() + prepare_mech(2200) +
+                      click(3400, *MAP_INFO) + click(3550, *MAP_INFO_CLOSE) +
                       click(3700, *AWAY) + click(6200, *AWAY) +
                       click(6600, *SYSTEM) + click(7000, *SYSTEM_CLOSE))
             client, client_dir = start("client", script, 11000, game_dir, out, args.renderer, display, {},
-                                       captures="3600,3900,6400,6800")
+                                       captures="3500,3600,3900,6400,6800")
         elif logistics:
             script = (join_room_script() + prepare_mech(2200) +
                       click(3850, *PREPARE) + click(4200, *BACK) +
