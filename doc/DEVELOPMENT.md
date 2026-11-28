@@ -237,7 +237,7 @@ For playing, see the [LAN skirmish manual](manual/lan-skirmish.md).
 
 - The room beacon ends with the host's game version (hosts before 0.2 send the shorter beacon; it is still accepted and shown as "< 0.2"). The client marks a room compatible when the protocol stamp and the game data hash match its own.
 - Incompatible rooms show `VERSION x.y.z` (or `DIFFERENT GAME DATA`) in the map column. Join does not connect; it shows both versions. If the host is newer the room list dialog offers **Download** (opens the release page); the direct IP panel says where to download it. If the host is older it says the host needs to update.
-- The protocol stamp (`MC2NET-4` in `code/multplyr.cpp`) still decides whether two games can play together; the version string is only shown. Bump the stamp whenever a network message changes.
+- The protocol stamp (`MC2NET-4` in `code/multplyr_wire.h`) still decides whether two games can play together; the version string is only shown. Bump the stamp whenever a network message changes. `unit_netlayout` hashes the sizes of every message and wire structure and fails when one changes while the stamp stays: bump the stamp, then set `kStamp` and `kCurrent` in `tests/unit/test_netlayout.cpp` (the Windows value is printed in the CI log). Changes that keep sizes, such as a new bit layout inside a chunk, still need a bump by hand.
 
 ---
 
@@ -322,6 +322,7 @@ ctest --test-dir build --output-on-failure
 | `unit_net` | LAN transport, see [How LAN multiplayer works](#how-lan-multiplayer-works) |
 | `unit_update` | Update check, see [Update check](#update-check) |
 | `unit_savelayout` | Sizes of the structures the quick save stores, see [Save game compatibility](#save-game-compatibility) |
+| `unit_netlayout` | Sizes of the LAN messages and wire structures match the protocol stamp |
 | `zh_tw_translations` | `localization/zh-TW/strings.txt`: every name exists and has English text, no duplicates, same printf placeholders (`scripts/check_translations.py`) |
 | `render_isolation` | Checks that OpenGL appears only in `GameOS/gameos/render/gl/` |
 | `shader_validation` | Compiles and links every shader variant offline with glslangValidator (same `#version 420`, `ALPHA_TEST` define and `#include` expansion as at run time), no GPU needed; skipped without `glslang-tools` |

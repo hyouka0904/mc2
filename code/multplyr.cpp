@@ -16,6 +16,7 @@
 
 #ifndef MULTPLYR_H
 #include"multplyr.h"
+#include"multplyr_wire.h"
 #endif
 
 #ifndef TEAM_H
@@ -243,7 +244,6 @@ void ShutdownNetworking (void) {
 #include <chrono>
 #include <cstddef>
 
-#define MC2_NET_PROTOCOL_STAMP	"MC2NET-4"		// bump when the wire format changes
 
 // Tests pretend to be another release with MC2_NET_TEST_VERSION and
 // MC2_NET_TEST_PROTOCOL (scripts/run_net_test.py --scenario version).
@@ -293,26 +293,7 @@ static void CopyString (char* dst, const char* src, size_t size) {
 	dst[size - 1] = '\0';
 }
 
-#pragma pack(1)
-// Discovery answer payload (see GosNetSession::setDiscoveryPayload).
-typedef struct _NetBeacon {
-	char			magic[4];				// "MC2S"
-	char			protocol[15];
-	char			name[MAXLEN_SESSION_NAME];
-	char			map[MAXLEN_MAP_NAME];
-	unsigned char	maxPlayers;
-	unsigned char	numPlayers;
-	unsigned char	locked;
-	unsigned char	inProgress;
-	unsigned int	dataHash;
-	unsigned int	sessionId;				// random per hosted session
-	// Added in 0.2; hosts before that send the beacon without it.
-	char			gameVersion[24];
-} NetBeacon;
-#define NET_BEACON_MIN_SIZE		offsetof(NetBeacon, gameVersion)
-
 static unsigned int HostSessionId = 0;
-#pragma pack()
 
 //---------------------------------------------------------------------------
 // Hash of the loaded data packs (file table of every .fst: sizes and name

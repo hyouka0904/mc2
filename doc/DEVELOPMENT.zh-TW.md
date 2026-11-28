@@ -230,7 +230,7 @@ cd game && ./mc2
 
 - 房間廣播的最後是主機的遊戲版本。0.2 以前的主機送的是較短的廣播，仍然收得到，版本顯示成「< 0.2」。客端在協定 stamp 和遊戲資料雜湊都和自己相同時，才把房間標成可加入。
 - 不能加入的房間，地圖欄改顯示 `VERSION x.y.z`（版本相同但資料不同時顯示 `DIFFERENT GAME DATA`）。按 Join 不會連線，直接顯示雙方的版本。主機比較新時，房間列表的對話框有 **Download**（打開 Release 頁面）；直接輸入 IP 的面板則寫出下載位置。主機比較舊時，提示主機要更新。
-- 能不能一起玩仍然由協定 stamp（`code/multplyr.cpp` 的 `MC2NET-4`）決定，版本字串只用來顯示。網路訊息有任何改動時，都要更新 stamp。
+- 能不能一起玩仍然由協定 stamp（`code/multplyr_wire.h` 的 `MC2NET-4`）決定，版本字串只用來顯示。網路訊息有任何改動時，都要更新 stamp。`unit_netlayout` 會對所有訊息與封包結構的大小算出雜湊，大小變了而 stamp 沒變就失敗：先更新 stamp，再改 `tests/unit/test_netlayout.cpp` 的 `kStamp` 和 `kCurrent`（Windows 的值印在 CI 紀錄裡）。大小不變的改動（例如 chunk 內的位元配置）仍要手動更新 stamp。
 
 ---
 
@@ -315,6 +315,7 @@ ctest --test-dir build --output-on-failure
 | `unit_net` | 區網傳輸層，見[區網聯機的實作](#區網聯機的實作) |
 | `unit_update` | 版本檢查，見[版本檢查](#版本檢查) |
 | `unit_savelayout` | 快速存檔寫入的資料結構大小，見[存檔相容性](#存檔相容性) |
+| `unit_netlayout` | 聯機訊息與封包結構的大小和協定 stamp 相符 |
 | `zh_tw_translations` | `localization/zh-TW/strings.txt`：每個名稱都存在且有英文原文、沒有重複、printf 佔位符一致（`scripts/check_translations.py`） |
 | `render_isolation` | 檢查 OpenGL 只出現在 `GameOS/gameos/render/gl/` |
 | `shader_validation` | 以 glslangValidator 離線編譯並連結所有著色器變體（與執行時相同的 `#version 420`、`ALPHA_TEST` 定義與 `#include` 展開），不需要 GPU；未安裝 `glslang-tools` 時略過 |

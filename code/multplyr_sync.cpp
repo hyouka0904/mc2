@@ -18,6 +18,7 @@
 
 #ifndef MULTPLYR_H
 #include"multplyr.h"
+#include"multplyr_wire.h"
 #endif
 
 #ifndef TEAM_H
@@ -134,71 +135,7 @@ static double SyncNow (void) {
 #define HOST_NETPLAYER			((NETPLAYER)1)
 #define	MAX_SYNC_MSG			(64 * 1024)
 
-//***************************************************************************
-// Wire formats of the in-mission messages (host <-> clients). Fixed-size
-// fields, packed, little endian on every supported platform.
-//***************************************************************************
-
-#pragma pack(1)
-// MCMSG_MOVER_UPDATE: host -> all. Header, then numEntries NetMoverEntry.
-typedef struct _NetMoverUpdate {
-	unsigned char	type;
-	unsigned short	updateId;
-	unsigned char	numEntries;
-	float			missionTime;
-	int				teamScore[MAX_TEAMS];
-	int				playerScore[MAX_MC_PLAYERS];
-	short			kills[MAX_MC_PLAYERS];
-	short			losses[MAX_MC_PLAYERS];
-	int				resourcePoints[MAX_MC_PLAYERS];
-	unsigned char	leftSession;		// bit per commander
-} NetMoverUpdate;
-
-typedef struct _NetMoverEntry {
-	unsigned char	index;				// net roster index
-	unsigned char	flags;				// 1 = status chunk, 2 = move chunk
-	unsigned int	status;
-	unsigned int	move;
-} NetMoverEntry;
-
-// MCMSG_MOVER_WEAPONFIRE_UPDATE: host -> all. Per mover: index, counts,
-// then fire chunks (u32), critical hit chunks (u8), radio chunks (u8).
-typedef struct _NetMoverEventsHeader {
-	unsigned char	type;
-	unsigned char	numMovers;
-} NetMoverEventsHeader;
-
-typedef struct _NetMoverEvents {
-	unsigned char	index;
-	unsigned char	numFire;
-	unsigned char	numCrit;
-	unsigned char	numRadio;
-} NetMoverEvents;
-
-// MCMSG_TURRET_UPDATE: host -> all. Turret targets (part ids, 0 = none).
-typedef struct _NetTurretUpdate {
-	unsigned char	type;
-	unsigned char	numEntries;
-} NetTurretUpdate;
-
-typedef struct _NetTurretEntry {
-	unsigned char	index;
-	int				targetPartId;
-} NetTurretEntry;
-
-// MCMSG_TURRET_WEAPONFIRE_UPDATE: host -> all. Per turret: index, count,
-// fire chunks.
-typedef struct _NetTurretFire {
-	unsigned char	index;
-	unsigned char	numFire;
-} NetTurretFire;
-
-// MCMSG_WEAPONHIT_UPDATE / MCMSG_WORLD_UPDATE: host -> all.
-typedef struct _NetChunkList {
-	unsigned char	type;
-	unsigned short	count;
-} NetChunkList;
-#pragma pack()
+// Wire formats of the in-mission messages: multplyr_wire.h.
 
 //***************************************************************************
 // WORLD CHUNK class (kept for the call sites; the data travels as
@@ -1679,15 +1616,6 @@ void MultiPlayer::clearRosters (void) {
 //***************************************************************************
 
 #define MAX_PAUSES_PER_PLAYER	3
-
-#pragma pack(1)
-typedef struct _NetPause {
-	unsigned char	type;			// MCMSG_PAUSE
-	unsigned char	paused;
-	char			commanderID;	// who asked
-	unsigned char	refused;		// host: no pauses left
-} NetPause;
-#pragma pack()
 
 static void AnnouncePause (MultiPlayer* mp, long cid, bool paused) {
 

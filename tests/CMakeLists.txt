@@ -10,6 +10,7 @@
 #  unit_net           LAN transport: connect, ordered reliable delivery, discovery
 #  unit_update        update check: versions, release JSON, update.ini, local HTTP
 #  unit_savelayout    in-mission save structures keep their sizes
+#  unit_netlayout     LAN wire structures match the protocol stamp
 #  zh_tw_translations zh-TW strings.txt names, placeholders, duplicates
 #  unit_mods          mod system: versions, manifests, modpacks, load order, overlay
 #  tool_mc2mod        modding workflow through the mc2mod command line tool
@@ -127,6 +128,10 @@ mc2_add_unit_test(unit_savelayout
     SOURCES unit/test_savelayout.cpp unit/savelayout_stubs.cpp ${CMAKE_SOURCE_DIR}/code/savelayout.cpp
     INCLUDES ${CMAKE_SOURCE_DIR}/code)
 
+mc2_add_unit_test(unit_netlayout
+    SOURCES unit/test_netlayout.cpp unit/savelayout_stubs.cpp ${CMAKE_SOURCE_DIR}/code/netlayout.cpp
+    INCLUDES ${CMAKE_SOURCE_DIR}/code)
+
 mc2_add_unit_test(unit_mods
     SOURCES unit/test_mods.cpp
     LIBS mc2mods)
@@ -139,13 +144,13 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_FOUND)
+    add_test(NAME zh_tw_translations
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/check_translations.py)
     add_test(NAME shader_validation
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/validate_shaders.py ${CMAKE_SOURCE_DIR}/shaders)
     set_tests_properties(shader_validation PROPERTIES SKIP_RETURN_CODE 77)
     # SPIR-V for Vulkan (spirv-val), MSL / HLSL conversion, PerDraw layout
     set(MC2_SHADER_REQUIRE "" CACHE STRING "Shader outputs shader_spirv must produce, e.g. msl,hlsl,dxil")
-    add_test(NAME zh_tw_translations
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/check_translations.py)
     set(_require_args)
     if(MC2_SHADER_REQUIRE)
         set(_require_args --require ${MC2_SHADER_REQUIRE})

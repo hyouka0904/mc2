@@ -4,7 +4,7 @@
 
 | 功能 | 入口與定位 | 狀態來源與連動 | 驗證 |
 |---|---|---|---|
-| 聯機開房、加入與模式入口 | `code/multplyr.cpp` 的 `MultiPlayer::hostSession`、`joinSession`；`code/mpconnectiontype.cpp`、`code/mpgamebrowser.cpp`、`code/mpparameterscreen.cpp` | 主機維護房間與名單。訊息結構在 `code/multplyr.h`，傳輸在 `GameOS/gameos/net/`，進關同步在 `code/multplyr_sync.cpp`。改封包格式時同步檢查協定版本。 | `unit_net`、LAN 測試與 `--scenario version` |
+| 聯機開房、加入與模式入口 | `code/multplyr.cpp` 的 `MultiPlayer::hostSession`、`joinSession`；`code/mpconnectiontype.cpp`、`code/mpgamebrowser.cpp`、`code/mpparameterscreen.cpp` | 主機維護房間與名單。訊息結構在 `code/multplyr.h`，其他封包結構和協定 stamp 在 `code/multplyr_wire.h`，傳輸在 `GameOS/gameos/net/`，進關同步在 `code/multplyr_sync.cpp`。改封包格式時要更新 stamp，`unit_netlayout` 會擋下只改大小沒改 stamp 的情況。 | `unit_net`、`unit_netlayout`、LAN 測試與 `--scenario version` |
 | 地圖與關卡載入 | `code/mission.cpp` 的 `Mission::init`；`mclib/terrain.cpp` 的 `Terrain::init` | Mission 讀取關卡設定與地圖封包，再初始化地形、物件和目標。多人地圖載入畫面在 `code/mploadmap.cpp`。新增地圖時一起驗證載入與尋路。 | 冒煙測試與 LAN 測試 |
 | 任務目標 | `code/objective.cpp` 的 `CObjectives::Read`、`Status`、`Save` | 目標由任務設定載入到陣營，`code/team.cpp` 查詢狀態，`code/missiongui.cpp` 與 `code/controlgui.cpp` 讀取並顯示。調整判定時一起確認完成條件、獎勵和結算。 | 實際完成一個目標並確認 HUD、獎勵及結算 |
 | 房間準備、部署與聊天 | `code/mpparameterscreen.cpp`、`code/missionbegin.cpp`、`code/pilotreadyscreen.cpp`、`code/chatwindow.cpp` | `code/multplyr.cpp` 核對整備狀態和預算、從房間啟動載入握手並轉送聊天。`code/multplyr.h` 定義收件人及訊息格式。 | LAN 整備與開局、多人收件人檢查 |
