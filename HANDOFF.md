@@ -66,9 +66,9 @@ timeout 900 python3 scripts/run_net_test.py game [--scenario logistics|version|a
 - 測試前要把 `build/mc2` 和 `build/out/res/libmc2res_64.so` 複製到遊戲目錄，否則會跑到舊版本，或出現 missing string res。
 - ASan：`-DCMAKE_BUILD_TYPE=Debug -DMC2_ENABLE_ASAN=ON`。`unit_stuff` 的洩漏報告來自原版記憶體池，可以忽略。
 
-## 最近一次結果（2026-11-28，`23264f9`）
+## 最近一次結果（2026-11-28，`fe4c558`）
 
-- Release：ctest 23/23；截圖 gl 18/18；流程 gl 12/12；聯機 battle、logistics、version、away（含 Map Info）都通過。
+- 檔案結構重整＋新測試 `unit_netlayout`（聯機格式，三平台同一個 hash `8cb28b61`）、`zh_tw_translations`：本機 ctest 25/25、截圖 gl 18/18、流程 gl 12/12、聯機 battle、version 通過；CI run 134 三平台與全部聯機情境綠燈。
 - 更新流程：本機假伺服器實測預計下載量、下載進度、「稍後」後由選項按鈕下載再安裝。
 - Release workflow run 46：三平台打包、安裝和區塊更新測試都通過，已發佈 test.46。
 
