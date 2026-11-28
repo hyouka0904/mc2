@@ -11,7 +11,7 @@
   - U1–U3、測試版頻道、遊戲內下載安裝、區塊更新。
   - 繁中補丁：2,108 條譯文、遊戲內語言切換。
   - 大廳修正：整備流程、聊天、System 選單、準備與暫離。
-- 最新測試版：[v0.1.1-test.42](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.42)（dev `1cf6f4f`）。
+- 最新測試版：[v0.1.1-test.46](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.46)（dev `23264f9`）。
 - 停在停止點 1＋U-a：等使用者實機回報。**收到回報前不開始 M2。**
 
 ## 待使用者實機確認
@@ -66,14 +66,11 @@ timeout 900 python3 scripts/run_net_test.py game [--scenario logistics|version|a
 - 測試前要把 `build/mc2` 和 `build/out/res/libmc2res_64.so` 複製到遊戲目錄，否則會跑到舊版本，或出現 missing string res。
 - ASan：`-DCMAKE_BUILD_TYPE=Debug -DMC2_ENABLE_ASAN=ON`。`unit_stuff` 的洩漏報告來自原版記憶體池，可以忽略。
 
-## 最近一次結果（2026-11-27，`1cf6f4f`）
+## 最近一次結果（2026-11-28，`23264f9`）
 
-- Release：
-  - ctest 23/23、smoke。
-  - 截圖 gl、gpu 各 18/18；流程 gl、gpu 各 12/12。
-  - 聯機 battle、logistics、version、away 都通過。
-- ASan：12 個流程和聯機 away、battle 都通過，沒有 ASan 錯誤。
-- Release workflow run 42：三平台打包、安裝和區塊更新測試都通過，已發佈 test.42。
+- Release：ctest 23/23；截圖 gl 18/18；流程 gl 12/12；聯機 battle、logistics、version、away（含 Map Info）都通過。
+- 更新流程：本機假伺服器實測預計下載量、下載進度、「稍後」後由選項按鈕下載再安裝。
+- Release workflow run 46：三平台打包、安裝和區塊更新測試都通過，已發佈 test.46。
 
 ## 下一步
 

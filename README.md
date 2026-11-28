@@ -4,7 +4,7 @@
 
 ## [⬇ Download the latest version](https://github.com/hyouka0904/mc2/releases/latest)
 
-**[⬇ Download the test version (v0.1.1-test.42)](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.42)**
+**[⬇ Download the test version (v0.1.1-test.46)](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.46)**
 
 **Return to the stable version.** In Options → Gameplay, turn off “Receive test versions” to receive only future stable updates newer than your installed build. To switch now, close the game, back up your saves and settings, and install or extract the [latest stable release](https://github.com/hyouka0904/mc2/releases/latest) in a separate location. The two builds may share a save folder. See `README.txt` in the download for its location. Save compatibility when rolling back has not been verified.
 

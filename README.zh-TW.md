@@ -4,7 +4,7 @@
 
 ## [⬇ 下載最新版](https://github.com/hyouka0904/mc2/releases/latest)
 
-**[⬇ 下載測試版（v0.1.1-test.42）](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.42)**
+**[⬇ 下載測試版（v0.1.1-test.46）](https://github.com/hyouka0904/mc2/releases/tag/v0.1.1-test.46)**
 
 **回到正式版。** 在「選項 → 遊戲玩法」取消勾選「接收測試版」，之後只會收到高於目前版本的正式版更新。若要立即回退，請先關閉遊戲並備份存檔與設定，再將[最新正式版](https://github.com/hyouka0904/mc2/releases/latest)安裝或解壓到另一個位置。兩版可能共用存檔資料夾，位置請參考安裝包內的 `README.txt`。回退後的存檔相容性尚未驗證。
 
