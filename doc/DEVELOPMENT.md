@@ -75,6 +75,7 @@ The code has four layers; each depends only on the ones below it:
 | `examples/mods/`, `examples/modpacks/` | Example mods and modpacks (also used by the tests). |
 | `thirdparty/enet/` | ENet 1.3.18 (MIT), reliable UDP for LAN multiplayer. The game uses it only through `GameOS/gameos/net/gos_net.h` (connections, reliable / unreliable channels, answering room discovery queries on game port 27015). |
 | `thirdparty/pl_mpeg/` | Single-file MPEG-1 video / MP2 audio decoder (MIT) for cutscenes. `code/mc2movie.cpp` converts each frame to RGBA, updates a texture and draws it as a quad, so every render backend can show it; movie audio goes to SDL3_mixer through `gosAudio_*PCMStream`. If `data/sound/` has a `.wav` with the same name, that file plays instead. |
+| `thirdparty/ARM/` | Original XNA ARM (asset resource manager) interface header used by `mclib/msl.cpp` and `aseconv` to record asset links; this port always builds its stub classes (`LINUX_BUILD`). |
 | `tests/` | Automated tests (see [Automated tests](#automated-tests)). |
 | `scripts/` | `prepare_game_dir.sh` (build the game data and assemble a runnable game directory), `smoke_test.sh` (headless end-to-end test), and the test, packaging and benchmark scripts. |
 | `cmake/MC2Dependencies.cmake` | Gets SDL3 / SDL3_mixer / SDL3_ttf: an installed version if there is one, otherwise a pinned version downloaded and built statically. |

@@ -67,6 +67,7 @@
 | `examples/mods/`、`examples/modpacks/` | 範例 Mod 與 Modpack（也用於自動測試）。 |
 | `thirdparty/enet/` | ENet 1.3.18（MIT 授權）可靠 UDP 函式庫，區網聯機用。遊戲只透過 `GameOS/gameos/net/gos_net.h` 使用它（連線、可靠／不可靠通道、在遊戲埠 27015 上回應房間探索查詢）。 |
 | `thirdparty/pl_mpeg/` | 單檔 MPEG-1 影片／MP2 音訊解碼器（MIT 授權），播放過場動畫用。`code/mc2movie.cpp` 把每幀轉成 RGBA 更新到一張材質，以一個四邊形畫出，所以所有繪圖後端都能顯示；動畫的聲音經 `gosAudio_*PCMStream` 送進 SDL3_mixer。若 `data/sound/` 有同名 `.wav`，則改播那個檔案。 |
+| `thirdparty/ARM/` | 原版 XNA ARM（素材資源管理）介面的標頭檔，`mclib/msl.cpp` 和 `aseconv` 用它記錄素材關聯；本移植版一律編譯它的空實作（`LINUX_BUILD`）。 |
 | `tests/` | 自動化測試（見[自動化測試](#自動化測試)）。 |
 | `scripts/` | `prepare_game_dir.sh`（建置遊戲資料並組出可執行的遊戲目錄）、`smoke_test.sh`（無頭端到端測試），以及測試、打包、效能量測腳本。 |
 | `cmake/MC2Dependencies.cmake` | 取得 SDL3 / SDL3_mixer / SDL3_ttf：優先用已安裝的版本，否則自動下載固定版本並靜態編譯。 |

@@ -50,7 +50,7 @@
 #include<toolos.hpp>
 
 
-#include "../ARM/Microsoft.Xna.Arm.h"
+#include "../thirdparty/ARM/Microsoft.Xna.Arm.h"
 using namespace Microsoft::Xna::Arm;
 
 //-------------------------------------------------------------------------------
